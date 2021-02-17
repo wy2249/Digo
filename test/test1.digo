@@ -1,0 +1,75 @@
+func main(i int) int {
+    if a  {
+        1
+        2
+        3
+    }
+    1
+}
+
+async func main2(i int) int {
+    if a {
+        1
+        2
+        3
+    } else if b {
+        1
+        2
+        3
+        4
+        5
+    }
+}
+
+async remote func main3(i2 int) int {
+    if abcd {
+        8
+        5
+        op
+        whatever
+    } else if d {
+        10
+        9
+        8
+        7
+        6
+        5
+    } else if cccc {
+        7
+        dfl
+        ddd
+    } else {
+        ccc
+        bbb
+    }
+}
+
+func main4(i2 int, i3 int) int {
+    for i := 0; i < 100; i = i + 1 {
+        if i < 5 {
+            func_1(i2, i3)
+        } else {
+            func_2(i3, i2)
+        }
+    }
+
+    for var i int = 4; i < 100; i = i * 5 {
+        if i < 5 {
+            func_1(i2 + 5, i3 / 4 )
+            break
+        } else {
+            func_2(i3 * 8, i2 - 5)
+            continue
+        }
+    }
+    for {
+        1
+    }
+    for i < 100 {
+
+    }
+}
+
+
+
+

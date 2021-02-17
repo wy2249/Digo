@@ -29,16 +29,22 @@ type expr =
   | TypedValue of type_value
   | NamedVariable of string
 
+type simple_statement = 
+    EmptySimpleStatement
+  | SimpleDeclare of builtin_type * string * expr
+  | SimpleShortDecl of string * expr
+  | SimpleExpr of expr
+
 type statement = 
     EmptyStatement
   | IfStatement of expr * statement list * statement list 
      (* condition expression; statements if true; statements if false  *)
-  | ForStatement of statement * expr * statement * statement list 
-      (*  for expr1; expr2; expr3 {  statements   }  *)
+  | ForStatement of simple_statement * expr * simple_statement * statement list 
+      (*  for ssmt1; expr2; ssmt3 {  statements   }  *)
   | Break
   | Continue
-  | Declare of builtin_type * string
-  | DeclareInit of string * expr
+  | Declare of builtin_type * string * expr
+  | ShortDecl of string * expr
   | Return of expr
   | Expr of expr
 
@@ -48,6 +54,8 @@ type parameter =
 type func_proto_impl = 
     FunctionImpl of string * builtin_type * parameter list * statement list
    (*  function name,  type of return value,  parameters,   statements    *)
+  | AsyncFunctionImpl of string * builtin_type * parameter list * statement list
+  | RemoteFunctionImpl of string * builtin_type * parameter list * statement list
 
 type functions = func_proto_impl list
 
