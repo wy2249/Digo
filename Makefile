@@ -25,8 +25,8 @@ scanner.cmx : parser.cmx
 
 .PHONY : remake
 
-remake: clean printer
+remake: clean printer 
 
 .PHONY : clean
 clean :
-	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out calc
+	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out printer
