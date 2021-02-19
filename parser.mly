@@ -41,14 +41,26 @@ p_function:
   KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
   LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
   /*  func FuncName(parameters) retType { statements }  */
-    { FunctionImpl($2, $6, $4, $9)   } 
+    { FunctionImpl($2, [$6], $4, $9)   } 
   /*  function name,  type of return value,  parameters,   statements    */
 | KEYWORD_ASYNC KEYWORD_REMOTE KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
   LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { RemoteFunctionImpl($4, $8, $6, $11)   } 
+    { RemoteFunctionImpl($4, [$8], $6, $11)   } 
 | KEYWORD_ASYNC KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
   LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { AsyncFunctionImpl($3, $7, $5, $10)   } 
+    { AsyncFunctionImpl($3, [$7], $5, $10)   } 
+  /*   Functions with multiple return values:  */  
+| KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  /*  func FuncName(parameters) (retType1, retType2,...) { statements }  */
+    { FunctionImpl($2, $7, $4, $11)   } 
+  /*  function name,  type of return values,  parameters,   statements    */
+| KEYWORD_ASYNC KEYWORD_REMOTE KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+    { RemoteFunctionImpl($4, $9, $6, $13)   } 
+| KEYWORD_ASYNC KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+    { AsyncFunctionImpl($3, $8, $5, $12)   } 
 
 p_parameters:
   { [] }
@@ -70,9 +82,14 @@ p_expr:
 | p_expr DIVIDE p_expr { BinaryOp($1, Div, $3) }
 | p_expr IS_LESS_THAN p_expr { BinaryOp($1, LessThan, $3) }
 | p_expr ASSIGNMENT p_expr { AssignOp($1, $3) }
-| p_literal          { TypedValue($1) }
+| p_literal          { Literal($1) }
 | VARIABLE         { NamedVariable($1) }
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
+
+p_type_list:
+  { [] }
+| p_type    {  [$1]  }
+| p_type COMMA p_type_list  {  $1::$3  } 
 
 p_type:
   KEYWORD_STRING {  StringType  }

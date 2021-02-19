@@ -12,12 +12,13 @@ type builtin_type =
   | StringType
   | ArrayType
   | BoolType
+  | FutureType
 
-type type_value = 
+type literal = 
   Integer of int
   | Float of float
   | String of string
-  | Array of int * type_value
+  | Array of int * literal list
   | Bool of bool
 
 type expr =
@@ -26,7 +27,7 @@ type expr =
   | UnaryOp  of unary_operator * expr
   | AssignOp of expr * expr
   | FunctionCall of string * expr list
-  | TypedValue of type_value
+  | Literal of literal
   | NamedVariable of string
 
 type simple_statement = 
@@ -52,10 +53,10 @@ type parameter =
     NamedParameter of string * builtin_type
 
 type func_proto_impl = 
-    FunctionImpl of string * builtin_type * parameter list * statement list
+    FunctionImpl of string * builtin_type list * parameter list * statement list
    (*  function name,  type of return value,  parameters,   statements    *)
-  | AsyncFunctionImpl of string * builtin_type * parameter list * statement list
-  | RemoteFunctionImpl of string * builtin_type * parameter list * statement list
+  | AsyncFunctionImpl of string * builtin_type list * parameter list * statement list
+  | RemoteFunctionImpl of string * builtin_type list * parameter list * statement list
 
 type functions = func_proto_impl list
 

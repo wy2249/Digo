@@ -2,6 +2,12 @@ func main(i int) int {
     if a  {
         1
         2
+        "1234d dfdf --@@3--32 b ///"
+        a := 1 + "1223"
+        a := 4
+        b = 1
+        var b string = "234134" + "412313"
+        var c int
         3
     }
     1
@@ -44,7 +50,7 @@ async remote func main3(i2 int) int {
     }
 }
 
-func main4(i2 int, i3 int) int {
+func master(i2 int, i3 int) int {
     for i := 0; i < 100; i = i + 1 {
         if i < 5 {
             func_1(i2, i3)
@@ -69,6 +75,34 @@ func main4(i2 int, i3 int) int {
 
     }
 }
+
+
+func func6(i2 int, i3 int, lkfd_49o5 int, jdfi84 string, dfji4 float) (int, string, float, string) {
+    for i := 0; i < 100; i = i + 1 {
+        if i < 5 {
+            func_1(i2, i3)
+        } else {
+            func_2(i3, i2)
+        }
+    }
+
+    for var i int = 4; i < 100; i = i * 5 {
+        if i < 5 {
+            func_1(i2 + 5, i3 / 4 )
+            break
+        } else {
+            func_2(i3 * 8, i2 - 5)
+            continue
+        }
+    }
+    for {
+        1
+    }
+    for i < 100 {
+
+    }
+}
+
 
 
 

@@ -20,9 +20,15 @@ IntegerType -> "Integer"
 
 and
 
-  stringify_type_value = function
+  stringify_literal = function
   Integer(x)  ->  "Integer " ^ string_of_int x
 | String(x)   ->  "String " ^ x
+
+and
+
+  stringify_builtin_type_list = function
+  []             ->   ""
+| (typ :: typs)  ->   stringify_builtin_type typ ^ ", " ^ stringify_builtin_type_list typs
 
 and
 
@@ -51,7 +57,7 @@ and
   | UnaryOp(op, ex)              -> ""
   | AssignOp(ex1, ex2)           -> stringify_expr ex1 ^ " = " ^ stringify_expr ex2
   | FunctionCall(funcName, exlist) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
-  | TypedValue(tv)               -> "" ^ stringify_type_value tv
+  | Literal(lit)               -> "" ^ stringify_literal lit
   | NamedVariable(nv)            -> "Variable " ^ nv
 
 and
@@ -95,7 +101,7 @@ and
 
   stringify_statements = function
     [] ->   ""
-  | (st :: sts) ->  "   " ^ stringify_statement st ^ "\n" ^ stringify_statements sts
+  | (st :: sts) ->  "" ^ stringify_statement st ^ "\n" ^ stringify_statements sts
 
 and
 
@@ -119,17 +125,17 @@ let rec stringify_parameters = function
 let rec print_function = function
     FunctionImpl(name, typ, parameters, stlist)
        ->  print_endline ("Function " ^ name);
-           print_endline (" Return Type: " ^ stringify_builtin_type typ);
+           print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
            print_endline (" Params: " ^ stringify_parameters parameters);
            print_endline (" Statements: \n   " ^ stringify_statements stlist);
   | RemoteFunctionImpl(name, typ, parameters, stlist)
       ->  print_endline ("Async remote function " ^ name);
-          print_endline (" Return Type: " ^ stringify_builtin_type typ);
+          print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
           print_endline (" Params: " ^ stringify_parameters parameters);
           print_endline (" Statements: \n   " ^ stringify_statements stlist);
   | AsyncFunctionImpl(name, typ, parameters, stlist)
       ->  print_endline ("Async function " ^ name);
-          print_endline (" Return Type: " ^ stringify_builtin_type typ);
+          print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
           print_endline (" Params: " ^ stringify_parameters parameters);
           print_endline (" Statements: \n   " ^ stringify_statements stlist);
 ;;
