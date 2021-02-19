@@ -46,7 +46,7 @@ and
   | Div  ->  r1 ^ " / " ^ r2
   | LessThan -> r1 ^ " < " ^ r2
   ) in 
-  let reg_content = new_reg ^ " = " ^ str in
+  let reg_content = "(" ^ new_reg ^ " = " ^ str ^ ")" in
   StringHash.replace temp_reg_table new_reg reg_content; reg_content
 
 and

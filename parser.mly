@@ -85,6 +85,7 @@ p_expr:
 | p_literal          { Literal($1) }
 | VARIABLE         { NamedVariable($1) }
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
+| LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
 
 p_type_list:
   { [] }
