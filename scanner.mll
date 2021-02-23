@@ -3,6 +3,10 @@
 rule tokenize = parse
   [' ' '\t' ] { tokenize lexbuf }
 | ['\r' '\n'] { NEWLINE }
+
+| "//"     { comment_line lexbuf }
+| "/*"     { comment_block lexbuf}
+
 | '+' { PLUS }
 | '-' { MINUS }
 | '*' { TIMES }
@@ -47,3 +51,12 @@ rule tokenize = parse
 | ['0'-'9']+ as lit { INT_LITERAL(int_of_string lit) }
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']* as var { VARIABLE(var) }
 | '"' ([^ '"' ]*) '"' as str { STRING_LITERAL(str) }
+
+
+and comment_line = parse
+  '\n'  { tokenize lexbuf }
+  | _   { comment_line lexbuf }
+
+and comment_block = parse
+  "*/"  { tokenize lexbuf }
+  | _   { comment_block lexbuf }
