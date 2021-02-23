@@ -8,6 +8,7 @@
 %token <int> INT_LITERAL
 %token <string> STRING_LITERAL
 %token <float> FLOAT_LITERAL
+%token <bool> BOOLEAN_LITERAL
 %token <string> VARIABLE
 
 %token KEYWORD_FOR KEYWORD_IF KEYWORD_ELSE KEYWORD_FUNC
@@ -100,9 +101,10 @@ p_type:
 | KEYWORD_BOOL   {  BoolType    }
 
 p_literal:
-  INT_LITERAL  {  Integer($1)  }
-| STRING_LITERAL { String($1) }
-| FLOAT_LITERAL {  Float($1)  }
+  INT_LITERAL     { Integer($1) }
+| STRING_LITERAL  { String($1)  }
+| FLOAT_LITERAL   { Float($1)   }
+| BOOLEAN_LITERAL { Bool($1)    }
 
 
 p_statements:
