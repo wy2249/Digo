@@ -7,6 +7,7 @@
 %token ASSIGNMENT ASSIGNNEW SEMICOLON EOF COMMA
 %token <int> INT_LITERAL
 %token <string> STRING_LITERAL
+%token <float> FLOAT_LITERAL
 %token <string> VARIABLE
 
 %token KEYWORD_FOR KEYWORD_IF KEYWORD_ELSE KEYWORD_FUNC
@@ -101,7 +102,7 @@ p_type:
 p_literal:
   INT_LITERAL  {  Integer($1)  }
 | STRING_LITERAL { String($1) }
-/*  TODO  */
+| FLOAT_LITERAL {  Float($1)  }
 
 
 p_statements:

@@ -23,6 +23,7 @@ and
   stringify_literal = function
   Integer(x)  ->  "Integer " ^ string_of_int x
 | String(x)   ->  "String " ^ x
+| Float(x)    ->  "Float " ^ string_of_float x
 
 and
 
