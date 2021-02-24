@@ -12,13 +12,13 @@ type builtin_type =
   | StringType
   | SliceType of builtin_type
   | BoolType
+  | FutureType
 
-
-type type_value = 
+type literal = 
   Integer of int
   | Float of float
   | String of string
-  | Slice of builtin_type * type_value list
+  | Slice of builtin_type * int * literal list
   | Bool of bool
 
 type expr =
@@ -27,19 +27,26 @@ type expr =
   | UnaryOp  of unary_operator * expr
   | AssignOp of expr * expr
   | FunctionCall of string * expr list
-  | TypedValue of type_value
+  | Literal of literal
   | NamedVariable of string
+  | SliceLiteral of builtin_type * int * expr list
+
+type simple_statement = 
+    EmptySimpleStatement
+  | SimpleDeclare of builtin_type * string * expr
+  | SimpleShortDecl of string * expr
+  | SimpleExpr of expr
 
 type statement = 
     EmptyStatement
   | IfStatement of expr * statement list * statement list 
      (* condition expression; statements if true; statements if false  *)
-  | ForStatement of statement * expr * statement * statement list 
-      (*  for expr1; expr2; expr3 {  statements   }  *)
+  | ForStatement of simple_statement * expr * simple_statement * statement list 
+      (*  for ssmt1; expr2; ssmt3 {  statements   }  *)
   | Break
   | Continue
-  | Declare of builtin_type * string
-  | DeclareInit of string * expr
+  | Declare of builtin_type * string * expr
+  | ShortDecl of string * expr
   | Return of expr
   | Expr of expr
 
@@ -47,8 +54,10 @@ type parameter =
     NamedParameter of string * builtin_type
 
 type func_proto_impl = 
-    FunctionImpl of string * builtin_type * parameter list * statement list
+    FunctionImpl of string * builtin_type list * parameter list * statement list
    (*  function name,  type of return value,  parameters,   statements    *)
+  | AsyncFunctionImpl of string * builtin_type list * parameter list * statement list
+  | RemoteFunctionImpl of string * builtin_type list * parameter list * statement list
 
 type functions = func_proto_impl list
 

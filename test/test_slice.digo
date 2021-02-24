@@ -1,0 +1,5 @@
+func master() int {
+    []string{}
+    i := []string{1,2}
+    [][]string{[]string{1,2,3}}
+}

@@ -1,1 +1,10 @@
 .idea/
+printer
+*.cmi
+*.cmo
+*.cmx
+parser.ml
+parser.mli
+scanner.ml
+printer.out
+
