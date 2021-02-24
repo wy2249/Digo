@@ -8,4 +8,5 @@ func master() int {
     i[1:]
     i[:10]
     []string{1,2} + []string{3,4}
+    [][][][]string{[][][]string{[][]string{}}}
 }

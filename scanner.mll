@@ -20,6 +20,8 @@ rule tokenize = parse
 | ">=" {IS_GREATER_EQUAL}
 | "<=" {IS_LESS_EQUAL}
 
+| '!' { LOGICAL_NOT  }
+
 | '{' { LEFT_BRACE }
 | '}' { RIGHT_BRACE }
 | '[' { LEFT_BRACKET }
@@ -33,6 +35,7 @@ rule tokenize = parse
 | ":=" { ASSIGNNEW }   (* TODO *)
 | ':' {COLON}
 | ';' { SEMICOLON }
+| '%' {  MODSIGN }
 | eof { EOF }
 
 | "for"     { KEYWORD_FOR     }
@@ -50,6 +53,10 @@ rule tokenize = parse
 | "bool"    { KEYWORD_BOOL    }
 | "continue"{ KEYWORD_CONTINUE}
 | "break"   { KEYWORD_BREAK   }
+
+| "gather"  { KEYWORD_GATHER  }
+| "len"     { KEYWORD_LEN     }
+| "append"  { KEYWORD_APPEND  }
 
 | "true" | "false" as boollit { BOOLEAN_LITERAL(bool_of_string boollit)}
 | ['0'-'9']+ as lit { INT_LITERAL(int_of_string lit) }

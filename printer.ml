@@ -18,6 +18,8 @@ IntegerType -> "Integer"
 | FloatType -> "Float"
 | StringType -> "String"
 | SliceType(typ) -> "Slice(" ^ stringify_builtin_type typ ^ ")"
+| BoolType   ->  "Boolean"
+| FutureType ->  "Future object"
 
 and
 
@@ -26,13 +28,34 @@ and
 | String(x)   ->  "String " ^ x
 | Float(x)    ->  "Float " ^ string_of_float x
 | Bool(x)     ->  "Boolean " ^ string_of_bool x
-| Slice(typ, len, lits) -> stringify_builtin_type(SliceType(typ)) ^ String.concat " " (List.map stringify_literal lits)
+
+and
+
+  stringify_builtin_function = function
+  Gather       ->    "Builtin_Gather"
+| Len          ->    "Builtin_Len"
+| Append       ->    "Builtin_Append"
 
 and
 
   stringify_builtin_type_list = function
   []             ->   ""
 | (typ :: typs)  ->   stringify_builtin_type typ ^ ", " ^ stringify_builtin_type_list typs
+
+and
+
+  stringify_unary_operator  op ex1 = 
+  let new_reg_id = StringHash.length temp_reg_table in
+  let new_reg = "r" ^ string_of_int new_reg_id in
+  let str = 
+  let r1 = stringify_expr ex1 in
+  (
+    match op with
+    LogicalNot  ->  "!(" ^ r1 ^ ")"
+  | Negative    ->  "-(" ^ r1 ^ ")"
+  ) in 
+  let reg_content = "(" ^ new_reg ^ " = " ^ str ^ ")" in
+  StringHash.replace temp_reg_table new_reg reg_content; reg_content
 
 and
 
@@ -56,6 +79,7 @@ and
   | IsNotEqual -> r1 ^ " != " ^ r2
   | LogicalAnd -> r1 ^ " && " ^ r2
   | LogicalOr -> r1 ^ " || " ^ r2
+  | Mod       -> r1 ^ " % " ^ r2
   ) in 
   let reg_content = "(" ^ new_reg ^ " = " ^ str ^ ")" in
   StringHash.replace temp_reg_table new_reg reg_content; reg_content
@@ -65,7 +89,7 @@ and
   stringify_expr = function
     EmptyExpr                    -> ""
   | BinaryOp(ex1, op, ex2)       -> stringify_binary_operator ex1 op ex2
-  | UnaryOp(op, ex)              -> ""
+  | UnaryOp(op, ex1)              -> stringify_unary_operator op ex1
   | AssignOp(ex1, ex2)           -> stringify_expr ex1 ^ " = " ^ stringify_expr ex2
   | FunctionCall(funcName, exlist) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
   | Literal(lit)               -> "" ^ stringify_literal lit
@@ -73,6 +97,8 @@ and
   | SliceLiteral(typ, len, exprs) -> stringify_builtin_type typ ^ "{" ^ String.concat "," (List.map stringify_expr exprs) ^ "}"
   | SliceIndex(ex1, ex2) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ "]"
   | SliceSlice(ex1, ex2, ex3) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ ":" ^ stringify_expr ex3 ^ "]"
+  | BuiltinFunctionCall(func, exlist) -> stringify_builtin_function(func) ^ stringify_expressions(exlist)
+  | Await(obj)                  ->  "Await on future object: " ^ obj
 
 and
 
@@ -93,7 +119,6 @@ and
 and
 
   stringify_statement = function
-    (*  Top level statement  *)
     EmptyStatement                  -> "Empty Statement"
   | IfStatement(ex, stt, stf)       -> 
     let label_id = StringHash.length temp_label_table in

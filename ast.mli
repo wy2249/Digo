@@ -4,7 +4,7 @@ type binary_operator =
   | IsEqual | IsNotEqual
   | LogicalAnd | LogicalOr
 
-type unary_operator = LogicalNot | Await | Negative
+type unary_operator = LogicalNot | Negative
 
 type builtin_type = 
   IntegerType
@@ -18,8 +18,12 @@ type literal =
   Integer of int
   | Float of float
   | String of string
-  | Slice of builtin_type * int * literal list
   | Bool of bool
+
+type builtin_function = 
+    Gather
+  | Len
+  | Append
 
 type expr =
     EmptyExpr
@@ -32,6 +36,8 @@ type expr =
   | SliceLiteral of builtin_type * int * expr list
   | SliceIndex of expr * expr
   | SliceSlice of expr * expr * expr
+  | BuiltinFunctionCall of builtin_function * expr list
+  | Await of string
 
 type simple_statement = 
     EmptySimpleStatement
