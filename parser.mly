@@ -4,9 +4,11 @@
 %token LOGICAL_OR LOGICAL_AND IS_EQUAL IS_NOT_EQUAL IS_LESS_THAN IS_GREATER_THAN
 %token LEFT_BRACE RIGHT_BRACE LEFT_BRACKET RIGHT_BRACKET
 %token LEFT_PARENTHE RIGHT_PARENTHE
-%token ASSIGNMENT ASSIGNNEW SEMICOLON EOF COMMA
+%token ASSIGNMENT ASSIGNNEW SEMICOLON COLON EOF COMMA
 %token <int> INT_LITERAL
 %token <string> STRING_LITERAL
+%token <float> FLOAT_LITERAL
+%token <bool> BOOLEAN_LITERAL
 %token <string> VARIABLE
 
 %token KEYWORD_FOR KEYWORD_IF KEYWORD_ELSE KEYWORD_FUNC
@@ -86,22 +88,34 @@ p_expr:
 | VARIABLE         { NamedVariable($1) }
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
 | LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
+| p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE { SliceLiteral($1, List.length $3, $3) }
+/* index */
+| p_expr LEFT_BRACKET p_expr RIGHT_BRACKET { SliceIndex($1, $3) }
+/* slice */
+| p_expr LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET { SliceSlice($1, $3, $5) }
+| p_expr LEFT_BRACKET COLON p_expr RIGHT_BRACKET { SliceSlice($1, EmptyExpr, $4) }
+| p_expr LEFT_BRACKET p_expr COLON RIGHT_BRACKET { SliceSlice($1, $3, EmptyExpr) }
 
 p_type_list:
   { [] }
 | p_type    {  [$1]  }
 | p_type COMMA p_type_list  {  $1::$3  } 
 
+p_slice_type:
+  LEFT_BRACKET RIGHT_BRACKET p_type { SliceType($3) }
+
 p_type:
   KEYWORD_STRING {  StringType  }
 | KEYWORD_INT    {  IntegerType }
 | KEYWORD_FLOAT  {  FloatType   }
 | KEYWORD_BOOL   {  BoolType    }
+| p_slice_type   {  $1 }
 
 p_literal:
-  INT_LITERAL  {  Integer($1)  }
-| STRING_LITERAL { String($1) }
-/*  TODO  */
+  INT_LITERAL     { Integer($1) }
+| STRING_LITERAL  { String($1)  }
+| FLOAT_LITERAL   { Float($1)   }
+| BOOLEAN_LITERAL { Bool($1)    }
 
 
 p_statements:
