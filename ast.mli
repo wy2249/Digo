@@ -10,7 +10,7 @@ type builtin_type =
   IntegerType
   | FloatType
   | StringType
-  | ArrayType
+  | SliceType of builtin_type
   | BoolType
   | FutureType
 
@@ -18,7 +18,7 @@ type literal =
   Integer of int
   | Float of float
   | String of string
-  | Array of int * literal list
+  | Slice of builtin_type * int * literal list
   | Bool of bool
 
 type expr =
@@ -29,6 +29,9 @@ type expr =
   | FunctionCall of string * expr list
   | Literal of literal
   | NamedVariable of string
+  | SliceLiteral of builtin_type * int * expr list
+  | SliceIndex of expr * expr
+  | SliceSlice of expr * expr * expr
 
 type simple_statement = 
     EmptySimpleStatement
