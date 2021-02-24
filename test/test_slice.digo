@@ -1,5 +1,10 @@
 func master() int {
     []string{}
     i := []string{1,2}
+    i := []string{1+2,2+3}
     [][]string{[]string{1,2,3}}
+    i[1]
+    i[1:10]
+    i[1:]
+    i[:10]
 }

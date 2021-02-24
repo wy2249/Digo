@@ -30,6 +30,8 @@ type expr =
   | Literal of literal
   | NamedVariable of string
   | SliceLiteral of builtin_type * int * expr list
+  | SliceIndex of expr * expr
+  | SliceSlice of expr * expr * expr
 
 type simple_statement = 
     EmptySimpleStatement

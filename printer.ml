@@ -62,6 +62,8 @@ and
   | Literal(lit)               -> "" ^ stringify_literal lit
   | NamedVariable(nv)            -> "Variable " ^ nv
   | SliceLiteral(typ, len, exprs) -> stringify_builtin_type typ ^ "{" ^ String.concat "," (List.map stringify_expr exprs) ^ "}"
+  | SliceIndex(ex1, ex2) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ "]"
+  | SliceSlice(ex1, ex2, ex3) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ ":" ^ stringify_expr ex3 ^ "]"
 
 and
 

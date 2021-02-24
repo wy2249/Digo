@@ -4,7 +4,7 @@
 %token LOGICAL_OR LOGICAL_AND IS_EQUAL IS_NOT_EQUAL IS_LESS_THAN IS_GREATER_THAN
 %token LEFT_BRACE RIGHT_BRACE LEFT_BRACKET RIGHT_BRACKET
 %token LEFT_PARENTHE RIGHT_PARENTHE
-%token ASSIGNMENT ASSIGNNEW SEMICOLON EOF COMMA
+%token ASSIGNMENT ASSIGNNEW SEMICOLON COLON EOF COMMA
 %token <int> INT_LITERAL
 %token <string> STRING_LITERAL
 %token <string> VARIABLE
@@ -87,6 +87,12 @@ p_expr:
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
 | LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
 | p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE { SliceLiteral($1, List.length $3, $3) }
+/* index */
+| p_expr LEFT_BRACKET p_expr RIGHT_BRACKET { SliceIndex($1, $3) }
+/* slice */
+| p_expr LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET { SliceSlice($1, $3, $5) }
+| p_expr LEFT_BRACKET COLON p_expr RIGHT_BRACKET { SliceSlice($1, EmptyExpr, $4) }
+| p_expr LEFT_BRACKET p_expr COLON RIGHT_BRACKET { SliceSlice($1, $3, EmptyExpr) }
 
 p_type_list:
   { [] }
