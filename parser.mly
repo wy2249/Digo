@@ -64,6 +64,13 @@ p_expr:
 | p_literal          { TypedValue($1) }
 | VARIABLE         { NamedVariable($1) }
 
+p_slice_type:
+  LEFT_BRACKET RIGHT_BRACKET p_type { SliceType($3) }
+
+p_element_list: 
+  { [] }
+| p_expr COMMA p_element_list { $1::$3 }
+
 p_type:
   KEYWORD_STRING {  StringType  }
 | KEYWORD_INT    {  IntegerType     }
@@ -73,7 +80,7 @@ p_type:
 p_literal:
   INT_LITERAL  {  Integer($1)  }
 | STRING_LITERAL { String($1) }
-/*  TODO  */
+| p_slice_type LEFT_BRACE p_element_list RIGHT_BRACE { Slice($1,$3) }
 
 
 p_statements:

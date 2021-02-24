@@ -1,0 +1,44 @@
+type token =
+  | NEWLINE
+  | PLUS
+  | MINUS
+  | TIMES
+  | DIVIDE
+  | LOGICAL_OR
+  | LOGICAL_AND
+  | IS_EQUAL
+  | IS_NOT_EQUAL
+  | IS_LESS_THAN
+  | IS_GREATER_THAN
+  | LEFT_BRACE
+  | RIGHT_BRACE
+  | LEFT_BRACKET
+  | RIGHT_BRACKET
+  | LEFT_PARENTHE
+  | RIGHT_PARENTHE
+  | ASSIGNMENT
+  | ASSIGNNEW
+  | SEMICOLON
+  | EOF
+  | COMMA
+  | INT_LITERAL of (int)
+  | STRING_LITERAL of (string)
+  | VARIABLE of (string)
+  | KEYWORD_FOR
+  | KEYWORD_IF
+  | KEYWORD_ELSE
+  | KEYWORD_FUNC
+  | KEYWORD_RETURN
+  | KEYWORD_AWAIT
+  | KEYWORD_ASYNC
+  | KEYWORD_REMOTE
+  | KEYWORD_VAR
+  | KEYWORD_STRING
+  | KEYWORD_INT
+  | KEYWORD_FLOAT
+  | KEYWORD_BOOL
+  | KEYWORD_CONTINUE
+  | KEYWORD_BREAK
+
+val functions :
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.functions

@@ -10,14 +10,15 @@ type builtin_type =
   IntegerType
   | FloatType
   | StringType
-  | ArrayType
+  | SliceType of builtin_type
   | BoolType
+
 
 type type_value = 
   Integer of int
   | Float of float
   | String of string
-  | Array of int * type_value
+  | Slice of builtin_type * type_value list
   | Bool of bool
 
 type expr =
