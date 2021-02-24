@@ -24,6 +24,8 @@ and
   stringify_literal = function
   Integer(x)  ->  "Integer " ^ string_of_int x
 | String(x)   ->  "String " ^ x
+| Float(x)    ->  "Float " ^ string_of_float x
+| Bool(x)     ->  "Boolean " ^ string_of_bool x
 | Slice(typ, len, lits) -> stringify_builtin_type(SliceType(typ)) ^ String.concat " " (List.map stringify_literal lits)
 
 and

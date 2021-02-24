@@ -45,6 +45,9 @@ rule tokenize = parse
 | "continue"{ KEYWORD_CONTINUE}
 | "break"   { KEYWORD_BREAK   }
 
+| "true" | "false" as boollit { BOOLEAN_LITERAL(bool_of_string boollit)}
 | ['0'-'9']+ as lit { INT_LITERAL(int_of_string lit) }
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']* as var { VARIABLE(var) }
 | '"' ([^ '"' ]*) '"' as str { STRING_LITERAL(str) }
+| (['0'-'9']+)'.'(['0'-'9']+) as lxm { FLOAT_LITERAL(float_of_string lxm)}
+
