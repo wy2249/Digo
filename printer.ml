@@ -49,6 +49,13 @@ and
   | Mul  ->  r1 ^ " * " ^ r2
   | Div  ->  r1 ^ " / " ^ r2
   | LessThan -> r1 ^ " < " ^ r2
+  | LessEqual -> r1 ^ " <= " ^ r2
+  | GreaterThan -> r1 ^ " > " ^ r2 
+  | GreaterEqual -> r1 ^ " >= " ^ r2
+  | IsEqual -> r1 ^ " == " ^ r2
+  | IsNotEqual -> r1 ^ " != " ^ r2
+  | LogicalAnd -> r1 ^ " && " ^ r2
+  | LogicalOr -> r1 ^ " || " ^ r2
   ) in 
   let reg_content = "(" ^ new_reg ^ " = " ^ str ^ ")" in
   StringHash.replace temp_reg_table new_reg reg_content; reg_content

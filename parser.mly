@@ -2,6 +2,7 @@
 
 %token NEWLINE PLUS MINUS TIMES DIVIDE
 %token LOGICAL_OR LOGICAL_AND IS_EQUAL IS_NOT_EQUAL IS_LESS_THAN IS_GREATER_THAN
+%token IS_LESS_EQUAL IS_GREATER_EQUAL
 %token LEFT_BRACE RIGHT_BRACE LEFT_BRACKET RIGHT_BRACKET
 %token LEFT_PARENTHE RIGHT_PARENTHE
 %token ASSIGNMENT ASSIGNNEW SEMICOLON COLON EOF COMMA
@@ -83,6 +84,13 @@ p_expr:
 | p_expr TIMES  p_expr { BinaryOp($1, Mul, $3) }
 | p_expr DIVIDE p_expr { BinaryOp($1, Div, $3) }
 | p_expr IS_LESS_THAN p_expr { BinaryOp($1, LessThan, $3) }
+| p_expr IS_GREATER_THAN p_expr {BinaryOp($1, GreaterThan, $3)}
+| p_expr IS_NOT_EQUAL p_expr {BinaryOp($1, IsNotEqual, $3)}
+| p_expr IS_EQUAL p_expr {BinaryOp($1, IsEqual, $3)}
+| p_expr IS_LESS_EQUAL p_expr {BinaryOp($1, LessEqual, $3)}
+| p_expr IS_GREATER_EQUAL p_expr {BinaryOp($1, GreaterEqual, $3)} 
+| p_expr LOGICAL_AND p_expr {BinaryOp($1, LogicalAnd, $3)}
+| p_expr LOGICAL_OR p_expr {BinaryOp($1, LogicalOr, $3)}
 | p_expr ASSIGNMENT p_expr { AssignOp($1, $3) }
 | p_literal          { Literal($1) }
 | VARIABLE         { NamedVariable($1) }

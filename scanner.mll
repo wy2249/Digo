@@ -17,6 +17,8 @@ rule tokenize = parse
 | "!=" { IS_NOT_EQUAL }
 | "<" { IS_LESS_THAN }
 | ">" { IS_GREATER_THAN }
+| ">=" {IS_GREATER_EQUAL}
+| "<=" {IS_LESS_EQUAL}
 
 | '{' { LEFT_BRACE }
 | '}' { RIGHT_BRACE }
