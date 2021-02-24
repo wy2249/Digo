@@ -17,6 +17,7 @@ let rec stringify_builtin_type = function
 IntegerType -> "Integer"
 | FloatType -> "Float"
 | StringType -> "String"
+| SliceType(typ) -> "Slice(" ^ stringify_builtin_type typ ^ ")"
 
 and
 
@@ -25,6 +26,7 @@ and
 | String(x)   ->  "String " ^ x
 | Float(x)    ->  "Float " ^ string_of_float x
 | Bool(x)     ->  "Boolean " ^ string_of_bool x
+| Slice(typ, len, lits) -> stringify_builtin_type(SliceType(typ)) ^ String.concat " " (List.map stringify_literal lits)
 
 and
 
@@ -61,6 +63,9 @@ and
   | FunctionCall(funcName, exlist) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
   | Literal(lit)               -> "" ^ stringify_literal lit
   | NamedVariable(nv)            -> "Variable " ^ nv
+  | SliceLiteral(typ, len, exprs) -> stringify_builtin_type typ ^ "{" ^ String.concat "," (List.map stringify_expr exprs) ^ "}"
+  | SliceIndex(ex1, ex2) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ "]"
+  | SliceSlice(ex1, ex2, ex3) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ ":" ^ stringify_expr ex3 ^ "]"
 
 and
 

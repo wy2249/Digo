@@ -25,6 +25,7 @@ rule tokenize = parse
 
 | '=' { ASSIGNMENT }
 | ":=" { ASSIGNNEW }   (* TODO *)
+| ':' {COLON}
 | ';' { SEMICOLON }
 | eof { EOF }
 
