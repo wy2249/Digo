@@ -58,6 +58,8 @@ rule tokenize = parse
 | "len"     { KEYWORD_LEN     }
 | "append"  { KEYWORD_APPEND  }
 
+| "future"  { KEYWORD_FUTURE  }
+
 | "true" | "false" as boollit { BOOLEAN_LITERAL(bool_of_string boollit)}
 | ['0'-'9']+ as lit { INT_LITERAL(int_of_string lit) }
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']* as var { VARIABLE(var) }

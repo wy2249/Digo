@@ -15,10 +15,14 @@
 %token KEYWORD_FOR KEYWORD_IF KEYWORD_ELSE KEYWORD_FUNC
 %token KEYWORD_RETURN KEYWORD_AWAIT KEYWORD_ASYNC
 %token KEYWORD_REMOTE KEYWORD_VAR KEYWORD_STRING
-%token KEYWORD_INT KEYWORD_FLOAT KEYWORD_BOOL
+%token KEYWORD_INT KEYWORD_FLOAT KEYWORD_BOOL KEYWORD_FUTURE
 %token KEYWORD_CONTINUE KEYWORD_BREAK
 %token KEYWORD_GATHER KEYWORD_LEN KEYWORD_APPEND
 
+%nonassoc COLON
+%nonassoc COMMA
+%nonassoc ASSIGNNEW
+%nonassoc LEFT_PARENTHE
 %right ASSIGNMENT
 %left LOGICAL_OR
 %left LOGICAL_AND
@@ -42,31 +46,41 @@ p_functions:
 | NEWLINE p_functions  { $2 }
 | p_function p_functions  { $1::$2 }
 
-p_function:
+p_function_annotation:
+  { FuncNormal }
+| KEYWORD_ASYNC { FuncAsync }
+| KEYWORD_ASYNC KEYWORD_REMOTE { FuncAsyncRemote }
+
+p_function_prototype:
   /*   the variable here is actually an ID     */
+  /* 1. func FuncName(parameters) retType */
+  p_function_annotation
   KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-  /*  func FuncName(parameters) retType { statements }  */
-    { FunctionImpl($2, [$6], $4, $9)   } 
-  /*  function name,  type of return value,  parameters,   statements    */
-| KEYWORD_ASYNC KEYWORD_REMOTE KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { RemoteFunctionImpl($4, [$8], $6, $11)   } 
-| KEYWORD_ASYNC KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { AsyncFunctionImpl($3, [$7], $5, $10)   } 
-  /*   Functions with multiple return values:  */  
-| KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-  /*  func FuncName(parameters) (retType1, retType2,...) { statements }  */
-    { FunctionImpl($2, $7, $4, $11)   } 
-  /*  function name,  type of return values,  parameters,   statements    */
-| KEYWORD_ASYNC KEYWORD_REMOTE KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { RemoteFunctionImpl($4, $9, $6, $13)   } 
-| KEYWORD_ASYNC KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
-  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
-    { AsyncFunctionImpl($3, $8, $5, $12)   } 
+  { FunctionProto($1, $3, [$7], $5) }
+| /* 2. func FuncName(parameters)  */
+  p_function_annotation
+  KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
+  { FunctionProto($1, $3, [], $5) }
+| /* 3. func FuncName(parameters)  (retType1, retType2, ...)  */
+  p_function_annotation
+  KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
+  { FunctionProto($1, $3, $8, $5) }
+
+p_function_impl:
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE   {  FunctionImpl($3) }
+
+p_function:
+  p_function_prototype p_function_impl  {  Function($1, $2)   }
+
+p_type_list:
+  /* empty type list is not allowed  */
+| p_type    {  [$1]  }
+| p_type COMMA p_type_list  {  $1::$3  } 
+
+p_variable_list:
+  /* empty variabie list is not allowed  */
+| VARIABLE    {  [$1]  }
+| VARIABLE COMMA p_variable_list  {  $1::$3  } 
 
 p_parameters:
   { [] }
@@ -77,9 +91,13 @@ p_parameter:
   VARIABLE p_type  {  NamedParameter($1, $2)  }
 
 p_expr_list:
-| { [] }
+  { [] }
+| p_expr_list_required   {  $1  }
+
+/*   at least one p_expr in the list  */
+p_expr_list_required:
 | p_expr   {  [$1]  }
-| p_expr COMMA p_expr_list { $1::$3 }
+| p_expr COMMA p_expr_list_required { $1::$3 }
 
 p_expr:
   p_expr PLUS   p_expr { BinaryOp($1, Add, $3) }
@@ -99,17 +117,20 @@ p_expr:
 | MINUS p_expr %prec NEGATIVE {  UnaryOp(Negative, $2) }
 | LOGICAL_NOT p_expr {  UnaryOp(LogicalNot, $2) }
 
-| p_expr ASSIGNMENT p_expr { AssignOp($1, $3) }
+/* p_expr_list_required will cause reduce/reduce conflict   */
+/*  FIXME or do not support a, b = b, a */
+| p_expr ASSIGNMENT p_expr { AssignOp([$1], [$3]) }
 | p_literal          { Literal($1) }
 | VARIABLE         { NamedVariable($1) }
+
+/*  the variable here is actually an ID (for a function)  */
+| VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
 
 | KEYWORD_AWAIT  VARIABLE {  Await($2)  }
 | KEYWORD_GATHER LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Gather, $3)  }
 | KEYWORD_LEN    LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Len, $3)  }
 | KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Append, $3)  }
 
-/*  the variable here is actually an ID (for a function)  */
-| VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
 | LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
 | p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE { SliceLiteral($1, List.length $3, $3) }
 /* index */
@@ -119,11 +140,6 @@ p_expr:
 | p_expr LEFT_BRACKET COLON p_expr RIGHT_BRACKET { SliceSlice($1, EmptyExpr, $4) }
 | p_expr LEFT_BRACKET p_expr COLON RIGHT_BRACKET { SliceSlice($1, $3, EmptyExpr) }
 
-p_type_list:
-  { [] }
-| p_type    {  [$1]  }
-| p_type COMMA p_type_list  {  $1::$3  } 
-
 p_slice_type:
   LEFT_BRACKET RIGHT_BRACKET p_type { SliceType($3) }
 
@@ -132,6 +148,7 @@ p_type:
 | KEYWORD_INT    {  IntegerType }
 | KEYWORD_FLOAT  {  FloatType   }
 | KEYWORD_BOOL   {  BoolType    }
+| KEYWORD_FUTURE {  FutureType  }
 | p_slice_type   {  $1 }
 
 p_literal:
@@ -172,17 +189,17 @@ p_if_statement:
 
 p_simple_statement:
   p_expr              { SimpleExpr($1) }
-| KEYWORD_VAR VARIABLE p_type ASSIGNMENT p_expr { SimpleDeclare($3, $2, $5)  }
-| KEYWORD_VAR VARIABLE p_type { SimpleDeclare($3, $2, EmptyExpr)  }
-| VARIABLE ASSIGNNEW p_expr { SimpleShortDecl($1, $3)  }
+| KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required { SimpleDeclare($3, $2, $5)  }
+| KEYWORD_VAR p_variable_list p_type_list { SimpleDeclare($3, $2, [EmptyExpr])  }
+| p_variable_list ASSIGNNEW p_expr_list_required { SimpleShortDecl($1, $3)  }
 
 p_statement:
   p_expr                 NEWLINE   { Expr($1) }
-| KEYWORD_RETURN p_expr  NEWLINE   { Return($2) }
+| KEYWORD_RETURN p_expr_list  NEWLINE   { Return($2) }
 
-| KEYWORD_VAR VARIABLE p_type ASSIGNMENT p_expr  NEWLINE  { Declare($3, $2, $5)  }
-| KEYWORD_VAR VARIABLE p_type                    NEWLINE  { Declare($3, $2, EmptyExpr)  }
-| VARIABLE ASSIGNNEW p_expr                      NEWLINE  { ShortDecl($1, $3)  }
+| KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required  NEWLINE  { Declare($3, $2, $5)  }
+| KEYWORD_VAR p_variable_list p_type_list                    NEWLINE  { Declare($3, $2, [EmptyExpr])  }
+| p_variable_list ASSIGNNEW p_expr_list_required                      NEWLINE  { ShortDecl($1, $3)  }
 
 | p_if_statement                   { $1 }
 | KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE

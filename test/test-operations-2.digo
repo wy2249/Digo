@@ -11,4 +11,6 @@ func main()(int,int){
     !!v2
     !!!v3
     ! a = b == ! c = d
+    a && b || c
+    a || b && c
 }

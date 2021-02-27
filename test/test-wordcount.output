@@ -1,0 +1,107 @@
+Async RemoteFunction worker_count_word
+ Return Type: Slice(String), Slice(Integer), 
+ Params: Parameter: name words type Slice(String), 
+ Statements: 
+   Call Sort with arguments Variable words, 
+Short declare resultWord,  Slice(String){}, 
+Short declare resultCount,  Slice(Integer){}, 
+
+If Statement (if1) Begin, Condition: (r5 = Builtin_LenVariable words,  == Integer 0)
+(if1)If true: 
+Return Variable resultWord, Variable resultCount, 
+
+(if1)If false: 
+Empty Statement
+If Statement (if1) End
+Short declare word,  Variable words[Integer 0], 
+Variable resultWord,  = Builtin_AppendVariable resultWord, Variable word, , 
+Variable resultCount,  = Builtin_AppendVariable resultCount, Integer 1, , 
+For (Short declare i,  Integer 1, , (r4 = Variable i < Builtin_LenVariable words, ), Variable i,  = (r3 = Variable i + Integer 1), )
+Statements: 
+
+If Statement (if0) Begin, Condition: (r2 = Variable words[Variable i] == Variable word)
+(if0)If true: 
+Variable resultCount[(r1 = Builtin_LenVariable resultWord,  - Integer 1)],  = (r0 = Variable resultCount[(r0 = Builtin_LenVariable resultWord,  - Integer 1)] + Integer 1), 
+
+(if0)If false: 
+Variable word,  = Variable words[Variable i], 
+Variable resultWord,  = Builtin_AppendVariable resultWord, Variable words[Variable i], , 
+Variable resultCount,  = Builtin_AppendVariable resultCount, Integer 1, , 
+If Statement (if0) End
+For end.
+Return Variable resultWord, Variable resultCount, 
+
+AsyncFunction count_word
+ Return Type: Slice(String), 
+ Params: Parameter: name workerWords type Slice(Slice(String)), 
+ Statements: 
+   Short declare futures,  Slice(Future object){}, 
+For (Short declare i,  Integer 0, , (r10 = Variable i < Builtin_LenVariable workerWords, ), Variable i,  = (r9 = Variable i + Integer 1), )
+Statements: 
+Variable futures,  = Builtin_AppendVariable futures, Call worker_count_word with arguments Variable workerWords[Variable i], , , 
+For end.
+Declare words,  Slice(String),  with , 
+For (Short declare i,  Integer 0, , (r8 = Variable i < Builtin_LenVariable workerWords, ), Variable i,  = (r7 = Variable i + Integer 1), )
+Statements: 
+Short declare resultWord, resultCount,  Await on future object: futures[Variable i], 
+Variable words[Variable resultWord],  = (r6 = Variable words[Variable resultWord] + Variable resultCount), 
+For end.
+Return Variable words, 
+
+Function split_file
+ Return Type: Slice(Slice(String)), 
+ Params: Parameter: name file type String, Parameter: name workerCount type Integer, 
+ Statements: 
+   Short declare reader,  Call FileReader with arguments Variable file, , 
+Short declare rotate,  Integer 0, 
+For (Empty short statement, , Empty short statement)
+Statements: 
+Short declare word, err,  Call ReadString with arguments Variable reader, Slice(String){String " ",String "\n"}, , 
+
+If Statement (if3) Begin, Condition: (r14 = (r14 = Variable err != Variable nil) && (r15 = Variable err != Variable EOF))
+(if3)If true: 
+Call panic with arguments String "cannot read file", 
+
+(if3)If false: 
+Empty Statement
+If Statement (if3) End
+Short declare worker,  (r13 = Variable rotate % Variable workerCount), 
+Variable workerWords[Variable worker],  = Builtin_AppendVariable workerWords[Variable worker], Variable word, , 
+Variable rotate,  = (r12 = Variable rotate + Integer 1), 
+
+If Statement (if2) Begin, Condition: (r11 = Variable err == Variable EOF)
+(if2)If true: 
+Break
+
+(if2)If false: 
+Empty Statement
+If Statement (if2) End
+For end.
+Return Variable workerWords, 
+
+Function word_count_entry
+ Return Type: 
+ Params: 
+ Statements: 
+   Short declare futures,  Slice(Future object){}, 
+Short declare workerWords,  Call split_file with arguments String "book1.txt", , 
+Variable futures,  = Builtin_AppendVariable futures, Call count_word with arguments Variable workerWords, , , 
+Variable workerWords,  = Call split_file with arguments String "book2.txt", , 
+Variable futures,  = Builtin_AppendVariable futures, Call count_word with arguments Variable workerWords, , , 
+Variable workerWords,  = Call split_file with arguments String "book3.txt", , 
+Variable futures,  = Builtin_AppendVariable futures, Call count_word with arguments Variable workerWords, , , 
+Short declare results,  Builtin_GatherVariable futures, , 
+Call print with arguments String "Word Count result of book1.txt", 
+Call print with arguments Variable results[Integer 0], 
+Call print with arguments String "Word Count result of book2.txt", 
+Call print with arguments Variable results[Integer 1], 
+Call print with arguments String "Word Count result of book3.txt", 
+Call print with arguments Variable results[Integer 2], 
+
+Function master
+ Return Type: 
+ Params: 
+ Statements: 
+   Call word_count_entry with arguments 
+
+

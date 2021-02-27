@@ -1,4 +1,9 @@
 func main(i int) int {
+    //NOT supported (yet): a, b = b, a
+    a, b := b, a
+    ret1, ret2 := func_with_multiple_ret_value(12,3,4,5)
+    var a, b int, int = b+1,a+1
+    1 - 2
     if a  {
         1
         2
@@ -11,6 +16,7 @@ func main(i int) int {
         3
     }
     1
+    return 1, 2
 }
 
 async func main2(i int) int {

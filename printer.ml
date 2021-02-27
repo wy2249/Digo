@@ -38,6 +38,18 @@ and
 
 and
 
+  stringify_multiple_variables = function
+  []         ->   ""
+| (v :: vl)  ->   v ^ ", " ^ stringify_multiple_variables vl
+
+and
+  
+   stringinfy_multiple_builtin_types = function
+   []         ->   ""
+| (v :: vl)  ->   stringify_builtin_type v ^ ", " ^ stringinfy_multiple_builtin_types vl
+
+and
+
   stringify_builtin_type_list = function
   []             ->   ""
 | (typ :: typs)  ->   stringify_builtin_type typ ^ ", " ^ stringify_builtin_type_list typs
@@ -90,7 +102,7 @@ and
     EmptyExpr                    -> ""
   | BinaryOp(ex1, op, ex2)       -> stringify_binary_operator ex1 op ex2
   | UnaryOp(op, ex1)              -> stringify_unary_operator op ex1
-  | AssignOp(ex1, ex2)           -> stringify_expr ex1 ^ " = " ^ stringify_expr ex2
+  | AssignOp(ex1, ex2)           -> stringify_expressions ex1 ^ " = " ^ stringify_expressions ex2
   | FunctionCall(funcName, exlist) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
   | Literal(lit)               -> "" ^ stringify_literal lit
   | NamedVariable(nv)            -> "Variable " ^ nv
@@ -109,12 +121,12 @@ and
 and
 
   stringify_declare typ name exp = 
-  "Declare " ^ name ^ " " ^ stringify_builtin_type typ ^ " with " ^ stringify_expr exp
+  "Declare " ^ stringify_multiple_variables name ^ " " ^ stringinfy_multiple_builtin_types typ ^ " with " ^ stringify_expressions exp
 
 and
 
   stringify_short_declare name exp = 
-  "Short declare " ^ name ^ " " ^ stringify_expr exp
+  "Short declare " ^ stringify_multiple_variables name ^ " " ^ stringify_expressions exp
 
 and
 
@@ -133,7 +145,7 @@ and
   | Continue                        -> "Continue"
   | Declare(typ, str, ex)           -> stringify_declare typ str ex
   | ShortDecl(str, ex)              -> stringify_short_declare str ex
-  | Return(ex)                      -> "Return " ^ stringify_expr ex
+  | Return(ex)                      -> "Return " ^ stringify_expressions ex
   | Expr(ex)                        -> stringify_expr ex
 
 and
@@ -161,24 +173,28 @@ let rec stringify_parameters = function
  | (par :: pars) ->      stringify_parameter par ^ ", " ^ stringify_parameters pars
 ;;
 
-let rec print_function = function
-    FunctionImpl(name, typ, parameters, stlist)
-       ->  print_endline ("Function " ^ name);
-           print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
-           print_endline (" Params: " ^ stringify_parameters parameters);
-           print_endline (" Statements: \n   " ^ stringify_statements stlist);
-  | RemoteFunctionImpl(name, typ, parameters, stlist)
-      ->  print_endline ("Async remote function " ^ name);
-          print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
-          print_endline (" Params: " ^ stringify_parameters parameters);
-          print_endline (" Statements: \n   " ^ stringify_statements stlist);
-  | AsyncFunctionImpl(name, typ, parameters, stlist)
-      ->  print_endline ("Async function " ^ name);
-          print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
-          print_endline (" Params: " ^ stringify_parameters parameters);
-          print_endline (" Statements: \n   " ^ stringify_statements stlist);
+let rec stringify_function_annot = function
+    FuncNormal   ->   ""
+  | FuncAsync    ->   "Async"
+  | FuncAsyncRemote -> "Async Remote"
 ;;
 
+let rec print_function_proto = function 
+    FunctionProto(annot, name, typ, parameters)
+       -> print_endline (stringify_function_annot annot ^ "Function " ^ name);
+       print_endline (" Return Type: " ^ stringify_builtin_type_list typ);
+       print_endline (" Params: " ^ stringify_parameters parameters);
+;;
+
+let rec print_function_impl =  function
+    FunctionImpl(stlist)
+        -> print_endline (" Statements: \n   " ^ stringify_statements stlist);
+;;
+
+let rec print_function = function
+    Function(proto, impl)
+       ->  print_function_proto proto; print_function_impl impl;
+;;
 
 let rec print_functions = function
     []  ->   print_endline ""

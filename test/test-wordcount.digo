@@ -1,0 +1,104 @@
+//   word-count
+
+// The workers execute this `async remote` function.
+// Calling an `async remote` function returns immediately
+// after the job is dispatched to a worker. It does not 
+// wait for the job to finish.
+// An `async remote` function does not return with return values
+// defined in the function prototype.
+// Instead, it returns a future object, on which 
+// user can call await/gather to get the actual return values.
+async remote func worker_count_word(words []string) ([]string, []int) {
+    // we count the words by first sorting them.
+    Sort(words)
+    resultWord := []string{}
+    resultCount := []int{}
+    if len(words) == 0 {
+        return resultWord, resultCount
+    }
+    word := words[0]
+    resultWord = append(resultWord, word)
+    resultCount = append(resultCount, 1)
+    for i := 1; i < len(words); i = i + 1 {
+        if words[i] == word {
+            resultCount[len(resultWord)-1] = resultCount[len(resultWord)-1] + 1
+        } else {
+            word = words[i]
+            resultWord = append(resultWord, words[i])
+            resultCount = append(resultCount, 1)
+        }
+    }
+    return resultWord, resultCount
+}
+
+// The master executes this `async` function in a new thread.
+// Calling an `async` function returns immediately with
+// a implicit future object.
+async func count_word(workerWords [][]string) []string {
+    futures := []future{}
+    for i := 0; i < len(workerWords); i = i + 1 {
+        // Calling the `async remote` worker_count_word function
+        // will automatically send the task to a worker.
+        // It does not block.
+        futures = append(futures, worker_count_word(workerWords[i]))
+    }
+    // a fake map indicated by a slice (not supported yet).
+    var words []string
+    for i := 0 ; i < len(workerWords); i = i + 1 {
+        // Here, we are explicity waiting for the remote task
+        // worker_count_word(workerWords[i])
+        // to finish.
+        resultWord, resultCount := await futures[i]
+        words[resultWord] = words[resultWord] + resultCount
+    }
+    return words
+}
+
+func split_file(file string, workerCount int) [][]string {
+    reader := FileReader(file)
+    // not supported yet:
+    // workerWords := make([][]string, workerCount)
+    rotate := 0
+    for {
+        // Reads until the first occurrence of delim ' ' or '\n'
+        word, err := ReadString(reader, []string{" ", "\n"})
+        if err != nil && err != EOF {
+            panic("cannot read file")
+        }
+        // Dispatch words to workers evenly
+        worker := rotate % workerCount
+        workerWords[worker] = append(workerWords[worker], word)
+        rotate = rotate + 1
+        if err == EOF {
+            break
+        }
+    }
+    return workerWords
+}
+
+func word_count_entry() {
+    futures := []future{}
+    workerWords := split_file("book1.txt")
+    futures = append(futures, count_word(workerWords))
+    workerWords = split_file("book2.txt")
+    futures = append(futures, count_word(workerWords))
+    workerWords = split_file("book3.txt")
+    futures = append(futures, count_word(workerWords))
+    
+    // Calling `async`/`async remote` functions does not block unless
+    // we expicitly wait for them to finish by calling await/gather.
+    // So word_count_entry() does not block until we `gather` here:
+    results := gather(futures)
+    // After gather returns, all tasks indicated by futures
+    // are finished.
+    print("Word Count result of book1.txt")
+    print(results[0])
+    print("Word Count result of book2.txt")
+    print(results[1])
+    print("Word Count result of book3.txt")
+    print(results[2])
+}
+
+func master() { 
+    word_count_entry()
+}

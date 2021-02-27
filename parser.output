@@ -1,0 +1,3418 @@
+   0  $accept : %entry% $end
+
+   1  functions : p_functions EOF
+
+   2  p_functions :
+   3              | NEWLINE p_functions
+   4              | p_function p_functions
+
+   5  p_function_annotation :
+   6                        | KEYWORD_ASYNC
+   7                        | KEYWORD_ASYNC KEYWORD_REMOTE
+
+   8  p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
+   9                       | p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
+  10                       | p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
+
+  11  p_function_impl : LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+
+  12  p_function : p_function_prototype p_function_impl
+
+  13  p_type_list : p_type
+  14              | p_type COMMA p_type_list
+
+  15  p_variable_list : VARIABLE
+  16                  | VARIABLE COMMA p_variable_list
+
+  17  p_parameters :
+  18               | p_parameter
+  19               | p_parameter COMMA p_parameters
+
+  20  p_parameter : VARIABLE p_type
+
+  21  p_expr_list :
+  22              | p_expr_list_required
+
+  23  p_expr_list_required : p_expr
+  24                       | p_expr COMMA p_expr_list_required
+
+  25  p_expr : p_expr PLUS p_expr
+  26         | p_expr MINUS p_expr
+  27         | p_expr TIMES p_expr
+  28         | p_expr DIVIDE p_expr
+  29         | p_expr MODSIGN p_expr
+  30         | p_expr IS_LESS_THAN p_expr
+  31         | p_expr IS_GREATER_THAN p_expr
+  32         | p_expr IS_NOT_EQUAL p_expr
+  33         | p_expr IS_EQUAL p_expr
+  34         | p_expr IS_LESS_EQUAL p_expr
+  35         | p_expr IS_GREATER_EQUAL p_expr
+  36         | p_expr LOGICAL_AND p_expr
+  37         | p_expr LOGICAL_OR p_expr
+  38         | MINUS p_expr
+  39         | LOGICAL_NOT p_expr
+  40         | p_expr ASSIGNMENT p_expr
+  41         | p_literal
+  42         | VARIABLE
+  43         | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE
+  44         | KEYWORD_AWAIT VARIABLE
+  45         | KEYWORD_GATHER LEFT_PARENTHE p_expr_list RIGHT_PARENTHE
+  46         | KEYWORD_LEN LEFT_PARENTHE p_expr_list RIGHT_PARENTHE
+  47         | KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE
+  48         | LEFT_PARENTHE p_expr RIGHT_PARENTHE
+  49         | p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE
+  50         | p_expr LEFT_BRACKET p_expr RIGHT_BRACKET
+  51         | p_expr LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET
+  52         | p_expr LEFT_BRACKET COLON p_expr RIGHT_BRACKET
+  53         | p_expr LEFT_BRACKET p_expr COLON RIGHT_BRACKET
+
+  54  p_slice_type : LEFT_BRACKET RIGHT_BRACKET p_type
+
+  55  p_type : KEYWORD_STRING
+  56         | KEYWORD_INT
+  57         | KEYWORD_FLOAT
+  58         | KEYWORD_BOOL
+  59         | KEYWORD_FUTURE
+  60         | p_slice_type
+
+  61  p_literal : INT_LITERAL
+  62            | STRING_LITERAL
+  63            | FLOAT_LITERAL
+  64            | BOOLEAN_LITERAL
+
+  65  p_statements :
+  66               | NEWLINE p_statements
+  67               | p_statement p_statements
+
+  68  p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE
+  69                 | KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement
+  70                 | KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+
+  71  p_simple_statement : p_expr
+  72                     | KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required
+  73                     | KEYWORD_VAR p_variable_list p_type_list
+  74                     | p_variable_list ASSIGNNEW p_expr_list_required
+
+  75  p_statement : p_expr NEWLINE
+  76              | KEYWORD_RETURN p_expr_list NEWLINE
+  77              | KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required NEWLINE
+  78              | KEYWORD_VAR p_variable_list p_type_list NEWLINE
+  79              | p_variable_list ASSIGNNEW p_expr_list_required NEWLINE
+  80              | p_if_statement
+  81              | KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  82              | KEYWORD_FOR p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  83              | KEYWORD_FOR LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  84              | KEYWORD_BREAK NEWLINE
+  85              | KEYWORD_CONTINUE NEWLINE
+
+  86  %entry% : '\001' functions
+
+state 0
+	$accept : . %entry% $end  (0)
+
+	'\001'  shift 1
+	.  error
+
+	%entry%  goto 2
+
+
+state 1
+	%entry% : '\001' . functions  (86)
+	p_functions : .  (2)
+	p_function_annotation : .  (5)
+
+	NEWLINE  shift 3
+	KEYWORD_ASYNC  shift 4
+	EOF  reduce 2
+	KEYWORD_FUNC  reduce 5
+
+	functions  goto 5
+	p_functions  goto 6
+	p_function  goto 7
+	p_function_annotation  goto 8
+	p_function_prototype  goto 9
+
+
+state 2
+	$accept : %entry% . $end  (0)
+
+	$end  accept
+
+
+state 3
+	p_functions : NEWLINE . p_functions  (3)
+	p_functions : .  (2)
+	p_function_annotation : .  (5)
+
+	NEWLINE  shift 3
+	KEYWORD_ASYNC  shift 4
+	EOF  reduce 2
+	KEYWORD_FUNC  reduce 5
+
+	p_functions  goto 10
+	p_function  goto 7
+	p_function_annotation  goto 8
+	p_function_prototype  goto 9
+
+
+state 4
+	p_function_annotation : KEYWORD_ASYNC .  (6)
+	p_function_annotation : KEYWORD_ASYNC . KEYWORD_REMOTE  (7)
+
+	KEYWORD_REMOTE  shift 11
+	KEYWORD_FUNC  reduce 6
+
+
+state 5
+	%entry% : '\001' functions .  (86)
+
+	.  reduce 86
+
+
+state 6
+	functions : p_functions . EOF  (1)
+
+	EOF  shift 12
+	.  error
+
+
+state 7
+	p_functions : p_function . p_functions  (4)
+	p_functions : .  (2)
+	p_function_annotation : .  (5)
+
+	NEWLINE  shift 3
+	KEYWORD_ASYNC  shift 4
+	EOF  reduce 2
+	KEYWORD_FUNC  reduce 5
+
+	p_functions  goto 13
+	p_function  goto 7
+	p_function_annotation  goto 8
+	p_function_prototype  goto 9
+
+
+state 8
+	p_function_prototype : p_function_annotation . KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type  (8)
+	p_function_prototype : p_function_annotation . KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE  (9)
+	p_function_prototype : p_function_annotation . KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+
+	KEYWORD_FUNC  shift 14
+	.  error
+
+
+state 9
+	p_function : p_function_prototype . p_function_impl  (12)
+
+	LEFT_BRACE  shift 15
+	.  error
+
+	p_function_impl  goto 16
+
+
+state 10
+	p_functions : NEWLINE p_functions .  (3)
+
+	.  reduce 3
+
+
+state 11
+	p_function_annotation : KEYWORD_ASYNC KEYWORD_REMOTE .  (7)
+
+	.  reduce 7
+
+
+state 12
+	functions : p_functions EOF .  (1)
+
+	.  reduce 1
+
+
+state 13
+	p_functions : p_function p_functions .  (4)
+
+	.  reduce 4
+
+
+state 14
+	p_function_prototype : p_function_annotation KEYWORD_FUNC . VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type  (8)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC . VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE  (9)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC . VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+
+	VARIABLE  shift 17
+	.  error
+
+
+state 15
+	p_function_impl : LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE  (11)
+
+	NEWLINE  shift 18
+	.  error
+
+
+state 16
+	p_function : p_function_prototype p_function_impl .  (12)
+
+	.  reduce 12
+
+
+state 17
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE . LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type  (8)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE . LEFT_PARENTHE p_parameters RIGHT_PARENTHE  (9)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE . LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+
+	LEFT_PARENTHE  shift 19
+	.  error
+
+
+state 18
+	p_function_impl : LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE  (11)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 40
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 19
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE . p_parameters RIGHT_PARENTHE p_type  (8)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE . p_parameters RIGHT_PARENTHE  (9)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE . p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+	p_parameters : .  (17)
+
+	VARIABLE  shift 47
+	RIGHT_PARENTHE  reduce 17
+
+	p_parameters  goto 48
+	p_parameter  goto 49
+
+
+state 20
+	p_statements : NEWLINE . p_statements  (66)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 50
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 21
+	p_expr : MINUS . p_expr  (38)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 52
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 22
+	p_expr : LOGICAL_NOT . p_expr  (39)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 53
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 23
+	p_slice_type : LEFT_BRACKET . RIGHT_BRACKET p_type  (54)
+
+	RIGHT_BRACKET  shift 54
+	.  error
+
+
+state 24
+	p_expr : LEFT_PARENTHE . p_expr RIGHT_PARENTHE  (48)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 55
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 25
+	p_literal : INT_LITERAL .  (61)
+
+	.  reduce 61
+
+
+state 26
+	p_literal : STRING_LITERAL .  (62)
+
+	.  reduce 62
+
+
+state 27
+	p_literal : FLOAT_LITERAL .  (63)
+
+	.  reduce 63
+
+
+state 28
+	p_literal : BOOLEAN_LITERAL .  (64)
+
+	.  reduce 64
+
+
+state 29
+	p_variable_list : VARIABLE .  (15)
+	p_variable_list : VARIABLE . COMMA p_variable_list  (16)
+	p_expr : VARIABLE .  (42)
+	p_expr : VARIABLE . LEFT_PARENTHE p_expr_list RIGHT_PARENTHE  (43)
+
+	LEFT_PARENTHE  shift 56
+	COMMA  shift 57
+	NEWLINE  reduce 42
+	PLUS  reduce 42
+	MINUS  reduce 42
+	TIMES  reduce 42
+	DIVIDE  reduce 42
+	MODSIGN  reduce 42
+	LOGICAL_OR  reduce 42
+	LOGICAL_AND  reduce 42
+	IS_EQUAL  reduce 42
+	IS_NOT_EQUAL  reduce 42
+	IS_LESS_THAN  reduce 42
+	IS_GREATER_THAN  reduce 42
+	IS_LESS_EQUAL  reduce 42
+	IS_GREATER_EQUAL  reduce 42
+	LEFT_BRACE  reduce 42
+	LEFT_BRACKET  reduce 42
+	ASSIGNMENT  reduce 42
+	ASSIGNNEW  reduce 15
+	SEMICOLON  reduce 42
+
+
+state 30
+	p_statement : KEYWORD_FOR . p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+	p_statement : KEYWORD_FOR . p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (82)
+	p_statement : KEYWORD_FOR . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (83)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACE  shift 58
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 59
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_variable_list  goto 60
+	p_expr  goto 61
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_simple_statement  goto 62
+
+
+state 31
+	p_if_statement : KEYWORD_IF . p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF . p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF . p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (70)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 63
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 32
+	p_statement : KEYWORD_RETURN . p_expr_list NEWLINE  (76)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	NEWLINE  reduce 21
+
+	p_expr_list  goto 64
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 33
+	p_expr : KEYWORD_AWAIT . VARIABLE  (44)
+
+	VARIABLE  shift 67
+	.  error
+
+
+state 34
+	p_statement : KEYWORD_VAR . p_variable_list p_type_list ASSIGNMENT p_expr_list_required NEWLINE  (77)
+	p_statement : KEYWORD_VAR . p_variable_list p_type_list NEWLINE  (78)
+
+	VARIABLE  shift 68
+	.  error
+
+	p_variable_list  goto 69
+
+
+state 35
+	p_statement : KEYWORD_CONTINUE . NEWLINE  (85)
+
+	NEWLINE  shift 70
+	.  error
+
+
+state 36
+	p_statement : KEYWORD_BREAK . NEWLINE  (84)
+
+	NEWLINE  shift 71
+	.  error
+
+
+state 37
+	p_expr : KEYWORD_GATHER . LEFT_PARENTHE p_expr_list RIGHT_PARENTHE  (45)
+
+	LEFT_PARENTHE  shift 72
+	.  error
+
+
+state 38
+	p_expr : KEYWORD_LEN . LEFT_PARENTHE p_expr_list RIGHT_PARENTHE  (46)
+
+	LEFT_PARENTHE  shift 73
+	.  error
+
+
+state 39
+	p_expr : KEYWORD_APPEND . LEFT_PARENTHE p_expr_list RIGHT_PARENTHE  (47)
+
+	LEFT_PARENTHE  shift 74
+	.  error
+
+
+state 40
+	p_function_impl : LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE  (11)
+
+	RIGHT_BRACE  shift 75
+	.  error
+
+
+state 41
+	p_statement : p_variable_list . ASSIGNNEW p_expr_list_required NEWLINE  (79)
+
+	ASSIGNNEW  shift 76
+	.  error
+
+
+state 42
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_statement : p_expr . NEWLINE  (75)
+
+	NEWLINE  shift 77
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	.  error
+
+
+state 43
+	p_expr : p_literal .  (41)
+
+	.  reduce 41
+
+
+state 44
+	p_expr : p_slice_type . LEFT_BRACE p_expr_list RIGHT_BRACE  (49)
+
+	LEFT_BRACE  shift 93
+	.  error
+
+
+state 45
+	p_statements : p_statement . p_statements  (67)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 94
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 46
+	p_statement : p_if_statement .  (80)
+
+	.  reduce 80
+
+
+state 47
+	p_parameter : VARIABLE . p_type  (20)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 100
+	p_slice_type  goto 101
+
+
+state 48
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters . RIGHT_PARENTHE p_type  (8)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters . RIGHT_PARENTHE  (9)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters . RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+
+	RIGHT_PARENTHE  shift 102
+	.  error
+
+
+state 49
+	p_parameters : p_parameter .  (18)
+	p_parameters : p_parameter . COMMA p_parameters  (19)
+
+	COMMA  shift 103
+	RIGHT_PARENTHE  reduce 18
+
+
+state 50
+	p_statements : NEWLINE p_statements .  (66)
+
+	.  reduce 66
+
+
+state 51
+	p_expr : VARIABLE .  (42)
+	p_expr : VARIABLE . LEFT_PARENTHE p_expr_list RIGHT_PARENTHE  (43)
+
+	LEFT_PARENTHE  shift 56
+	NEWLINE  reduce 42
+	PLUS  reduce 42
+	MINUS  reduce 42
+	TIMES  reduce 42
+	DIVIDE  reduce 42
+	MODSIGN  reduce 42
+	LOGICAL_OR  reduce 42
+	LOGICAL_AND  reduce 42
+	IS_EQUAL  reduce 42
+	IS_NOT_EQUAL  reduce 42
+	IS_LESS_THAN  reduce 42
+	IS_GREATER_THAN  reduce 42
+	IS_LESS_EQUAL  reduce 42
+	IS_GREATER_EQUAL  reduce 42
+	LEFT_BRACE  reduce 42
+	RIGHT_BRACE  reduce 42
+	LEFT_BRACKET  reduce 42
+	RIGHT_BRACKET  reduce 42
+	RIGHT_PARENTHE  reduce 42
+	ASSIGNMENT  reduce 42
+	SEMICOLON  reduce 42
+	COLON  reduce 42
+	COMMA  reduce 42
+
+
+52: shift/reduce conflict (shift 91, reduce 38) on LEFT_BRACKET
+state 52
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : MINUS p_expr .  (38)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 38
+	PLUS  reduce 38
+	MINUS  reduce 38
+	TIMES  reduce 38
+	DIVIDE  reduce 38
+	MODSIGN  reduce 38
+	LOGICAL_OR  reduce 38
+	LOGICAL_AND  reduce 38
+	IS_EQUAL  reduce 38
+	IS_NOT_EQUAL  reduce 38
+	IS_LESS_THAN  reduce 38
+	IS_GREATER_THAN  reduce 38
+	IS_LESS_EQUAL  reduce 38
+	IS_GREATER_EQUAL  reduce 38
+	LEFT_BRACE  reduce 38
+	RIGHT_BRACE  reduce 38
+	RIGHT_BRACKET  reduce 38
+	RIGHT_PARENTHE  reduce 38
+	ASSIGNMENT  reduce 38
+	SEMICOLON  reduce 38
+	COLON  reduce 38
+	COMMA  reduce 38
+
+
+53: shift/reduce conflict (shift 91, reduce 39) on LEFT_BRACKET
+state 53
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : LOGICAL_NOT p_expr .  (39)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 39
+	LOGICAL_OR  reduce 39
+	LOGICAL_AND  reduce 39
+	LEFT_BRACE  reduce 39
+	RIGHT_BRACE  reduce 39
+	RIGHT_BRACKET  reduce 39
+	RIGHT_PARENTHE  reduce 39
+	ASSIGNMENT  reduce 39
+	SEMICOLON  reduce 39
+	COLON  reduce 39
+	COMMA  reduce 39
+
+
+state 54
+	p_slice_type : LEFT_BRACKET RIGHT_BRACKET . p_type  (54)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 104
+	p_slice_type  goto 101
+
+
+state 55
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : LEFT_PARENTHE p_expr . RIGHT_PARENTHE  (48)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	RIGHT_PARENTHE  shift 105
+	ASSIGNMENT  shift 92
+	.  error
+
+
+state 56
+	p_expr : VARIABLE LEFT_PARENTHE . p_expr_list RIGHT_PARENTHE  (43)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_PARENTHE  reduce 21
+
+	p_expr_list  goto 106
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 57
+	p_variable_list : VARIABLE COMMA . p_variable_list  (16)
+
+	VARIABLE  shift 68
+	.  error
+
+	p_variable_list  goto 107
+
+
+state 58
+	p_statement : KEYWORD_FOR LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE  (83)
+
+	NEWLINE  shift 108
+	.  error
+
+
+state 59
+	p_simple_statement : KEYWORD_VAR . p_variable_list p_type_list ASSIGNMENT p_expr_list_required  (72)
+	p_simple_statement : KEYWORD_VAR . p_variable_list p_type_list  (73)
+
+	VARIABLE  shift 68
+	.  error
+
+	p_variable_list  goto 109
+
+
+state 60
+	p_simple_statement : p_variable_list . ASSIGNNEW p_expr_list_required  (74)
+
+	ASSIGNNEW  shift 110
+	.  error
+
+
+state 61
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_simple_statement : p_expr .  (71)
+	p_statement : KEYWORD_FOR p_expr . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (82)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACE  shift 111
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	SEMICOLON  reduce 71
+
+
+state 62
+	p_statement : KEYWORD_FOR p_simple_statement . SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+
+	SEMICOLON  shift 112
+	.  error
+
+
+state 63
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_if_statement : KEYWORD_IF p_expr . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF p_expr . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (70)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACE  shift 113
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	.  error
+
+
+state 64
+	p_statement : KEYWORD_RETURN p_expr_list . NEWLINE  (76)
+
+	NEWLINE  shift 114
+	.  error
+
+
+state 65
+	p_expr_list : p_expr_list_required .  (22)
+
+	.  reduce 22
+
+
+state 66
+	p_expr_list_required : p_expr .  (23)
+	p_expr_list_required : p_expr . COMMA p_expr_list_required  (24)
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	COMMA  shift 115
+	NEWLINE  reduce 23
+	LEFT_BRACE  reduce 23
+	RIGHT_BRACE  reduce 23
+	RIGHT_PARENTHE  reduce 23
+	SEMICOLON  reduce 23
+
+
+state 67
+	p_expr : KEYWORD_AWAIT VARIABLE .  (44)
+
+	.  reduce 44
+
+
+state 68
+	p_variable_list : VARIABLE .  (15)
+	p_variable_list : VARIABLE . COMMA p_variable_list  (16)
+
+	COMMA  shift 57
+	LEFT_BRACKET  reduce 15
+	ASSIGNNEW  reduce 15
+	KEYWORD_STRING  reduce 15
+	KEYWORD_INT  reduce 15
+	KEYWORD_FLOAT  reduce 15
+	KEYWORD_BOOL  reduce 15
+	KEYWORD_FUTURE  reduce 15
+
+
+state 69
+	p_statement : KEYWORD_VAR p_variable_list . p_type_list ASSIGNMENT p_expr_list_required NEWLINE  (77)
+	p_statement : KEYWORD_VAR p_variable_list . p_type_list NEWLINE  (78)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 116
+	p_type_list  goto 117
+	p_slice_type  goto 101
+
+
+state 70
+	p_statement : KEYWORD_CONTINUE NEWLINE .  (85)
+
+	.  reduce 85
+
+
+state 71
+	p_statement : KEYWORD_BREAK NEWLINE .  (84)
+
+	.  reduce 84
+
+
+state 72
+	p_expr : KEYWORD_GATHER LEFT_PARENTHE . p_expr_list RIGHT_PARENTHE  (45)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_PARENTHE  reduce 21
+
+	p_expr_list  goto 118
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 73
+	p_expr : KEYWORD_LEN LEFT_PARENTHE . p_expr_list RIGHT_PARENTHE  (46)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_PARENTHE  reduce 21
+
+	p_expr_list  goto 119
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 74
+	p_expr : KEYWORD_APPEND LEFT_PARENTHE . p_expr_list RIGHT_PARENTHE  (47)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_PARENTHE  reduce 21
+
+	p_expr_list  goto 120
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 75
+	p_function_impl : LEFT_BRACE NEWLINE p_statements RIGHT_BRACE .  (11)
+
+	.  reduce 11
+
+
+state 76
+	p_statement : p_variable_list ASSIGNNEW . p_expr_list_required NEWLINE  (79)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr_list_required  goto 121
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 77
+	p_statement : p_expr NEWLINE .  (75)
+
+	.  reduce 75
+
+
+state 78
+	p_expr : p_expr PLUS . p_expr  (25)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 122
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 79
+	p_expr : p_expr MINUS . p_expr  (26)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 123
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 80
+	p_expr : p_expr TIMES . p_expr  (27)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 124
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 81
+	p_expr : p_expr DIVIDE . p_expr  (28)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 125
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 82
+	p_expr : p_expr MODSIGN . p_expr  (29)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 126
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 83
+	p_expr : p_expr LOGICAL_OR . p_expr  (37)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 127
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 84
+	p_expr : p_expr LOGICAL_AND . p_expr  (36)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 128
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 85
+	p_expr : p_expr IS_EQUAL . p_expr  (33)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 129
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 86
+	p_expr : p_expr IS_NOT_EQUAL . p_expr  (32)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 130
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 87
+	p_expr : p_expr IS_LESS_THAN . p_expr  (30)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 131
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 88
+	p_expr : p_expr IS_GREATER_THAN . p_expr  (31)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 132
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 89
+	p_expr : p_expr IS_LESS_EQUAL . p_expr  (34)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 133
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 90
+	p_expr : p_expr IS_GREATER_EQUAL . p_expr  (35)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 134
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 91
+	p_expr : p_expr LEFT_BRACKET . p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr LEFT_BRACKET . p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr LEFT_BRACKET . COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr LEFT_BRACKET . p_expr COLON RIGHT_BRACKET  (53)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	COLON  shift 135
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 136
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 92
+	p_expr : p_expr ASSIGNMENT . p_expr  (40)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 137
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 93
+	p_expr : p_slice_type LEFT_BRACE . p_expr_list RIGHT_BRACE  (49)
+	p_expr_list : .  (21)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 21
+
+	p_expr_list  goto 138
+	p_expr_list_required  goto 65
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 94
+	p_statements : p_statement p_statements .  (67)
+
+	.  reduce 67
+
+
+state 95
+	p_type : KEYWORD_STRING .  (55)
+
+	.  reduce 55
+
+
+state 96
+	p_type : KEYWORD_INT .  (56)
+
+	.  reduce 56
+
+
+state 97
+	p_type : KEYWORD_FLOAT .  (57)
+
+	.  reduce 57
+
+
+state 98
+	p_type : KEYWORD_BOOL .  (58)
+
+	.  reduce 58
+
+
+state 99
+	p_type : KEYWORD_FUTURE .  (59)
+
+	.  reduce 59
+
+
+state 100
+	p_parameter : VARIABLE p_type .  (20)
+
+	.  reduce 20
+
+
+state 101
+	p_type : p_slice_type .  (60)
+
+	.  reduce 60
+
+
+state 102
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE . p_type  (8)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE .  (9)
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE . LEFT_PARENTHE p_type_list RIGHT_PARENTHE  (10)
+
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 139
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	LEFT_BRACE  reduce 9
+
+	p_type  goto 140
+	p_slice_type  goto 101
+
+
+state 103
+	p_parameters : p_parameter COMMA . p_parameters  (19)
+	p_parameters : .  (17)
+
+	VARIABLE  shift 47
+	RIGHT_PARENTHE  reduce 17
+
+	p_parameters  goto 141
+	p_parameter  goto 49
+
+
+state 104
+	p_slice_type : LEFT_BRACKET RIGHT_BRACKET p_type .  (54)
+
+	.  reduce 54
+
+
+state 105
+	p_expr : LEFT_PARENTHE p_expr RIGHT_PARENTHE .  (48)
+
+	.  reduce 48
+
+
+state 106
+	p_expr : VARIABLE LEFT_PARENTHE p_expr_list . RIGHT_PARENTHE  (43)
+
+	RIGHT_PARENTHE  shift 142
+	.  error
+
+
+state 107
+	p_variable_list : VARIABLE COMMA p_variable_list .  (16)
+
+	.  reduce 16
+
+
+state 108
+	p_statement : KEYWORD_FOR LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE  (83)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 143
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 109
+	p_simple_statement : KEYWORD_VAR p_variable_list . p_type_list ASSIGNMENT p_expr_list_required  (72)
+	p_simple_statement : KEYWORD_VAR p_variable_list . p_type_list  (73)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 116
+	p_type_list  goto 144
+	p_slice_type  goto 101
+
+
+state 110
+	p_simple_statement : p_variable_list ASSIGNNEW . p_expr_list_required  (74)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr_list_required  goto 145
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 111
+	p_statement : KEYWORD_FOR p_expr LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE  (82)
+
+	NEWLINE  shift 146
+	.  error
+
+
+state 112
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON . p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 147
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 113
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE  (70)
+
+	NEWLINE  shift 148
+	.  error
+
+
+state 114
+	p_statement : KEYWORD_RETURN p_expr_list NEWLINE .  (76)
+
+	.  reduce 76
+
+
+state 115
+	p_expr_list_required : p_expr COMMA . p_expr_list_required  (24)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr_list_required  goto 149
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 116
+	p_type_list : p_type .  (13)
+	p_type_list : p_type . COMMA p_type_list  (14)
+
+	COMMA  shift 150
+	NEWLINE  reduce 13
+	LEFT_BRACE  reduce 13
+	RIGHT_PARENTHE  reduce 13
+	ASSIGNMENT  reduce 13
+	SEMICOLON  reduce 13
+
+
+state 117
+	p_statement : KEYWORD_VAR p_variable_list p_type_list . ASSIGNMENT p_expr_list_required NEWLINE  (77)
+	p_statement : KEYWORD_VAR p_variable_list p_type_list . NEWLINE  (78)
+
+	NEWLINE  shift 151
+	ASSIGNMENT  shift 152
+	.  error
+
+
+state 118
+	p_expr : KEYWORD_GATHER LEFT_PARENTHE p_expr_list . RIGHT_PARENTHE  (45)
+
+	RIGHT_PARENTHE  shift 153
+	.  error
+
+
+state 119
+	p_expr : KEYWORD_LEN LEFT_PARENTHE p_expr_list . RIGHT_PARENTHE  (46)
+
+	RIGHT_PARENTHE  shift 154
+	.  error
+
+
+state 120
+	p_expr : KEYWORD_APPEND LEFT_PARENTHE p_expr_list . RIGHT_PARENTHE  (47)
+
+	RIGHT_PARENTHE  shift 155
+	.  error
+
+
+state 121
+	p_statement : p_variable_list ASSIGNNEW p_expr_list_required . NEWLINE  (79)
+
+	NEWLINE  shift 156
+	.  error
+
+
+122: shift/reduce conflict (shift 91, reduce 25) on LEFT_BRACKET
+state 122
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr PLUS p_expr .  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 25
+	PLUS  reduce 25
+	MINUS  reduce 25
+	LOGICAL_OR  reduce 25
+	LOGICAL_AND  reduce 25
+	IS_EQUAL  reduce 25
+	IS_NOT_EQUAL  reduce 25
+	IS_LESS_THAN  reduce 25
+	IS_GREATER_THAN  reduce 25
+	IS_LESS_EQUAL  reduce 25
+	IS_GREATER_EQUAL  reduce 25
+	LEFT_BRACE  reduce 25
+	RIGHT_BRACE  reduce 25
+	RIGHT_BRACKET  reduce 25
+	RIGHT_PARENTHE  reduce 25
+	ASSIGNMENT  reduce 25
+	SEMICOLON  reduce 25
+	COLON  reduce 25
+	COMMA  reduce 25
+
+
+123: shift/reduce conflict (shift 91, reduce 26) on LEFT_BRACKET
+state 123
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr MINUS p_expr .  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 26
+	PLUS  reduce 26
+	MINUS  reduce 26
+	LOGICAL_OR  reduce 26
+	LOGICAL_AND  reduce 26
+	IS_EQUAL  reduce 26
+	IS_NOT_EQUAL  reduce 26
+	IS_LESS_THAN  reduce 26
+	IS_GREATER_THAN  reduce 26
+	IS_LESS_EQUAL  reduce 26
+	IS_GREATER_EQUAL  reduce 26
+	LEFT_BRACE  reduce 26
+	RIGHT_BRACE  reduce 26
+	RIGHT_BRACKET  reduce 26
+	RIGHT_PARENTHE  reduce 26
+	ASSIGNMENT  reduce 26
+	SEMICOLON  reduce 26
+	COLON  reduce 26
+	COMMA  reduce 26
+
+
+124: shift/reduce conflict (shift 91, reduce 27) on LEFT_BRACKET
+state 124
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr TIMES p_expr .  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 27
+	PLUS  reduce 27
+	MINUS  reduce 27
+	TIMES  reduce 27
+	DIVIDE  reduce 27
+	MODSIGN  reduce 27
+	LOGICAL_OR  reduce 27
+	LOGICAL_AND  reduce 27
+	IS_EQUAL  reduce 27
+	IS_NOT_EQUAL  reduce 27
+	IS_LESS_THAN  reduce 27
+	IS_GREATER_THAN  reduce 27
+	IS_LESS_EQUAL  reduce 27
+	IS_GREATER_EQUAL  reduce 27
+	LEFT_BRACE  reduce 27
+	RIGHT_BRACE  reduce 27
+	RIGHT_BRACKET  reduce 27
+	RIGHT_PARENTHE  reduce 27
+	ASSIGNMENT  reduce 27
+	SEMICOLON  reduce 27
+	COLON  reduce 27
+	COMMA  reduce 27
+
+
+125: shift/reduce conflict (shift 91, reduce 28) on LEFT_BRACKET
+state 125
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr DIVIDE p_expr .  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 28
+	PLUS  reduce 28
+	MINUS  reduce 28
+	TIMES  reduce 28
+	DIVIDE  reduce 28
+	MODSIGN  reduce 28
+	LOGICAL_OR  reduce 28
+	LOGICAL_AND  reduce 28
+	IS_EQUAL  reduce 28
+	IS_NOT_EQUAL  reduce 28
+	IS_LESS_THAN  reduce 28
+	IS_GREATER_THAN  reduce 28
+	IS_LESS_EQUAL  reduce 28
+	IS_GREATER_EQUAL  reduce 28
+	LEFT_BRACE  reduce 28
+	RIGHT_BRACE  reduce 28
+	RIGHT_BRACKET  reduce 28
+	RIGHT_PARENTHE  reduce 28
+	ASSIGNMENT  reduce 28
+	SEMICOLON  reduce 28
+	COLON  reduce 28
+	COMMA  reduce 28
+
+
+126: shift/reduce conflict (shift 91, reduce 29) on LEFT_BRACKET
+state 126
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr MODSIGN p_expr .  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 29
+	PLUS  reduce 29
+	MINUS  reduce 29
+	TIMES  reduce 29
+	DIVIDE  reduce 29
+	MODSIGN  reduce 29
+	LOGICAL_OR  reduce 29
+	LOGICAL_AND  reduce 29
+	IS_EQUAL  reduce 29
+	IS_NOT_EQUAL  reduce 29
+	IS_LESS_THAN  reduce 29
+	IS_GREATER_THAN  reduce 29
+	IS_LESS_EQUAL  reduce 29
+	IS_GREATER_EQUAL  reduce 29
+	LEFT_BRACE  reduce 29
+	RIGHT_BRACE  reduce 29
+	RIGHT_BRACKET  reduce 29
+	RIGHT_PARENTHE  reduce 29
+	ASSIGNMENT  reduce 29
+	SEMICOLON  reduce 29
+	COLON  reduce 29
+	COMMA  reduce 29
+
+
+127: shift/reduce conflict (shift 91, reduce 37) on LEFT_BRACKET
+state 127
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr LOGICAL_OR p_expr .  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 37
+	LOGICAL_OR  reduce 37
+	LEFT_BRACE  reduce 37
+	RIGHT_BRACE  reduce 37
+	RIGHT_BRACKET  reduce 37
+	RIGHT_PARENTHE  reduce 37
+	ASSIGNMENT  reduce 37
+	SEMICOLON  reduce 37
+	COLON  reduce 37
+	COMMA  reduce 37
+
+
+128: shift/reduce conflict (shift 91, reduce 36) on LEFT_BRACKET
+state 128
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr LOGICAL_AND p_expr .  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 36
+	LOGICAL_OR  reduce 36
+	LOGICAL_AND  reduce 36
+	LEFT_BRACE  reduce 36
+	RIGHT_BRACE  reduce 36
+	RIGHT_BRACKET  reduce 36
+	RIGHT_PARENTHE  reduce 36
+	ASSIGNMENT  reduce 36
+	SEMICOLON  reduce 36
+	COLON  reduce 36
+	COMMA  reduce 36
+
+
+129: shift/reduce conflict (shift 91, reduce 33) on LEFT_BRACKET
+state 129
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr IS_EQUAL p_expr .  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 33
+	LOGICAL_OR  reduce 33
+	LOGICAL_AND  reduce 33
+	IS_EQUAL  reduce 33
+	IS_NOT_EQUAL  reduce 33
+	LEFT_BRACE  reduce 33
+	RIGHT_BRACE  reduce 33
+	RIGHT_BRACKET  reduce 33
+	RIGHT_PARENTHE  reduce 33
+	ASSIGNMENT  reduce 33
+	SEMICOLON  reduce 33
+	COLON  reduce 33
+	COMMA  reduce 33
+
+
+130: shift/reduce conflict (shift 91, reduce 32) on LEFT_BRACKET
+state 130
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr IS_NOT_EQUAL p_expr .  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 32
+	LOGICAL_OR  reduce 32
+	LOGICAL_AND  reduce 32
+	IS_EQUAL  reduce 32
+	IS_NOT_EQUAL  reduce 32
+	LEFT_BRACE  reduce 32
+	RIGHT_BRACE  reduce 32
+	RIGHT_BRACKET  reduce 32
+	RIGHT_PARENTHE  reduce 32
+	ASSIGNMENT  reduce 32
+	SEMICOLON  reduce 32
+	COLON  reduce 32
+	COMMA  reduce 32
+
+
+131: shift/reduce conflict (shift 91, reduce 30) on LEFT_BRACKET
+state 131
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr IS_LESS_THAN p_expr .  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 30
+	LOGICAL_OR  reduce 30
+	LOGICAL_AND  reduce 30
+	IS_EQUAL  reduce 30
+	IS_NOT_EQUAL  reduce 30
+	IS_LESS_THAN  reduce 30
+	IS_GREATER_THAN  reduce 30
+	IS_LESS_EQUAL  reduce 30
+	IS_GREATER_EQUAL  reduce 30
+	LEFT_BRACE  reduce 30
+	RIGHT_BRACE  reduce 30
+	RIGHT_BRACKET  reduce 30
+	RIGHT_PARENTHE  reduce 30
+	ASSIGNMENT  reduce 30
+	SEMICOLON  reduce 30
+	COLON  reduce 30
+	COMMA  reduce 30
+
+
+132: shift/reduce conflict (shift 91, reduce 31) on LEFT_BRACKET
+state 132
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr IS_GREATER_THAN p_expr .  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 31
+	LOGICAL_OR  reduce 31
+	LOGICAL_AND  reduce 31
+	IS_EQUAL  reduce 31
+	IS_NOT_EQUAL  reduce 31
+	IS_LESS_THAN  reduce 31
+	IS_GREATER_THAN  reduce 31
+	IS_LESS_EQUAL  reduce 31
+	IS_GREATER_EQUAL  reduce 31
+	LEFT_BRACE  reduce 31
+	RIGHT_BRACE  reduce 31
+	RIGHT_BRACKET  reduce 31
+	RIGHT_PARENTHE  reduce 31
+	ASSIGNMENT  reduce 31
+	SEMICOLON  reduce 31
+	COLON  reduce 31
+	COMMA  reduce 31
+
+
+133: shift/reduce conflict (shift 91, reduce 34) on LEFT_BRACKET
+state 133
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr IS_LESS_EQUAL p_expr .  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 34
+	LOGICAL_OR  reduce 34
+	LOGICAL_AND  reduce 34
+	IS_EQUAL  reduce 34
+	IS_NOT_EQUAL  reduce 34
+	IS_LESS_THAN  reduce 34
+	IS_GREATER_THAN  reduce 34
+	IS_LESS_EQUAL  reduce 34
+	IS_GREATER_EQUAL  reduce 34
+	LEFT_BRACE  reduce 34
+	RIGHT_BRACE  reduce 34
+	RIGHT_BRACKET  reduce 34
+	RIGHT_PARENTHE  reduce 34
+	ASSIGNMENT  reduce 34
+	SEMICOLON  reduce 34
+	COLON  reduce 34
+	COMMA  reduce 34
+
+
+134: shift/reduce conflict (shift 91, reduce 35) on LEFT_BRACKET
+state 134
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr IS_GREATER_EQUAL p_expr .  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LEFT_BRACKET  shift 91
+	NEWLINE  reduce 35
+	LOGICAL_OR  reduce 35
+	LOGICAL_AND  reduce 35
+	IS_EQUAL  reduce 35
+	IS_NOT_EQUAL  reduce 35
+	IS_LESS_THAN  reduce 35
+	IS_GREATER_THAN  reduce 35
+	IS_LESS_EQUAL  reduce 35
+	IS_GREATER_EQUAL  reduce 35
+	LEFT_BRACE  reduce 35
+	RIGHT_BRACE  reduce 35
+	RIGHT_BRACKET  reduce 35
+	RIGHT_PARENTHE  reduce 35
+	ASSIGNMENT  reduce 35
+	SEMICOLON  reduce 35
+	COLON  reduce 35
+	COMMA  reduce 35
+
+
+state 135
+	p_expr : p_expr LEFT_BRACKET COLON . p_expr RIGHT_BRACKET  (52)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 157
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 136
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr LEFT_BRACKET p_expr . RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr LEFT_BRACKET p_expr . COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_expr : p_expr LEFT_BRACKET p_expr . COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	RIGHT_BRACKET  shift 158
+	ASSIGNMENT  shift 92
+	COLON  shift 159
+	.  error
+
+
+137: shift/reduce conflict (shift 91, reduce 40) on LEFT_BRACKET
+state 137
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr ASSIGNMENT p_expr .  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	NEWLINE  reduce 40
+	LEFT_BRACE  reduce 40
+	RIGHT_BRACE  reduce 40
+	RIGHT_BRACKET  reduce 40
+	RIGHT_PARENTHE  reduce 40
+	SEMICOLON  reduce 40
+	COLON  reduce 40
+	COMMA  reduce 40
+
+
+state 138
+	p_expr : p_slice_type LEFT_BRACE p_expr_list . RIGHT_BRACE  (49)
+
+	RIGHT_BRACE  shift 160
+	.  error
+
+
+state 139
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE . p_type_list RIGHT_PARENTHE  (10)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 116
+	p_type_list  goto 161
+	p_slice_type  goto 101
+
+
+state 140
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type .  (8)
+
+	.  reduce 8
+
+
+state 141
+	p_parameters : p_parameter COMMA p_parameters .  (19)
+
+	.  reduce 19
+
+
+state 142
+	p_expr : VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE .  (43)
+
+	.  reduce 43
+
+
+state 143
+	p_statement : KEYWORD_FOR LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE  (83)
+
+	RIGHT_BRACE  shift 162
+	.  error
+
+
+state 144
+	p_simple_statement : KEYWORD_VAR p_variable_list p_type_list . ASSIGNMENT p_expr_list_required  (72)
+	p_simple_statement : KEYWORD_VAR p_variable_list p_type_list .  (73)
+
+	ASSIGNMENT  shift 163
+	LEFT_BRACE  reduce 73
+	SEMICOLON  reduce 73
+
+
+state 145
+	p_simple_statement : p_variable_list ASSIGNNEW p_expr_list_required .  (74)
+
+	.  reduce 74
+
+
+state 146
+	p_statement : KEYWORD_FOR p_expr LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE  (82)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 164
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 147
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr . SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	SEMICOLON  shift 165
+	.  error
+
+
+state 148
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE  (70)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 166
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 149
+	p_expr_list_required : p_expr COMMA p_expr_list_required .  (24)
+
+	.  reduce 24
+
+
+state 150
+	p_type_list : p_type COMMA . p_type_list  (14)
+
+	LEFT_BRACKET  shift 23
+	KEYWORD_STRING  shift 95
+	KEYWORD_INT  shift 96
+	KEYWORD_FLOAT  shift 97
+	KEYWORD_BOOL  shift 98
+	KEYWORD_FUTURE  shift 99
+	.  error
+
+	p_type  goto 116
+	p_type_list  goto 167
+	p_slice_type  goto 101
+
+
+state 151
+	p_statement : KEYWORD_VAR p_variable_list p_type_list NEWLINE .  (78)
+
+	.  reduce 78
+
+
+state 152
+	p_statement : KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT . p_expr_list_required NEWLINE  (77)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr_list_required  goto 168
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 153
+	p_expr : KEYWORD_GATHER LEFT_PARENTHE p_expr_list RIGHT_PARENTHE .  (45)
+
+	.  reduce 45
+
+
+state 154
+	p_expr : KEYWORD_LEN LEFT_PARENTHE p_expr_list RIGHT_PARENTHE .  (46)
+
+	.  reduce 46
+
+
+state 155
+	p_expr : KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE .  (47)
+
+	.  reduce 47
+
+
+state 156
+	p_statement : p_variable_list ASSIGNNEW p_expr_list_required NEWLINE .  (79)
+
+	.  reduce 79
+
+
+state 157
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr LEFT_BRACKET COLON p_expr . RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	RIGHT_BRACKET  shift 169
+	ASSIGNMENT  shift 92
+	.  error
+
+
+state 158
+	p_expr : p_expr LEFT_BRACKET p_expr RIGHT_BRACKET .  (50)
+
+	.  reduce 50
+
+
+state 159
+	p_expr : p_expr LEFT_BRACKET p_expr COLON . p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr LEFT_BRACKET p_expr COLON . RIGHT_BRACKET  (53)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	RIGHT_BRACKET  shift 170
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr  goto 171
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 160
+	p_expr : p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE .  (49)
+
+	.  reduce 49
+
+
+state 161
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list . RIGHT_PARENTHE  (10)
+
+	RIGHT_PARENTHE  shift 172
+	.  error
+
+
+state 162
+	p_statement : KEYWORD_FOR LEFT_BRACE NEWLINE p_statements RIGHT_BRACE .  (83)
+
+	.  reduce 83
+
+
+state 163
+	p_simple_statement : KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT . p_expr_list_required  (72)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 51
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_expr_list_required  goto 173
+	p_expr  goto 66
+	p_literal  goto 43
+	p_slice_type  goto 44
+
+
+state 164
+	p_statement : KEYWORD_FOR p_expr LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE  (82)
+
+	RIGHT_BRACE  shift 174
+	.  error
+
+
+state 165
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON . p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 59
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	.  error
+
+	p_variable_list  goto 60
+	p_expr  goto 175
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_simple_statement  goto 176
+
+
+state 166
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE  (70)
+
+	RIGHT_BRACE  shift 177
+	.  error
+
+
+state 167
+	p_type_list : p_type COMMA p_type_list .  (14)
+
+	.  reduce 14
+
+
+state 168
+	p_statement : KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required . NEWLINE  (77)
+
+	NEWLINE  shift 178
+	.  error
+
+
+state 169
+	p_expr : p_expr LEFT_BRACKET COLON p_expr RIGHT_BRACKET .  (52)
+
+	.  reduce 52
+
+
+state 170
+	p_expr : p_expr LEFT_BRACKET p_expr COLON RIGHT_BRACKET .  (53)
+
+	.  reduce 53
+
+
+state 171
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr LEFT_BRACKET p_expr COLON p_expr . RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	RIGHT_BRACKET  shift 179
+	ASSIGNMENT  shift 92
+	.  error
+
+
+state 172
+	p_function_prototype : p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE .  (10)
+
+	.  reduce 10
+
+
+state 173
+	p_simple_statement : KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required .  (72)
+
+	.  reduce 72
+
+
+state 174
+	p_statement : KEYWORD_FOR p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE .  (82)
+
+	.  reduce 82
+
+
+state 175
+	p_expr : p_expr . PLUS p_expr  (25)
+	p_expr : p_expr . MINUS p_expr  (26)
+	p_expr : p_expr . TIMES p_expr  (27)
+	p_expr : p_expr . DIVIDE p_expr  (28)
+	p_expr : p_expr . MODSIGN p_expr  (29)
+	p_expr : p_expr . IS_LESS_THAN p_expr  (30)
+	p_expr : p_expr . IS_GREATER_THAN p_expr  (31)
+	p_expr : p_expr . IS_NOT_EQUAL p_expr  (32)
+	p_expr : p_expr . IS_EQUAL p_expr  (33)
+	p_expr : p_expr . IS_LESS_EQUAL p_expr  (34)
+	p_expr : p_expr . IS_GREATER_EQUAL p_expr  (35)
+	p_expr : p_expr . LOGICAL_AND p_expr  (36)
+	p_expr : p_expr . LOGICAL_OR p_expr  (37)
+	p_expr : p_expr . ASSIGNMENT p_expr  (40)
+	p_expr : p_expr . LEFT_BRACKET p_expr RIGHT_BRACKET  (50)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET  (51)
+	p_expr : p_expr . LEFT_BRACKET COLON p_expr RIGHT_BRACKET  (52)
+	p_expr : p_expr . LEFT_BRACKET p_expr COLON RIGHT_BRACKET  (53)
+	p_simple_statement : p_expr .  (71)
+
+	PLUS  shift 78
+	MINUS  shift 79
+	TIMES  shift 80
+	DIVIDE  shift 81
+	MODSIGN  shift 82
+	LOGICAL_OR  shift 83
+	LOGICAL_AND  shift 84
+	IS_EQUAL  shift 85
+	IS_NOT_EQUAL  shift 86
+	IS_LESS_THAN  shift 87
+	IS_GREATER_THAN  shift 88
+	IS_LESS_EQUAL  shift 89
+	IS_GREATER_EQUAL  shift 90
+	LEFT_BRACKET  shift 91
+	ASSIGNMENT  shift 92
+	LEFT_BRACE  reduce 71
+
+
+state 176
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement . LEFT_BRACE NEWLINE p_statements RIGHT_BRACE  (81)
+
+	LEFT_BRACE  shift 180
+	.  error
+
+
+state 177
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE . KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE . KEYWORD_ELSE p_if_statement  (69)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE .  (70)
+
+	KEYWORD_ELSE  shift 181
+	NEWLINE  reduce 70
+	MINUS  reduce 70
+	LOGICAL_NOT  reduce 70
+	RIGHT_BRACE  reduce 70
+	LEFT_BRACKET  reduce 70
+	LEFT_PARENTHE  reduce 70
+	INT_LITERAL  reduce 70
+	STRING_LITERAL  reduce 70
+	FLOAT_LITERAL  reduce 70
+	BOOLEAN_LITERAL  reduce 70
+	VARIABLE  reduce 70
+	KEYWORD_FOR  reduce 70
+	KEYWORD_IF  reduce 70
+	KEYWORD_RETURN  reduce 70
+	KEYWORD_AWAIT  reduce 70
+	KEYWORD_VAR  reduce 70
+	KEYWORD_CONTINUE  reduce 70
+	KEYWORD_BREAK  reduce 70
+	KEYWORD_GATHER  reduce 70
+	KEYWORD_LEN  reduce 70
+	KEYWORD_APPEND  reduce 70
+
+
+state 178
+	p_statement : KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required NEWLINE .  (77)
+
+	.  reduce 77
+
+
+state 179
+	p_expr : p_expr LEFT_BRACKET p_expr COLON p_expr RIGHT_BRACKET .  (51)
+
+	.  reduce 51
+
+
+state 180
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE . NEWLINE p_statements RIGHT_BRACE  (81)
+
+	NEWLINE  shift 182
+	.  error
+
+
+state 181
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE . LEFT_BRACE p_statements RIGHT_BRACE  (68)
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE . p_if_statement  (69)
+
+	LEFT_BRACE  shift 183
+	KEYWORD_IF  shift 31
+	.  error
+
+	p_if_statement  goto 184
+
+
+state 182
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE . p_statements RIGHT_BRACE  (81)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 185
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 183
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE . p_statements RIGHT_BRACE  (68)
+	p_statements : .  (65)
+
+	NEWLINE  shift 20
+	MINUS  shift 21
+	LOGICAL_NOT  shift 22
+	LEFT_BRACKET  shift 23
+	LEFT_PARENTHE  shift 24
+	INT_LITERAL  shift 25
+	STRING_LITERAL  shift 26
+	FLOAT_LITERAL  shift 27
+	BOOLEAN_LITERAL  shift 28
+	VARIABLE  shift 29
+	KEYWORD_FOR  shift 30
+	KEYWORD_IF  shift 31
+	KEYWORD_RETURN  shift 32
+	KEYWORD_AWAIT  shift 33
+	KEYWORD_VAR  shift 34
+	KEYWORD_CONTINUE  shift 35
+	KEYWORD_BREAK  shift 36
+	KEYWORD_GATHER  shift 37
+	KEYWORD_LEN  shift 38
+	KEYWORD_APPEND  shift 39
+	RIGHT_BRACE  reduce 65
+
+	p_statements  goto 186
+	p_variable_list  goto 41
+	p_expr  goto 42
+	p_literal  goto 43
+	p_slice_type  goto 44
+	p_statement  goto 45
+	p_if_statement  goto 46
+
+
+state 184
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE p_if_statement .  (69)
+
+	.  reduce 69
+
+
+state 185
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements . RIGHT_BRACE  (81)
+
+	RIGHT_BRACE  shift 187
+	.  error
+
+
+state 186
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements . RIGHT_BRACE  (68)
+
+	RIGHT_BRACE  shift 188
+	.  error
+
+
+state 187
+	p_statement : KEYWORD_FOR p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement LEFT_BRACE NEWLINE p_statements RIGHT_BRACE .  (81)
+
+	.  reduce 81
+
+
+state 188
+	p_if_statement : KEYWORD_IF p_expr LEFT_BRACE NEWLINE p_statements RIGHT_BRACE KEYWORD_ELSE LEFT_BRACE p_statements RIGHT_BRACE .  (68)
+
+	.  reduce 68
+
+
+State 52 contains 1 shift/reduce conflict.
+State 53 contains 1 shift/reduce conflict.
+State 122 contains 1 shift/reduce conflict.
+State 123 contains 1 shift/reduce conflict.
+State 124 contains 1 shift/reduce conflict.
+State 125 contains 1 shift/reduce conflict.
+State 126 contains 1 shift/reduce conflict.
+State 127 contains 1 shift/reduce conflict.
+State 128 contains 1 shift/reduce conflict.
+State 129 contains 1 shift/reduce conflict.
+State 130 contains 1 shift/reduce conflict.
+State 131 contains 1 shift/reduce conflict.
+State 132 contains 1 shift/reduce conflict.
+State 133 contains 1 shift/reduce conflict.
+State 134 contains 1 shift/reduce conflict.
+State 137 contains 1 shift/reduce conflict.
+
+
+55 terminals, 22 nonterminals
+87 grammar rules, 189 states

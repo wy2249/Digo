@@ -29,7 +29,7 @@ type expr =
     EmptyExpr
   | BinaryOp of expr * binary_operator * expr
   | UnaryOp  of unary_operator * expr
-  | AssignOp of expr * expr
+  | AssignOp of expr list * expr list
   | FunctionCall of string * expr list
   | Literal of literal
   | NamedVariable of string
@@ -41,8 +41,8 @@ type expr =
 
 type simple_statement = 
     EmptySimpleStatement
-  | SimpleDeclare of builtin_type * string * expr
-  | SimpleShortDecl of string * expr
+  | SimpleDeclare of builtin_type list * string list * expr list
+  | SimpleShortDecl of string list * expr list
   | SimpleExpr of expr
 
 type statement = 
@@ -53,19 +53,28 @@ type statement =
       (*  for ssmt1; expr2; ssmt3 {  statements   }  *)
   | Break
   | Continue
-  | Declare of builtin_type * string * expr
-  | ShortDecl of string * expr
-  | Return of expr
+  | Declare of builtin_type list * string list * expr list
+  | ShortDecl of string list * expr list
+  | Return of expr list
   | Expr of expr
 
 type parameter = 
     NamedParameter of string * builtin_type
 
+type func_annotation = 
+    FuncNormal
+  | FuncAsync
+  | FuncAsyncRemote
+
+type func_proto = 
+  (*  annotation,  function name,  type of return value,  parameters,   statements    *)
+    FunctionProto of func_annotation * string * builtin_type list * parameter list
+
+type func_impl = 
+    FunctionImpl of statement list
+
 type func_proto_impl = 
-    FunctionImpl of string * builtin_type list * parameter list * statement list
-   (*  function name,  type of return value,  parameters,   statements    *)
-  | AsyncFunctionImpl of string * builtin_type list * parameter list * statement list
-  | RemoteFunctionImpl of string * builtin_type list * parameter list * statement list
+    Function of func_proto * func_impl
 
 type functions = func_proto_impl list
 
