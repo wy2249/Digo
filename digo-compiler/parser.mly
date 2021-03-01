@@ -22,7 +22,8 @@
 %nonassoc COLON
 %nonassoc COMMA
 %nonassoc ASSIGNNEW
-%nonassoc LEFT_PARENTHE
+%nonassoc LEFT_PARENTHE RIGHT_PARENTHE
+%nonassoc LEFT_BRACKET RIGHT_BRACKET
 %right ASSIGNMENT
 %left LOGICAL_OR
 %left LOGICAL_AND
