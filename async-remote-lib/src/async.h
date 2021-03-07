@@ -15,6 +15,7 @@ using std::future;
 class Async: public noncopyable {
 public:
     static shared_ptr<Async> CreateLocal(string digo_func_name, bytes parameters);
+    static shared_ptr<Async> CreateRemote(string digo_func_name, bytes parameters);
     bytes Await();
 private:
     std::future<bytes> std_future_obj_;

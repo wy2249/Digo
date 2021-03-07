@@ -1,0 +1,4 @@
+file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp *.c)
+add_executable(async-remote-ext ${SOURCES})
+add_library(async-remote-lib STATIC ${SOURCES})
+
