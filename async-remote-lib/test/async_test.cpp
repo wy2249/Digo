@@ -6,6 +6,14 @@
 #include "master_worker.h"
 #include "gtest/gtest.h"
 
+TEST(CreateLocalTest, Normal) {
+  auto params = to_bytes("bar");
+  auto f = Async::CreateLocal("foo", params);
+  auto result = f->Await();
+  auto result_str = to_string(result);
+  ASSERT_EQ(result_str, "bar");
+}
+
 TEST(CreateRemoteTest, Normal) {
   auto mr = Master::GetInst();
   auto wk = Worker::GetInst();
