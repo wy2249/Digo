@@ -13,7 +13,7 @@ TEST(ByteToString, Normal) {
       .length = 3,
   };
   byte *bb = new byte[3]{'f', 'o', 'o'};
-  bs.content = shared_ptr<byte>(bb);
+  bs.content = shared_ptr<byte[]>(bb);
   string expect = "foo";
   string out = to_string(bs);
   ASSERT_EQ(expect, out);
@@ -31,7 +31,10 @@ TEST(MasterWorkerTest, Normal) {
   auto mr = Master::GetInst();
   auto wk = Worker::GetInst();
   std::thread([&]{mr->Listen("127.0.0.1:9999");}).detach();
+  sleep(2);
+
   std::thread([&]{wk->Start("127.0.0.1:9999", "127.0.0.1:9998");}).detach();
+  sleep(2);
 
   auto params = to_bytes("bar");
   auto result = mr->CallRemoteFunctionByName("foo", params);

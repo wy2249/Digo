@@ -10,7 +10,10 @@ TEST(CreateRemoteTest, Normal) {
   auto mr = Master::GetInst();
   auto wk = Worker::GetInst();
   std::thread([&]{mr->Listen("127.0.0.1:9999");}).detach();
+  sleep(2);
+
   std::thread([&]{wk->Start("127.0.0.1:9999", "127.0.0.1:9998");}).detach();
+  sleep(2);
 
   auto params = to_bytes("bar");
   auto f = Async::CreateRemote("foo", params);

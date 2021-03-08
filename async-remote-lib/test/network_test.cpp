@@ -2,21 +2,25 @@
 // Created by 陈语梵 on 3/6/21.
 //
 
-#include <map>
 #include <thread>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <map>
+#include <string>
+#include <functional>
 
 #include "gtest/gtest.h"
+
 #include "network.h"
 
 TEST(ServerTest, Normal) {
   auto s = Server::Create("127.0.0.1:9999");
-  auto handlers = std::map<string, Handler>{
-      {"foo", [=](const string &data) {
+  auto handlers = std::map<std::string, Handler>{
+      {"foo", [=](const std::string &data) {
         return "success\n";
       }}
   };
+
   s->SetHandlers(handlers);
   std::thread([&] { s->Start(); }).detach();
 
@@ -41,8 +45,10 @@ TEST(ClientTest, Normal) {
   auto c = Client::Create();
   string resp;
 
-  // FIXME: ncat doesn't exit after test is done
-  auto t = std::thread(system, "ncat -l 9999 -k -c 'xargs -n1 echo'");
+  // FIXME: a more elegant way to kill existent ncat
+  waitpid(system("killall ncat"), nullptr, 0);
+
+  std::thread(system, "ncat -l 9999 -k -c 'xargs -n1 echo'").detach();
   sleep(3);
 
   int r = c->Call("127.0.0.1:9999",

@@ -4,8 +4,17 @@
 
 #include <string>
 #include <memory>
+#include <map>
+#include <iostream>
+
 using std::string;
 using std::shared_ptr;
+using std::map;
+using std::to_string;
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::make_shared;
 
 typedef int32_t int32;
 typedef int future_obj_ptr;
@@ -13,7 +22,7 @@ typedef unsigned char byte;
 
 typedef struct bytes {
   // FIXME: memory leak when destructing content
-  shared_ptr<byte> content = nullptr;
+  shared_ptr<byte[]> content = nullptr;
   int32 length = 0;
 } bytes;
 

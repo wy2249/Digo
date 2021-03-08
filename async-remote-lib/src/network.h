@@ -12,9 +12,10 @@
 
 #include "common.h"
 
+
 #define DELIM "\r\n\r\n"
 
-typedef std::function<const string &(const string &)> Handler;
+typedef std::function<string (const string &)> Handler;
 
 class Client : public noncopyable {
  public:
@@ -33,6 +34,8 @@ class Server : public noncopyable {
   void SetHandlers(const std::map<string, Handler> &);
   void Stop();
   void Start();
+
+  ~Server() {this->Stop();}
 
  private:
   void HandleConn(int fd, const string &client_addr);

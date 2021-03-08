@@ -1,23 +1,24 @@
-
+#include <iostream>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <cstdlib>
 #include <cstdio>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <iostream>
-#include <algorithm>
 #include <fcntl.h>
 #include <thread>
+#include <string>
+#include <cstring>
+#include <cmath>
 
 #include "network.h"
+
 
 string PackData(const string &rpc_name, const string &data) {
   string resp;
   resp = rpc_name + DELIM + data;
-  string resp_length = std::to_string(resp.length());
-  resp = std::string(4 - resp_length.length(), '0') + resp_length + resp;
+  string resp_length = to_string(resp.length());
+  resp = string(4 - resp_length.length(), '0') + resp_length + resp;
   return resp;
 }
 
@@ -46,7 +47,7 @@ int ReadUnpack(int fd, string &rpc_name, string &data) {
 
   int pos;
   if ((pos = data.find(DELIM)) == -1) {
-    std::cerr << "the request format is incorrect" << std::endl;
+    cerr << "the request format is incorrect" << endl;
     return -1;
   }
   rpc_name = data.substr(0, pos);
@@ -62,12 +63,12 @@ int ParseAddr(const string &addr, string &hostname, unsigned short &port) {
   }
   hostname = addr.substr(0, p);
   string port_str = addr.substr(p + 1);
-  port = std::stoul(port_str);
+  port = stoul(port_str);
   return 0;
 }
 
 shared_ptr<Client> Client::Create() {
-  shared_ptr<Client> client = std::make_shared<Client>();
+  shared_ptr<Client> client = make_shared<Client>();
   client->socket_ = socket(AF_INET, SOCK_STREAM, 0);
   return client;
 }
@@ -78,7 +79,7 @@ int Client::Call(const string &server_addr, const string &rpc_name,
   unsigned short port;
   if (ParseAddr(server_addr, hostname, port) != 0) {
     // TODO: better error handling
-    std::cerr << "parse server address failed" << std::endl;
+    cerr << "parse server address failed" << endl;
     exit(EXIT_FAILURE);
   }
 
@@ -94,13 +95,13 @@ int Client::Call(const string &server_addr, const string &rpc_name,
   }
 
   string req = PackData(rpc_name, data);
-  std::cout << req << std::endl;
+  cout << req << endl;
   if (send(this->socket_, req.c_str(), req.length(), 0) < 0) {
     perror("send");
     exit(EXIT_FAILURE);
   }
 
-  std::string whatever;
+  string whatever;
   if (ReadUnpack(this->socket_, whatever, resp) == -1) {
     close(this->socket_);
     return -1;
@@ -110,12 +111,12 @@ int Client::Call(const string &server_addr, const string &rpc_name,
 }
 
 shared_ptr<Server> Server::Create(const string &server_addr) {
-  shared_ptr<Server> server = std::make_shared<Server>();
+  shared_ptr<Server> server = make_shared<Server>();
 
   string hostname;
   unsigned short port;
   if (ParseAddr(server_addr, hostname, port) != 0) {
-    std::cerr << "parse address failed" << std::endl;
+    cerr << "parse address failed" << endl;
     exit(-1);
   }
 
@@ -147,7 +148,7 @@ shared_ptr<Server> Server::Create(const string &server_addr) {
   return server;
 }
 
-void Server::SetHandlers(const std::map<string, Handler> &hs) {
+void Server::SetHandlers(const map<string, Handler> &hs) {
   this->handlers_ = hs;
 }
 
@@ -167,11 +168,11 @@ void Server::Start() {
 
   while (true) {
     if (fcntl(this->socket_, F_GETFD) == -1 && errno == EBADF) {
-      std::cout << "listening stopped. Bye" << std::endl;
+      cout << "listening stopped. Bye" << endl;
       return;
     }
 
-    std::cout << " accepting..." << std::endl;
+    cout << " accepting..." << endl;
     accept_fd = accept(this->socket_,
                        (struct sockaddr *) &addr_in, (socklen_t *) &addr_len);
     if (accept_fd < 0) {
@@ -184,7 +185,7 @@ void Server::Start() {
     inet_ntop(AF_INET, &(addr_in.sin_addr), client_addr_cstr, addr_len);
 
     string client_addr = client_addr_cstr;
-    client_addr += ":" + std::to_string(ntohs(addr_in.sin_port));
+    client_addr += ":" + to_string(ntohs(addr_in.sin_port));
     std::thread([=] { this->HandleConn(accept_fd, client_addr); }).detach();
   }
 }
@@ -192,15 +193,16 @@ void Server::Start() {
 void Server::HandleConn(int fd, const string &client_addr) {
   /* 4bytes: <packet_length> */
 
-  std::cout << "handling..." << std::endl;
+  cout << "handling..." << endl;
 
-  std::string rpc_name, data;
+  string rpc_name, data;
 
   if (ReadUnpack(fd, rpc_name, data) != 0) {
     close(fd);
     return;
   }
 
+  cout << this->handlers_.count("foo") << endl;
   string resp = this->handlers_[rpc_name](data);
   resp = PackData(rpc_name, resp);
   send(fd, resp.c_str(), resp.length(), 0);
