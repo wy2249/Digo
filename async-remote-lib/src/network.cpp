@@ -72,6 +72,43 @@ shared_ptr<Client> Client::Create() {
   return client;
 }
 
+int Client::Call(const string &server_addr, const string &rpc_name,
+                 const string &data, string &resp) {
+  string hostname;
+  unsigned short port;
+  if (ParseAddr(server_addr, hostname, port) != 0) {
+    // TODO: better error handling
+    std::cerr << "parse server address failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  struct sockaddr_in address{};
+  memset(&address, 0, sizeof(address));
+  address.sin_port = htons(port);
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = inet_addr(hostname.c_str());
+
+  if (connect(this->socket_, (struct sockaddr *) &address, sizeof(address)) < 0) {
+    perror("connect");
+    exit(EXIT_FAILURE);
+  }
+
+  string req = PackData(rpc_name, data);
+  std::cout << req << std::endl;
+  if (send(this->socket_, req.c_str(), req.length(), 0) < 0) {
+    perror("send");
+    exit(EXIT_FAILURE);
+  }
+
+  std::string whatever;
+  if (ReadUnpack(this->socket_, whatever, resp) == -1) {
+    close(this->socket_);
+    return -1;
+  }
+  close(this->socket_);
+  return 0;
+}
+
 shared_ptr<Server> Server::Create(const string &server_addr) {
   shared_ptr<Server> server = std::make_shared<Server>();
 
@@ -170,41 +207,3 @@ void Server::HandleConn(int fd, const string &client_addr) {
   close(fd);
 }
 
-int Client::Call(const string &server_addr, const string &rpc_name,
-                 const string &data, string &resp) {
-  string hostname;
-  unsigned short port;
-  if (ParseAddr(server_addr, hostname, port) != 0) {
-    // TODO: better error handling
-    std::cerr << "parse server address failed" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  struct sockaddr_in address{};
-  memset(&address, 0, sizeof(address));
-  address.sin_port = htons(port);
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = inet_addr(hostname.c_str());
-
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
-
-  if (connect(fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
-    perror("connect");
-    exit(EXIT_FAILURE);
-  }
-
-  string req = PackData(rpc_name, data);
-  std::cout << req << std::endl;
-  if (send(fd, req.c_str(), req.length(), 0) < 0) {
-    perror("send");
-    exit(EXIT_FAILURE);
-  }
-
-  std::string whatever;
-  if (ReadUnpack(fd, whatever, resp) == -1) {
-    close(fd);
-    return -1;
-  }
-  close(fd);
-  return 0;
-}

@@ -1,6 +1,6 @@
 
-#ifndef ASYNC_REMOTE_LIB__NETWORK_H_
-#define ASYNC_REMOTE_LIB__NETWORK_H_
+#ifndef ASYNC_REMOTE_LIB_SRC_NETWORK_H_
+#define ASYNC_REMOTE_LIB_SRC_NETWORK_H_
 
 #include <sys/socket.h>
 #include <vector>
@@ -41,4 +41,4 @@ class Server : public noncopyable {
   int socket_;
 };
 
-#endif //ASYNC_REMOTE_LIB__NETWORK_H_
+#endif //ASYNC_REMOTE_LIB_SRC_NETWORK_H_

@@ -1,6 +1,6 @@
 
-#ifndef ASYNC_REMOTE_LIB_COMMON_H
-#define ASYNC_REMOTE_LIB_COMMON_H
+#ifndef ASYNC_REMOTE_LIB_SRC_COMMON_H_
+#define ASYNC_REMOTE_LIB_SRC_COMMON_H_
 
 #include <string>
 #include <memory>
@@ -12,6 +12,7 @@ typedef int future_obj_ptr;
 typedef unsigned char byte;
 
 typedef struct bytes {
+  // FIXME: memory leak when destructing content
   shared_ptr<byte> content = nullptr;
   int32 length = 0;
 } bytes;
@@ -26,4 +27,4 @@ class noncopyable {
   noncopyable &operator=(const noncopyable &) = delete;
 };
 
-#endif //ASYNC_REMOTE_LIB_COMMON_H
+#endif //ASYNC_REMOTE_LIB_SRC_COMMON_H_

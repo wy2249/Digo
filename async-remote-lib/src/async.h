@@ -1,6 +1,6 @@
 
-#ifndef ASYNC_REMOTE_LIB_ASYNC_H
-#define ASYNC_REMOTE_LIB_ASYNC_H
+#ifndef ASYNC_REMOTE_LIB_SRC_ASYNC_H_
+#define ASYNC_REMOTE_LIB_SRC_ASYNC_H_
 
 #include <thread>
 #include <memory>
@@ -21,4 +21,4 @@ class Async : public noncopyable {
   std::future<bytes> std_future_obj_;
 };
 
-#endif //ASYNC_REMOTE_LIB_ASYNC_H
+#endif //ASYNC_REMOTE_LIB_SRC_ASYNC_H_

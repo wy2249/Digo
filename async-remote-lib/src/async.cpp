@@ -1,5 +1,6 @@
 
 #include "async.h"
+#include "master_worker.h"
 
 #include <functional>
 
@@ -16,10 +17,8 @@ shared_ptr<Async> Async::CreateLocal(string digo_func_name, bytes parameters) {
 shared_ptr<Async> Async::CreateRemote(string digo_func_name, bytes parameters) {
   shared_ptr<Async> async = make_shared<Async>();
   async->std_future_obj_ = std::async([=] {
-    // TODO 1: pick a worker
-
-    // TODO 2: wrap the
-    return CallFunctionByName(digo_func_name, parameters);
+    return Master::GetInst()->CallRemoteFunctionByName(
+        digo_func_name, parameters);
   });
   return async;
 }
