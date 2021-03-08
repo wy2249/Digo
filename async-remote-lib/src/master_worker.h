@@ -23,6 +23,8 @@ class Master : public noncopyable {
 
   void Listen(const string &server_addr);
 
+  void StopListen();
+
   bytes CallRemoteFunctionByName(const string &digo_func_name, const bytes &parameters);
 
   void AddWorker(const string &worker_addr);
@@ -41,6 +43,8 @@ class Worker : public noncopyable {
   static shared_ptr<Worker> GetInst();
 
   void Start(const string &server_addr, const string &client_addr);
+
+  void Stop();
 
  private:
   shared_ptr<Server> srv;

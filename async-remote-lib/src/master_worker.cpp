@@ -45,9 +45,21 @@ shared_ptr<Master> Master::GetInst() {
   return master_;
 }
 
+void Master::StopListen() {
+  this->srv->Stop();
+  this->srv = nullptr;
+}
+
+void Worker::Stop() {
+  this->srv->Stop();
+  this->srv = nullptr;
+}
+
 void Master::Listen(const string &server_addr) {
-  if (this->srv)
+  if (this->srv) {
     this->srv->Stop();
+    this->srv = nullptr;
+  }
   this->srv = Server::Create(server_addr);
   this->srv->SetHandlers(master_handlers);
   this->srv->Start();
@@ -108,8 +120,10 @@ map<string, Handler> worker_handlers = {
 };
 
 void Worker::Start(const string &server_addr, const string &client_addr) {
-  if (this->srv)
+  if (this->srv) {
     this->srv->Stop();
+    this->srv = nullptr;
+  }
   this->srv = Server::Create(client_addr);
   this->srv->SetHandlers(worker_handlers);
   auto f = std::async([&] { this->srv->Start(); });

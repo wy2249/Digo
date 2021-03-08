@@ -158,7 +158,7 @@ void Server::Stop() {
 
 void Server::Start() {
   if (listen(this->socket_, 128) < 0) {
-    perror("listen");
+    perror("server::start::listen");
     exit(EXIT_FAILURE);
   }
 

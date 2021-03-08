@@ -40,5 +40,8 @@ TEST(MasterWorkerTest, Normal) {
   auto result = mr->CallRemoteFunctionByName("foo", params);
   auto result_str = to_string(result);
   ASSERT_EQ(result_str, "bar");
+
+  mr->StopListen();
+  wk->Stop();
 }
 
