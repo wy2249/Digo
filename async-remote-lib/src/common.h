@@ -12,18 +12,18 @@ typedef int future_obj_ptr;
 typedef unsigned char byte;
 
 typedef struct bytes {
-    shared_ptr<byte>   content = nullptr;
-    int32              length = 0;
+  shared_ptr<byte> content = nullptr;
+  int32 length = 0;
 } bytes;
 
 class noncopyable {
-protected:
-    noncopyable() = default;
-    ~noncopyable() = default;
+ protected:
+  noncopyable() = default;
+  ~noncopyable() = default;
 
-public:
-    noncopyable(const noncopyable &) = delete;
-    noncopyable &operator=(const noncopyable &) = delete;
+ public:
+  noncopyable(const noncopyable &) = delete;
+  noncopyable &operator=(const noncopyable &) = delete;
 };
 
 #endif //ASYNC_REMOTE_LIB_COMMON_H

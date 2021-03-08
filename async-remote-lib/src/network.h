@@ -14,37 +14,31 @@
 
 #define DELIM "\r\n\r\n"
 
-typedef std::function<const string&(const string&)> Handler;
+typedef std::function<const string &(const string &)> Handler;
 
-struct Request {
-  std::string rpc_name;
-  std::string data;
+class Client : public noncopyable {
+ public:
+  static shared_ptr<Client> Create();
+  int Call(const string &server_addr,
+           const string &rpc_name, const string &data);
+
+ private:
+  int socket_;
 };
 
-class Client: public noncopyable  {
-public:
-    static shared_ptr<Client> Create();
-    int Call(const string &server_addr,
-        const string &rpc_name, const string &data);
+class Server : public noncopyable {
+ public:
+  static shared_ptr<Server> Create(const string &server_addr);
 
-private:
-    int socket_;
-};
+  void SetHandlers(const std::map<string, Handler> &);
+  void Stop();
+  void Start();
 
-class Server: public noncopyable  {
-public:
-    static shared_ptr<Server> Create(const string &server_addr);
+ private:
+  void HandleConn(int fd, const string &client_addr);
 
-    void SetHandlers(const std::map<string, Handler>&);
-    void Stop();
-  [[noreturn]] void Start();
-
-private:
-    void HandleConn(int fd, const string& client_addr);
-
-
-    std::map<string, Handler> handlers;
-    int socket_;
+  std::map<string, Handler> handlers_;
+  int socket_;
 };
 
 #endif //ASYNC_REMOTE_LIB__NETWORK_H_
