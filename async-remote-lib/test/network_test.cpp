@@ -11,7 +11,6 @@
 #include "gtest/gtest.h"
 #include "network.h"
 
-// FIXME(yufan): make it a more automatic test
 TEST(ServerTest, Normal) {
   auto s = Server::Create("127.0.0.1:9999");
   auto handlers = std::map<string, Handler>{
@@ -37,6 +36,20 @@ TEST(ServerTest, Normal) {
   while (recv(c, buf, sizeof(buf) - 1, 0) > 0);
   ASSERT_STREQ("0015foo" DELIM "success\n", buf);
   s->Stop();
+}
+
+TEST(ClientTest, Normal) {
+  auto c = Client::Create();
+  string resp;
+
+  // FIXME: ncat doesn't exit after test is done
+  auto t = std::thread(system, "ncat -l 9999 -k -c 'xargs -n1 echo'");
+  sleep(3);
+
+  int r = c->Call("127.0.0.1:9999",
+                  "foo", "bar\n", resp);
+  ASSERT_EQ(r, 0);
+  ASSERT_STREQ("bar\n", resp.c_str());
 }
 
 

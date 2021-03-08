@@ -20,7 +20,7 @@ class Client : public noncopyable {
  public:
   static shared_ptr<Client> Create();
   int Call(const string &server_addr,
-           const string &rpc_name, const string &data);
+           const string &rpc_name, const string &data, string &resp);
 
  private:
   int socket_;

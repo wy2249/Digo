@@ -13,6 +13,59 @@
 
 #include "network.h"
 
+string PackData(const string &rpc_name, const string &data) {
+  string resp;
+  resp = rpc_name + DELIM + data;
+  string resp_length = std::to_string(resp.length());
+  resp = std::string(4 - resp_length.length(), '0') + resp_length + resp;
+  return resp;
+}
+
+int ReadUnpack(int fd, string &rpc_name, string &data) {
+  int n;
+  char buf[1024];
+  memset(buf, 0, sizeof(buf));
+
+  // read the first 4 bytes and convert it to the total length
+  if ((n = read(fd, buf, 4)) != 4) {
+    return -1;
+  }
+
+  auto packet_length = strtoul(buf, nullptr, 10);
+  auto read_left = packet_length;
+  while (data.length() != packet_length &&
+      (n = read(fd, buf, std::min(read_left, sizeof(buf) - 1))) > 0) {
+    buf[n] = '\0';
+    read_left -= n;
+    data += buf;
+  }
+
+  if (n < 0) {
+    return -1;
+  }
+
+  int pos;
+  if ((pos = data.find(DELIM)) == -1) {
+    std::cerr << "the request format is incorrect" << std::endl;
+    return -1;
+  }
+  rpc_name = data.substr(0, pos);
+  data = data.substr(pos + sizeof(DELIM) - 1);
+  return 0;
+}
+
+int ParseAddr(const string &addr, string &hostname, unsigned short &port) {
+  auto p = addr.find(':');
+
+  if (p == -1) {
+    return -1;
+  }
+  hostname = addr.substr(0, p);
+  string port_str = addr.substr(p + 1);
+  port = std::stoul(port_str);
+  return 0;
+}
+
 shared_ptr<Client> Client::Create() {
   shared_ptr<Client> client = std::make_shared<Client>();
   client->socket_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -22,25 +75,18 @@ shared_ptr<Client> Client::Create() {
 shared_ptr<Server> Server::Create(const string &server_addr) {
   shared_ptr<Server> server = std::make_shared<Server>();
 
-  auto p = server_addr.find(':');
-
-  if (p == -1) {
-    perror("parse addr");
-    exit(EXIT_FAILURE);
+  string hostname;
+  unsigned short port;
+  if (ParseAddr(server_addr, hostname, port) != 0) {
+    std::cerr << "parse address failed" << std::endl;
+    exit(-1);
   }
-
-  string addr = server_addr.substr(0, p);
-  string port_str = server_addr.substr(p + 1);
-  unsigned int port = std::stoul(port_str);
-
-  std::cout << "addr: " << addr << " port: " << port << std::endl;
 
   struct sockaddr_in address{};
   memset(&address, 0, sizeof(sockaddr_in));
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
-  address.sin_addr.s_addr = INADDR_ANY;
-//  inet_pton(AF_INET, addr.c_str(), &address.sin_addr);
+  address.sin_addr.s_addr = inet_addr(hostname.c_str());
 
   int listen_fd;
 
@@ -113,45 +159,52 @@ void Server::HandleConn(int fd, const string &client_addr) {
 
   std::string rpc_name, data;
 
-  int n;
-  char buf[1024];
-  memset(buf, 0, sizeof(buf));
-
-  // read the first 4 bytes and convert it to the total length
-  if ((n = read(fd, buf, 4)) != 4) {
+  if (ReadUnpack(fd, rpc_name, data) != 0) {
     close(fd);
     return;
   }
 
-  auto packet_length = strtoul(buf, nullptr, 10);
-  std::cout << "packet_length: " << packet_length << std::endl;
-  auto read_left = packet_length;
-  while (data.length() != packet_length &&
-      (n = read(fd, buf, std::min(read_left, sizeof(buf) - 1))) > 0) {
-    buf[n] = '\0';
-    read_left -= n;
-    std::cout << "read_left: " << read_left << std::endl;
-    data += buf;
-  }
-
-  if (n < 0) {
-    close(fd);
-    return;
-  }
-
-  int pos;
-  if ((pos = data.find(DELIM)) == -1) {
-    std::cerr << "the request format is incorrect" << std::endl;
-    close(fd);
-    return;
-  }
-
-  rpc_name = data.substr(0, pos);
-  data = data.substr(pos + sizeof(DELIM) - 1);
   string resp = this->handlers_[rpc_name](data);
-  resp = rpc_name + DELIM + resp;
-  string resp_length = std::to_string(resp.length());
-  resp = std::string(4 - resp_length.length(), '0') + resp_length + resp;
+  resp = PackData(rpc_name, resp);
   send(fd, resp.c_str(), resp.length(), 0);
   close(fd);
+}
+
+int Client::Call(const string &server_addr, const string &rpc_name,
+                 const string &data, string &resp) {
+  string hostname;
+  unsigned short port;
+  if (ParseAddr(server_addr, hostname, port) != 0) {
+    // TODO: better error handling
+    std::cerr << "parse server address failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  struct sockaddr_in address{};
+  memset(&address, 0, sizeof(address));
+  address.sin_port = htons(port);
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = inet_addr(hostname.c_str());
+
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (connect(fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
+    perror("connect");
+    exit(EXIT_FAILURE);
+  }
+
+  string req = PackData(rpc_name, data);
+  std::cout << req << std::endl;
+  if (send(fd, req.c_str(), req.length(), 0) < 0) {
+    perror("send");
+    exit(EXIT_FAILURE);
+  }
+
+  std::string whatever;
+  if (ReadUnpack(fd, whatever, resp) == -1) {
+    close(fd);
+    return -1;
+  }
+  close(fd);
+  return 0;
 }
