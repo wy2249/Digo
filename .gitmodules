@@ -1,0 +1,3 @@
+[submodule "async-remote-lib/lib/googletest"]
+	path = async-remote-lib/lib/googletest
+	url = https://github.com/google/googletest
