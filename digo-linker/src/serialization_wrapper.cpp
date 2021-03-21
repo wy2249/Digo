@@ -46,6 +46,7 @@ void SW_GetAndDestroy(void* w, byte** out_bytes, int32_t* out_length) {
     try {
         *out_bytes = ((Serialization*)w)->GetBytes();
         *out_length = ((Serialization*)w)->GetSize();
+        delete (Serialization*)w;
     }
     catch (std::exception & e) {
         std::cout << "Serialization wrapper exception: " << e.what() << std::endl;
