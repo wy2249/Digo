@@ -12,32 +12,13 @@
 
 using std::vector;
 
-enum digo_type {
-    TYPE_UNDEFINED = 0,
-    TYPE_STR = 1,
-    TYPE_INT32 = 2,
-    TYPE_INT64 = 3,
-};
-
 class ExtractionResult {
 public:
     ExtractionResult() = default;
     int err_number = 0;
     string err_info;
 
-    class cell {
-    public:
-        cell() = default;
-        explicit cell(string s) : str(std::move(s)), type(TYPE_STR) {}
-        explicit cell(int32_t num) : num32(num), type(TYPE_INT32) {}
-        explicit cell(int64_t num) : num64(num), type(TYPE_INT64) {}
-        digo_type type = TYPE_UNDEFINED;
-        string   str;
-        int32_t  num32 = 0;
-        int64_t  num64 = 0;
-    };
-
-    vector<cell> extracted_cells;
+    vector<TypeCell> extracted_cells;
 
 };
 
@@ -49,6 +30,10 @@ public:
     void AddInt32(int32_t);
     void AddInt64(int64_t);
     vector<byte> Get();
+
+    ExtractionResult Extract(byte* stream, int len);
+    byte* GetBytes();
+    int GetSize();
     // TODO: add more types
 
 private:

@@ -8,6 +8,14 @@ Serialization::Serialization() {
 
 }
 
+ExtractionResult Serialization::Extract(byte *stream, int len) {
+    vector<byte> tmp;
+    for (int i = 0; i < len; i++) {
+        tmp.push_back(stream[i]);
+    }
+    return Extract(tmp);
+}
+
 ExtractionResult Serialization::Extract(vector<byte> & stream) {
     // extract header to get type info
     ExtractionResult result;
@@ -116,4 +124,17 @@ int64_t Serialization::ExtractInt64NoHeader(vector<byte> & stream, int *iter) {
 
 vector<byte> Serialization::Get() {
     return content_;
+}
+
+byte *Serialization::GetBytes() {
+    byte* bytes = new byte[content_.size()];
+    int i = 0;
+    for (byte b : content_) {
+        bytes[i++] = b;
+    }
+    return bytes;
+}
+
+int Serialization::GetSize() {
+    return content_.size();
 }

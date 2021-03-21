@@ -27,7 +27,7 @@ int test_serialization() {
     auto result = s_ext.Extract(serialized);
 
     for (const auto& cell : result.extracted_cells) {
-        std::cout << "cell: " << cell.type << " content: ";
+        std::cout << "TypeCell: " << cell.type << " content: ";
         switch(cell.type) {
             case TYPE_STR:
                 std::cout << cell.str;
