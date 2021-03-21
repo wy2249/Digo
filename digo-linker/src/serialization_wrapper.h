@@ -14,7 +14,7 @@ extern "C" {
     void SW_AddInt64(void*, int64_t);
     void SW_AddString(void*, char*);
     void SW_GetAndDestroy(void* w, byte** out_bytes, int32_t* out_length);
-    void SW_FreeArray(const char*);
+    void SW_FreeArray(const byte*);
 
     // TODO:
     void SW_Extract();

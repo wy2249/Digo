@@ -20,5 +20,7 @@ int serializer_template(char* str, char* str2) {
     int len = 0;
 
     SW_GetAndDestroy(s, &result, &len);
+
+    SW_FreeArray(result);
     return 0;
 }
