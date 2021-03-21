@@ -24,6 +24,8 @@ define dso_local i32 @_Z19serializer_templatePcS_(i8* %0, i8* %1) local_unnamed_
   call void @llvm.lifetime.start.p0i8(i64 4, i8* nonnull %7) #3
   store i32 0, i32* %4, align 4, !tbaa !6
   call void @SW_GetAndDestroy(i8* %5, i8** nonnull %3, i32* nonnull %4)
+  %8 = load i8*, i8** %3, align 8, !tbaa !2
+  call void @SW_FreeArray(i8* %8)
   call void @llvm.lifetime.end.p0i8(i64 4, i8* nonnull %7) #3
   call void @llvm.lifetime.end.p0i8(i64 8, i8* nonnull %6) #3
   ret i32 0
@@ -41,6 +43,8 @@ declare dso_local void @SW_AddInt64(i8*, i64) local_unnamed_addr #2
 declare dso_local void @SW_AddString(i8*, i8*) local_unnamed_addr #2
 
 declare dso_local void @SW_GetAndDestroy(i8*, i8**, i32*) local_unnamed_addr #2
+
+declare dso_local void @SW_FreeArray(i8*) local_unnamed_addr #2
 
 ; Function Attrs: argmemonly nounwind willreturn
 declare void @llvm.lifetime.end.p0i8(i64 immarg, i8* nocapture) #1
