@@ -53,7 +53,7 @@ void SW_GetAndDestroy(void* w, byte** out_bytes, int32_t* out_length) {
     }
 }
 
-void SW_FreeArray(const char* b) {
+void SW_FreeArray(const byte* b) {
     try {
         delete[] b;
     }

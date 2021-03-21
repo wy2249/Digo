@@ -9,7 +9,7 @@ generate-serializer-dependency: clean
 
 .PHONY: generate-template
 generate-template:
-	clang -stdlib=libc++ -std=c++20 -O3 -S -emit-llvm src/serializer_template.cpp
+	clang -stdlib=libc++ -std=c++20 -fno-discard-value-names -S -emit-llvm src/serializer_template.cpp
 
 .PHONY: clean
 clean:

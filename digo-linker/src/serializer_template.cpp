@@ -3,6 +3,8 @@
 //
 
 #include "serialization_wrapper.h"
+#include <string.h>
+#include <stdarg.h>
 
 int serializer_template(char* str, char* str2) {
     void* s = SW_CreateWrapper();
@@ -23,4 +25,29 @@ int serializer_template(char* str, char* str2) {
 
     SW_FreeArray(result);
     return 0;
+}
+
+// see https://llvm.org/docs/LangRef.html#variable-argument-handling-intrinsics
+
+void jump_table_template(const char* func_name, ...) {
+    int parameter_count = 0;
+    if (strcmp("func1", func_name) == 0) {
+        parameter_count = 5;
+        goto func1;
+    }
+
+    func1:
+    va_list args;
+    va_start(args, func_name);
+    for (int i = 0; i < parameter_count; i++) {
+        va_arg(args, int64_t);
+        va_arg(args, char*);
+    }
+
+    va_end(args);
+
+    goto end;
+
+    end:
+    return;
 }

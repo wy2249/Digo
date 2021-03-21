@@ -5,6 +5,25 @@ target triple = "x86_64-pc-linux-gnu"
 
 %struct.__va_list_tag = type { i32, i32, i8*, i8* }
 
+
+; DIGO Async Function Metadata BEGIN
+; VERSION = 1
+
+; FUNC DECLARE BEGIN
+; FUNC_NAME = 'func_1'
+; PARAMETERS = 'int, string, string, int'
+; RETURN_TYPE = 'int, string'
+; FUNC DECLARE END
+
+; FUNC DECLARE BEGIN
+; FUNC_NAME = 'func_2'
+; PARAMETERS = 'int,string, int'
+; RETURN_TYPE = 'string, string'
+; FUNC DECLARE END
+
+; DIGO Async Function Metadata END
+
+
 @.str = private unnamed_addr constant [6 x i8] c"func1\00", align 1
 
 ; Function Attrs: noinline optnone uwtable

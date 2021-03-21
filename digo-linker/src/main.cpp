@@ -1,11 +1,32 @@
 #include <iostream>
+#include <fstream>
 #include "serialization.h"
+#include "metadata.h"
+
+using namespace std;
 
 int test_serialization();
+int metadata_parser_entry(const string && file);
 
 int main() {
     test_serialization();
+    metadata_parser_entry("../metadata_template.ll");
     return 0;
+}
+
+int metadata_parser_entry(const string && file) {
+    fstream s;
+    s.open(file, ios::in);
+    string ir;
+    string tmp;
+    while (getline(s, tmp)) {
+        ir += tmp + "\n";
+    }
+    Metadata metadata;
+    metadata.ParseFuncMetadataFromLLIR(ir);
+
+    return 0;
+
 }
 
 int test_serialization() {
