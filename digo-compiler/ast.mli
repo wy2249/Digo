@@ -58,14 +58,23 @@ type statement =
   | Return of expr list
   | Expr of expr
 
-type parameter = 
-    NamedParameter of string * builtin_type
+type parameter = string * builtin_type
+  (* NamedParameter of string * builtin_type *)
 
 type func_annotation = 
     FuncNormal
   | FuncAsync
   | FuncAsyncRemote
 
+type func_decl = {
+  ann : func_annotation;
+  fname : string;
+  typ : builtin_type list;
+  formals : parameter list;
+  body : statement list;
+}
+
+(*
 type func_proto = 
   (*  annotation,  function name,  type of return value,  parameters,   statements    *)
     FunctionProto of func_annotation * string * builtin_type list * parameter list
@@ -75,6 +84,6 @@ type func_impl =
 
 type func_proto_impl = 
     Function of func_proto * func_impl
+*)
 
-type functions = func_proto_impl list
-
+type functions = func_decl list (* func_proto_impl list *)
