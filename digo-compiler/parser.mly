@@ -139,8 +139,12 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| p_expr ASSIGNMENT p_expr { AssignOp([$1], [$3]) }
-| p_literal          { Literal($1) }
+| VARIABLE ASSIGNMENT p_expr { AssignOp($1, [$3]) }
+/*| p_literal          { Literal($1) } */
+| INT_LITERAL     { Integer($1) }
+| STRING_LITERAL  { String($1)  }
+| FLOAT_LITERAL   { Float($1)   }
+| BOOLEAN_LITERAL { Bool($1)    }
 | VARIABLE         { NamedVariable($1) }
 
 /*  the variable here is actually an ID (for a function)  */
@@ -171,12 +175,13 @@ p_type:
 | KEYWORD_FUTURE {  FutureType  }
 | p_slice_type   {  $1 }
 
+/*
 p_literal:
   INT_LITERAL     { Integer($1) }
 | STRING_LITERAL  { String($1)  }
 | FLOAT_LITERAL   { Float($1)   }
 | BOOLEAN_LITERAL { Bool($1)    }
-
+*/
 
 p_statements:
 | { [] }

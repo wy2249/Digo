@@ -6,6 +6,7 @@ type binary_operator =
 
 type unary_operator = LogicalNot | Negative
 
+(* do we need a void type for no return func?*)
 type builtin_type = 
   IntegerType
   | FloatType
@@ -14,11 +15,13 @@ type builtin_type =
   | BoolType
   | FutureType
 
+(*
 type literal = 
   Integer of int
   | Float of float
   | String of string
   | Bool of bool
+*)
 
 type builtin_function = 
     Gather
@@ -27,11 +30,14 @@ type builtin_function =
 
 type expr =
     EmptyExpr
+  | Integer of int
+  | Float of float
+  | String of string
+  | Bool of bool
   | BinaryOp of expr * binary_operator * expr
   | UnaryOp  of unary_operator * expr
-  | AssignOp of expr list * expr list
+  | AssignOp of string * expr list
   | FunctionCall of string * expr list
-  | Literal of literal
   | NamedVariable of string
   | SliceLiteral of builtin_type * int * expr list
   | SliceIndex of expr * expr
@@ -87,3 +93,36 @@ type func_proto_impl =
 *)
 
 type functions = func_decl list (* func_proto_impl list *)
+
+
+let string_of_op = function
+  Add -> "+"
+| Sub -> "-"
+| Mul -> "*"
+| Div -> "/"
+| LessThan -> "<"
+| LessEqual -> "<="
+| GreaterThan -> ">"
+| GreaterEqual -> ">="
+| IsEqual -> "=="
+| IsNotEqual -> "!="
+| LogicalAnd -> "&&"
+| LogicalOr -> "||"
+| Mod -> "%"
+
+let string_of_uop = function
+  LogicalNot -> "!"
+| Negative -> "-"
+
+let rec string_of_typ = function
+IntegerType -> "int"
+| FloatType -> "float"
+| StringType -> "string"
+| SliceType(typ) ->"Slice(" ^ string_of_typ typ ^ ")"
+| BoolType -> "bool"
+| FutureType -> "future"
+
+let rec stringify_builtin_function = function
+  Gather       ->    "Builtin_Gather"
+| Len          ->    "Builtin_Len"
+| Append       ->    "Builtin_Append"
