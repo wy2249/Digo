@@ -22,7 +22,7 @@ typedef unsigned char byte;
 
 typedef struct bytes {
   // FIXME: memory leak when destructing content
-  shared_ptr<byte[]> content = nullptr;
+  shared_ptr<byte> content = nullptr;
   int32 length = 0;
 } bytes;
 

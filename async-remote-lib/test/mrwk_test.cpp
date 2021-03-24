@@ -12,8 +12,10 @@ TEST(ByteToString, Normal) {
       .content = nullptr,
       .length = 3,
   };
-  byte *bb = new byte[3]{'f', 'o', 'o'};
-  bs.content = shared_ptr<byte[]>(bb);
+  byte *bb = []{
+    return new byte[3]{'f', 'o', 'o'};
+  }();
+  bs.content = shared_ptr<byte>(bb);
   string expect = "foo";
   string out = to_string(bs);
   ASSERT_EQ(expect, out);
@@ -22,9 +24,7 @@ TEST(ByteToString, Normal) {
 TEST(StringToByte, Normal) {
   auto bytes = to_bytes("foo");
   ASSERT_EQ(3, bytes.length);
-  ASSERT_EQ('f', bytes.content.get()[0]);
-  ASSERT_EQ('o', bytes.content.get()[1]);
-  ASSERT_EQ('o', bytes.content.get()[2]);
+  ASSERT_EQ(0, memcmp("foo", bytes.content.get(), 3));
 }
 
 TEST(MasterWorkerTest, Normal) {
