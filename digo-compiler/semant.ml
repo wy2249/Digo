@@ -1,6 +1,7 @@
 (* Semantic checking for the Digo compiler *)
 
 open Ast
+open Llvm
 
 module StringMap = Map.Make(String)
 
@@ -150,11 +151,11 @@ let check (functions) =
       body = func.body
     }
 
-  in  List.iter check_function functions
+  in  List.map check_function functions
 ;;
 
 let _ =
   let lexbuf = Lexing.from_channel stdin in
   let ast = Parser.functions Scanner.tokenize lexbuf in
   let sast = check ast in
-  print_string (L.string_of_llmodule (Codegen.translate sast)) 
+  print_string (string_of_llmodule (Codegen.translate sast)) 
