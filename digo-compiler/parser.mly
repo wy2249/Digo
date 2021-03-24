@@ -17,7 +17,7 @@
 %token KEYWORD_REMOTE KEYWORD_VAR KEYWORD_STRING
 %token KEYWORD_INT KEYWORD_FLOAT KEYWORD_BOOL KEYWORD_FUTURE
 %token KEYWORD_CONTINUE KEYWORD_BREAK
-%token KEYWORD_GATHER KEYWORD_LEN KEYWORD_APPEND
+%token KEYWORD_GATHER KEYWORD_LEN KEYWORD_APPEND KEYWORD_VOID
 
 %nonassoc COLON
 %nonassoc COMMA
@@ -45,33 +45,52 @@ functions:
 p_functions:
 | { [] }
 | NEWLINE p_functions  { $2 }
-| p_function p_functions  { $1::$2 }
+| p_function_decl p_functions { $1::$2 }
+/*| p_function p_functions  { $1::$2 } */
 
 p_function_annotation:
   { FuncNormal }
 | KEYWORD_ASYNC { FuncAsync }
 | KEYWORD_ASYNC KEYWORD_REMOTE { FuncAsyncRemote }
 
-p_function_prototype:
+p_function_decl:
   /*   the variable here is actually an ID     */
   /* 1. func FuncName(parameters) retType */
-  p_function_annotation
-  KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE p_type
-  { FunctionProto($1, $3, [$7], $5) }
+  p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE 
+  p_type LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  /*{ FunctionProto($1, $3, [$7], $5) }*/
+  { { ann = $1;
+    fname = $3;
+    typ = [$7];
+    formals = $5;
+    body = $10 } }
 | /* 2. func FuncName(parameters)  */
-  p_function_annotation
-  KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
-  { FunctionProto($1, $3, [], $5) }
+  p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  /* { FunctionProto($1, $3, [], $5) } */
+  { { ann = $1;
+    fname = $3;
+    typ = [];
+    formals = $5;
+    body = $9 } }
 | /* 3. func FuncName(parameters)  (retType1, retType2, ...)  */
-  p_function_annotation
-  KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE LEFT_PARENTHE p_type_list RIGHT_PARENTHE
-  { FunctionProto($1, $3, $8, $5) }
+  p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE 
+  LEFT_PARENTHE p_type_list RIGHT_PARENTHE 
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
+  /* { FunctionProto($1, $3, $8, $5) } */
+  { { ann = $1;
+    fname = $3;
+    typ = $8;
+    formals = $5;
+    body = $12 } }
 
+/*
 p_function_impl:
   LEFT_BRACE NEWLINE p_statements RIGHT_BRACE   {  FunctionImpl($3) }
 
 p_function:
   p_function_prototype p_function_impl  {  Function($1, $2)   }
+*/
 
 p_type_list:
   /* empty type list is not allowed  */
@@ -89,7 +108,7 @@ p_parameters:
 | p_parameter COMMA p_parameters  {  $1::$3  } 
 
 p_parameter:
-  VARIABLE p_type  {  NamedParameter($1, $2)  }
+  VARIABLE p_type  {  ($1, $2)  }
 
 p_expr_list:
   { [] }
@@ -120,8 +139,12 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| p_expr ASSIGNMENT p_expr { AssignOp([$1], [$3]) }
-| p_literal          { Literal($1) }
+| VARIABLE ASSIGNMENT p_expr { AssignOp($1, [$3]) }
+/*| p_literal          { Literal($1) } */
+| INT_LITERAL     { Integer($1) }
+| STRING_LITERAL  { String($1)  }
+| FLOAT_LITERAL   { Float($1)   }
+| BOOLEAN_LITERAL { Bool($1)    }
 | VARIABLE         { NamedVariable($1) }
 
 /*  the variable here is actually an ID (for a function)  */
@@ -150,14 +173,16 @@ p_type:
 | KEYWORD_FLOAT  {  FloatType   }
 | KEYWORD_BOOL   {  BoolType    }
 | KEYWORD_FUTURE {  FutureType  }
+| KEYWORD_VOID   {  VoidType    }
 | p_slice_type   {  $1 }
 
+/*
 p_literal:
   INT_LITERAL     { Integer($1) }
 | STRING_LITERAL  { String($1)  }
 | FLOAT_LITERAL   { Float($1)   }
 | BOOLEAN_LITERAL { Bool($1)    }
-
+*/
 
 p_statements:
 | { [] }

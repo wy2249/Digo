@@ -1,0 +1,9 @@
+func main(i float) float {
+    a
+}
+
+func main(i int) float {
+    b
+}
+
+//Fatal error: exception Failure("duplicate function main")
