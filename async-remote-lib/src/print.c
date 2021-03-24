@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-__attribute__((noinline)) void printFloat(float f) {
-  printf("%.lf\n", f);
+__attribute__((noinline)) void printFloat(double f) {
+  printf("%lf\n", f);
 }
 
 __attribute__((noinline)) void printInt(int i) {
