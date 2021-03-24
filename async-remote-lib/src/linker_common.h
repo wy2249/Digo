@@ -14,7 +14,7 @@ inline bytes CallFunctionByName(string digo_func_name, bytes parameters) {
   int32 result_length = 0;
   linker_call_function(digo_func_name.c_str(), parameters.content.get(), parameters.length,
                        &result, &result_length);
-  return bytes{shared_ptr<byte[]>(result), result_length};
+  return bytes{shared_ptr<byte>(result), result_length};
 }
 
 #endif //ASYNC_REMOTE_LIB_SRC_LINKER_COMMON_H_

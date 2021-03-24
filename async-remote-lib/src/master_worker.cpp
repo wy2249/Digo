@@ -25,7 +25,7 @@ bytes to_bytes(const string &data) {
   bytes bs;
   byte *content = new byte[data.length()];
   memcpy(content, data.c_str(), data.length());
-  bs.content = shared_ptr<byte[]>(content);
+  bs.content = shared_ptr<byte>(content);
   bs.length = data.length();
   return bs;
 }
@@ -105,7 +105,6 @@ map<string, Handler> worker_handlers = {
       auto worker = Worker::GetInst();
 
       auto p = data.find(':');
-      // zhen hao wan
       if (p == -1) {
         return string("error: request format invalid");
       }
