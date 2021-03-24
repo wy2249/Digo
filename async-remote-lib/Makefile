@@ -2,8 +2,8 @@ all: generate-executable
 
 .PHONY: generate-llvm
 generate-llvm: clean
-	clang -stdlib=libc++ -std=c++20 -O3 -S -emit-llvm *.cpp
-	clang -O3 -S -emit-llvm linker_reserved.c
+	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm ./src/*.cpp
+	clang -O3 -S -emit-llvm ./src/linker_reserved.c ./src/print.c
 
 .PHONY: link-all-llvm
 link-all-llvm: generate-llvm
