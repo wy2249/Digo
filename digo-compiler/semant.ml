@@ -156,4 +156,5 @@ let check (functions) =
 let _ =
   let lexbuf = Lexing.from_channel stdin in
   let ast = Parser.functions Scanner.tokenize lexbuf in
-  check ast
+  let sast = check ast in
+  print_string (L.string_of_llmodule (Codegen.translate sast)) 
