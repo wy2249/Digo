@@ -59,6 +59,7 @@ rule tokenize = parse
 | "append"  { KEYWORD_APPEND  }
 
 | "future"  { KEYWORD_FUTURE  }
+| "void"	{ KEYWORD_VOID    }
 
 | "true" | "false" as boollit { BOOLEAN_LITERAL(bool_of_string boollit)}
 | ['0'-'9']+ as lit { INT_LITERAL(int_of_string lit) }

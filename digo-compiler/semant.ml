@@ -2,6 +2,7 @@
 
 open Ast
 open Llvm
+open Llvm_analysis
 
 module StringMap = Map.Make(String)
 
@@ -158,4 +159,6 @@ let _ =
   let lexbuf = Lexing.from_channel stdin in
   let ast = Parser.functions Scanner.tokenize lexbuf in
   let sast = check ast in
-  print_string (string_of_llmodule (Codegen.translate sast)) 
+  let m =Codegen.translate sast in
+  assert_valid_module m;
+  print_string(string_of_llmodule m)

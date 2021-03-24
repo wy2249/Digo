@@ -14,6 +14,7 @@ type builtin_type =
   | SliceType of builtin_type
   | BoolType
   | FutureType
+  | VoidType
 
 (*
 type literal = 

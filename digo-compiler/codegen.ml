@@ -21,6 +21,7 @@ let translate(functions) =
       | StringType   -> string_t     
       (*| SliceType    -> void_t   needs work*)
       | FutureType   -> void_t   (*needs work*)
+      | VoidType     -> void_t
     in
 
   let printInt_t = 
@@ -32,6 +33,11 @@ let translate(functions) =
     var_arg_function_type i32_t [| float_t |] in
   let printFloat = 
     declare_function "printFloat" printFloat_t the_module in
+
+  let printString_t = 
+    var_arg_function_type i32_t [| string_t |] in
+  let printString =
+    declare_function "printString" printString_t the_module in
 
   let function_decls = 
     let function_delc m fdecl=    
@@ -94,9 +100,11 @@ let translate(functions) =
           let e_ = expr builder (List.hd ex1) in              (*assume only the list only contains 1 expr,works latter*)
             ignore(build_store e_ (lookup var) builder); e_
         | FunctionCall("printInt",[e])            ->  
-            build_call printInt [|(expr builder e) |] "printInt" builder 
+            build_call printInt [|(expr builder e)|] "printInt" builder 
         | FunctionCall("printFloat",[e])          ->
             build_call printFloat [|(expr builder e) |] "printFloat" builder
+        | FunctionCall("printString",[e])         ->
+            build_call printString [|(expr builder e)|] "printString" builder
         | FunctionCall(var,ex_l)                  -> const_int i32_t 0             (*needs work latter*)
 
         | Integer(ex)          ->  const_int i32_t ex
