@@ -5,4 +5,5 @@
   apt install clang
   apt install llvm
   make
+  ./executable
  ```
