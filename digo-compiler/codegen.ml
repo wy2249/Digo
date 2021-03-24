@@ -8,17 +8,17 @@ let translate(functions) =
   let the_module = create_module context "Digo" in
 
   let i32_t      = i32_type    context 
-    (*and i8_t       = i8_type     context*)
+    and i8_t       = i8_type     context
     and i1_t       = i1_type     context
     and float_t    = double_type context
-    and string_t   = array_type (i8_type context) 100     (*assume each string is less than 100 character*)
+    (*and string_t   = array_type (i8_type context) 100     assume each string is less than 100 character*)
     and void_t     = void_type   context in
     
     let ltype_of_typ = function
         IntegerType  -> i32_t
       | FloatType    -> float_t
       | BoolType     -> i1_t
-      | StringType   -> string_t     
+      | StringType   -> pointer_type i8_t     
       (*| SliceType    -> void_t   needs work*)
       | FutureType   -> void_t   (*needs work*)
       | VoidType     -> void_t
@@ -34,16 +34,24 @@ let translate(functions) =
   let printFloat = 
     declare_function "printFloat" printFloat_t the_module in
 
-  let find_length = function
-    String(ex) -> (String.length ex) + 1
-  | _ -> 0                           in
 
-  let printString_type len= 
+  (*let find_length = function
+    String(ex) -> (String.length ex) + 1
+  | _ -> 0                           in*)
+  let show_string = function
+    String(ex) -> ex
+  | _ -> ""                           in    
+
+  (*let printString_type len= 
     array_type (i8_type context) len in
   let printString_t len= 
     var_arg_function_type i32_t [| (printString_type len) |] in
   let printString len=
-    declare_function "printString" (printString_t len) the_module in
+    declare_function "printString" (printString_t len) the_module in*)
+  let printString_t= 
+    var_arg_function_type i32_t [|(pointer_type i8_t)|] in
+  let printString=
+    declare_function "printString" (printString_t) the_module in  
 
   let function_decls = 
     let function_delc m fdecl=    
@@ -60,6 +68,8 @@ let translate(functions) =
         StringMap.find fdecl.fname function_decls in
       let builder = 
         builder_at_end context (entry_block the_function) in
+
+      let str_format_str = build_global_stringptr "%s\n" "str" builder in
 
       let local_vars = 
         let add_parameter m (n,t) p = 
@@ -110,8 +120,12 @@ let translate(functions) =
         | FunctionCall("printFloat",[e])          ->
             build_call printFloat [|(expr builder e) |] "printFloat" builder
         | FunctionCall("printString",[e])         ->
-          let length = find_length e in
-              build_call (printString length) [|(expr builder e)|] "printString" builder
+          (*let length = find_length e in
+              build_call (printString length) [|(expr builder e)|] "printString" builder*)
+              (*build_call printString [|str_format_str;(expr builder e)|] "printString" builder *)
+            let string_in_printString = show_string e in 
+              let current_ptr = build_global_stringptr string_in_printString "str" builder in
+                build_call printString [|current_ptr|] "printString" builder
         | FunctionCall(var,ex_l)                  -> const_int i32_t 0             (*needs work latter*)
 
         | Integer(ex)          ->  const_int i32_t ex
