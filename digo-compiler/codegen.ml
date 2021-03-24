@@ -34,10 +34,16 @@ let translate(functions) =
   let printFloat = 
     declare_function "printFloat" printFloat_t the_module in
 
-  let printString_t = 
-    var_arg_function_type i32_t [| string_t |] in
-  let printString =
-    declare_function "printString" printString_t the_module in
+  let find_length = function
+    String(ex) -> (String.length ex) + 1
+  | _ -> 0                           in
+
+  let printString_type len= 
+    array_type (i8_type context) len in
+  let printString_t len= 
+    var_arg_function_type i32_t [| (printString_type len) |] in
+  let printString len=
+    declare_function "printString" (printString_t len) the_module in
 
   let function_decls = 
     let function_delc m fdecl=    
@@ -104,7 +110,8 @@ let translate(functions) =
         | FunctionCall("printFloat",[e])          ->
             build_call printFloat [|(expr builder e) |] "printFloat" builder
         | FunctionCall("printString",[e])         ->
-            build_call printString [|(expr builder e)|] "printString" builder
+          let length = find_length e in
+              build_call (printString length) [|(expr builder e)|] "printString" builder
         | FunctionCall(var,ex_l)                  -> const_int i32_t 0             (*needs work latter*)
 
         | Integer(ex)          ->  const_int i32_t ex
@@ -147,6 +154,7 @@ let translate(functions) =
 
         List.iter build_function_body functions;
         the_module
+
 
 
 
