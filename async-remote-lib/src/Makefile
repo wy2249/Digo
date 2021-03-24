@@ -1,9 +1,5 @@
 all: generate-executable
 
-.PHONY: generate-print-only
-generate-print-only: clean
-	clang -O3 -S -emit-llvm src/print.c
-
 .PHONY: generate-llvm
 generate-llvm: clean
 	clang -stdlib=libc++ -std=c++20 -O3 -S -emit-llvm *.cpp

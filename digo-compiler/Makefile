@@ -1,3 +1,10 @@
+generate-ll-only: clean hello_world.ll
+
+
+hello_world.ll:
+	ocamlbuild -use-ocamlfind semant.native -package llvm,llvm.analysis
+	./semant.native < test/hello_world.digo > hello_world.ll
+
 all : semant printer
 
 semant : parser.cmo scanner.cmo semant.cmo
