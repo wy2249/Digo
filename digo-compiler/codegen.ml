@@ -8,7 +8,7 @@ let translate(functions) =
   let the_module = create_module context "Digo" in
 
   let i32_t      = i32_type    context 
-    and i8_t       = i8_type     context
+    (*and i8_t       = i8_type     context*)
     and i1_t       = i1_type     context
     and float_t    = double_type context
     and string_t   = array_type (i8_type context) 100     (*assume each string is less than 100 character*)
@@ -39,13 +39,13 @@ let translate(functions) =
       and argument_types = 
         Array.of_list (List.map (fun (_,t) -> ltype_of_typ t) fdecl.formals) in          
           let ftype = 
-            function_type (ltype_of_typ fdecl.typ) argument_types in 
-          StringMap.add name_del (define_function name_del ftype the_module,fdecl) m in
+            function_type (ltype_of_typ (List.hd fdecl.typ)) argument_types in                        (*assume only one return type, works latter*) 
+          StringMap.add name (define_function name ftype the_module,fdecl) m in
         List.fold_left function_delc StringMap.empty functions in
 
   let build_function_body fdecl= 
       let (the_function,_) = 
-        StringMap.find fdecl.name function_decls in
+        StringMap.find fdecl.fname function_decls in
       let builder = 
         builder_at_end context (entry_block the_function) in
 
@@ -91,19 +91,18 @@ let translate(functions) =
             LogicalNot  ->  build_neg               (*add float cases latter*)      
           | Negative    ->  build_not) e_ "tmp" builder
         | AssignOp(var,ex1)           ->
-          let e_ = expr builder ex1 in
+          let e_ = expr builder (List.hd ex1) in              (*assume only the list only contains 1 expr,works latter*)
             ignore(build_store e_ (lookup var) builder); e_
         | FunctionCall("printInt",[e])            ->  
             build_call printInt [|(expr builder e) |] "printInt" builder 
         | FunctionCall("printFloat",[e])          ->
             build_call printFloat [|(expr builder e) |] "printFloat" builder
         | FunctionCall(var,ex_l)                  -> const_int i32_t 0             (*needs work latter*)
-        | Literal(ex)                             ->  
-          (match ex with
-            Integer(x)          ->  const_int i32_t x
-          | Float(x)            ->  const_float float_t x
-          | String(x)           ->  const_stringz context x
-          | Bool(x)             ->  const_int i1_t (if x then 1 else 0))
+
+        | Integer(ex)          ->  const_int i32_t ex
+        | Float(ex)            ->  const_float float_t ex
+        | String(ex)           ->  const_stringz context ex
+        | Bool(ex)             ->  const_int i1_t (if ex then 1 else 0)
 
         | NamedVariable(n)              ->  const_stringz context n
         | SliceLiteral(built_typ,len,e1_l)      ->  const_int i32_t 0                (*needs work*)
@@ -125,16 +124,16 @@ let translate(functions) =
       | Declare(typ, str, ex)               ->  builder
       | ShortDecl(str, ex)                  ->  builder
       | Return(ex)                          ->  
-      ignore(match fdelc.typ with 
+      ignore(match fdecl.typ with 
           (*Void -> build_ret_void builder*)
-          | _-> build_ret (expr builder ex) builder);
+          | _-> build_ret (expr builder (List.hd ex)) builder);                 
           builder                     (*assume only return one type, needs work latter*)
-      | Expr(ex)                            ->  ignore(expr builder ex); builder    
+      | Expr(ex)                            ->  ignore(expr builder ex); builder    (*works latter*)
         in
 
-        let builder = List.fold_left stmt builder fdelc.body in
+        let builder = List.fold_left stmt builder fdecl.body in
 
-        add_terminal builder (match fdelc.typ with
+        add_terminal builder (match fdecl.typ with
           (*works latter*)
         | _ -> build_ret_void)    in 
 
