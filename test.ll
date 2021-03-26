@@ -85,8 +85,6 @@ define i32 @digo_linker_await_func_0(i8* %arg0) {
 
   %ret = call i32 @SW_ExtractInt32(i8* %extractor)
 
-  call void @JobDecRef(i8* %arg0)
-
   ret i32 %ret
 }
 
@@ -126,7 +124,9 @@ entry:
 
   %future_obj = call i8* @digo_linker_async_call_func_0(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.test.num20, i64 0, i64 0))
   %retval = call i32 @digo_linker_await_func_0(i8* %future_obj)
-  
+
+  call void @JobDecRef(i8* %future_obj)
+
   call void @printInt(i32 %retval)
   ret void
 }
