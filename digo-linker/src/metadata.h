@@ -30,6 +30,8 @@ public:
     string  GenerateJumpTable();
     string  GenerateSerializerAsLLIR(const FuncPrototype & proto);
     string  GenerateDeserializerAsLLIR(const FuncPrototype & proto);
+
+    string  ReplaceDigoLinkerCall(const string & ir);
 private:
     vector<FuncPrototype> functions_prototype_;
 };

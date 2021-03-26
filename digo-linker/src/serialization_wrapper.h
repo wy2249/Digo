@@ -16,8 +16,11 @@ extern "C" {
     void SW_GetAndDestroy(void* w, byte** out_bytes, int32_t* out_length);
     void SW_FreeArray(const byte*);
 
-    // TODO:
-    void SW_Extract();
+    void* SW_CreateExtractor(byte*, int);
+    int32_t SW_ExtractInt32(void*);
+    int64_t SW_ExtractInt64(void*);
+    void* SW_ExtractString(void*);
+    void SW_DestroyExtractor(void*);
 }
 
 #endif //DIGO_LINKER_SERIALIZATION_WRAPPER_H

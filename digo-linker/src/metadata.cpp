@@ -17,6 +17,9 @@ const regex func_decl_regex("; FUNC DECLARE BEGIN\n; FUNC_NAME = '(.+)'\n"
                             "; PARAMETERS = '(.+)'\n; RETURN_TYPE = '(.+)'\n"
                             "; FUNC DECLARE END\n");
 
+const regex digo_linker_async_call("\n (.+) = DigoLinkerCall AsyncCall(.+)\n");
+const regex digo_linker_await_future("\n (.+) = DigoLinkerCall AwaitFuture(.+)\n");
+
 class WrongVersionException: public exception {
 public:
     const char * what() const noexcept override {
@@ -28,6 +31,13 @@ class IncorrectMetadataException: public exception {
 public:
     const char * what() const noexcept override {
         return "incorrect metadata";
+    }
+};
+
+class IncorrectIRException: public exception {
+public:
+    const char * what() const noexcept override {
+        return "incorrect ir";
     }
 };
 
@@ -123,5 +133,21 @@ string Metadata::GenerateSerializerAsLLIR(const FuncPrototype &proto) {
 }
 
 string Metadata::GenerateDeserializerAsLLIR(const FuncPrototype &proto) {
+    return std::string();
+}
+
+string Metadata::ReplaceDigoLinkerCall(const string &ir) {
+
+    auto iter = sregex_iterator(ir.begin(), ir.end(),
+                                digo_linker_async_call);
+
+    for (; iter != sregex_iterator() ; iter++) {
+        string return_var = iter->str(1);
+        string func_closure = iter->str(2);
+        if (return_var.empty()) {
+            throw IncorrectIRException();
+        }
+    }
+
     return std::string();
 }

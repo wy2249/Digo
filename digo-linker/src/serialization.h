@@ -25,13 +25,16 @@ public:
 class Serialization: public noncopyable {
 public:
     Serialization();
-    ExtractionResult Extract(vector<byte> & stream);
+    void Extract(vector<byte> & stream);
     void AddString(const string &);
     void AddInt32(int32_t);
     void AddInt64(int64_t);
     vector<byte> Get();
 
-    ExtractionResult Extract(byte* stream, int len);
+    void Extract(byte* stream, int len);
+
+    TypeCell ExtractOne();
+
     byte* GetBytes();
     int GetSize();
     // TODO: add more types
@@ -47,6 +50,10 @@ private:
     int64_t ExtractInt64NoHeader(vector<byte> &, int *iter);
 
     vector<byte> content_;
+
+    ExtractionResult extraction_result_;
+
+    int extraction_ptr_;
 
 };
 

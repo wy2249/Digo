@@ -2,6 +2,7 @@
 #include <fstream>
 #include "serialization.h"
 #include "metadata.h"
+#include "wrapper.h"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ int metadata_parser_entry(const string && file);
 
 int main() {
     test_serialization();
-    metadata_parser_entry("../metadata_template.ll");
+    metadata_parser_entry("../test/async.ll");
     return 0;
 }
 

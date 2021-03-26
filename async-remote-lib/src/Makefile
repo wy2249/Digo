@@ -3,7 +3,6 @@ all: generate-executable
 .PHONY: generate-llvm
 generate-llvm: clean
 	clang -stdlib=libc++ -std=c++20 -O3 -S -emit-llvm *.cpp
-	clang -O3 -S -emit-llvm linker_reserved.c
 
 .PHONY: link-all-llvm
 link-all-llvm: generate-llvm

@@ -7,4 +7,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread" )
 
 add_executable(digo-linker src/serialization.cpp src/main.cpp src/metadata.cpp src/serializer_template.cpp src/serialization_wrapper.cpp)
 
+add_executable(digo-async-lib-wrapper src/wrapper.cpp)
+
+add_executable(digo-linker-only src/linker_main.cpp)
+
 include_directories(src)

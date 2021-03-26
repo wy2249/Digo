@@ -21,7 +21,10 @@ typedef int future_obj_ptr;
 typedef unsigned char byte;
 
 typedef struct bytes {
-  // FIXME: memory leak when destructing content
+  // FIXED: memory leak when destructing content
+  // using delete instead of delete[] to free an array of POD types (trivial destructor)
+  // is safe because it is not necessary to destruct each element of the array, and
+  // freeing the memory allocated is sufficient.
   shared_ptr<byte> content = nullptr;
   int32 length = 0;
 } bytes;

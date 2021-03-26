@@ -3,20 +3,49 @@
 //
 
 #include "serialization.h"
+#include <exception>
+using std::exception;
 
 Serialization::Serialization() {
 
 }
 
-ExtractionResult Serialization::Extract(byte *stream, int len) {
+class EmptyStreamException: public exception {
+public:
+    const char * what() const noexcept override {
+        return "empty stream";
+    }
+};
+
+class ExtractionWrongIndexException: public exception {
+public:
+    ExtractionWrongIndexException(int i, int len)
+    {
+        msg = "Index: ";
+        msg += std::to_string(i);
+        msg += ", out of bound ";
+        msg += std::to_string(len);
+    }
+    const char * what() const noexcept override {
+        return msg.c_str();
+    }
+private:
+    string msg;
+};
+
+void Serialization::Extract(byte *stream, int len) {
+    if (stream == nullptr || len == 0) {
+        throw EmptyStreamException();
+    }
     vector<byte> tmp;
+    tmp.reserve(len);
     for (int i = 0; i < len; i++) {
         tmp.push_back(stream[i]);
     }
-    return Extract(tmp);
+    Extract(tmp);
 }
 
-ExtractionResult Serialization::Extract(vector<byte> & stream) {
+void Serialization::Extract(vector<byte> & stream) {
     // extract header to get type info
     ExtractionResult result;
     int iter = 0;
@@ -44,7 +73,19 @@ ExtractionResult Serialization::Extract(vector<byte> & stream) {
             break;
         }
     }
-    return result;
+    this->extraction_result_ = result;
+    this->extraction_ptr_ = 0;
+}
+
+TypeCell Serialization::ExtractOne() {
+    int idx = this->extraction_ptr_;
+    int size = this->extraction_result_.extracted_cells.size();
+    if (idx >= size) {
+        throw ExtractionWrongIndexException(idx, size);
+    }
+    auto ret = this->extraction_result_.extracted_cells.at(this->extraction_ptr_);
+    this->extraction_ptr_++;
+    return ret;
 }
 
 void Serialization::AddString(const string & str) {

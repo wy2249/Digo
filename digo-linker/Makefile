@@ -1,16 +1,18 @@
-all: generate-dependencies
+all: build-all
 
-.PHONY: generate-dependencies
-generate-dependencies: clean
+.PHONY: build-all
+build-all: clean generate-digo-dependency generate-digo-linker
 
-.PHONY: generate-serializer-dependency
-generate-serializer-dependency: clean
-	clang -stdlib=libc++ -std=c++20 -O3 -S -emit-llvm src/serialization.cpp
+.PHONY: generate-digo-dependency
+generate-digo-dependency:
+	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm src/serialization.cpp src/wrapper.cpp src/serialization_wrapper.cpp
+	llvm-link -S -v -o allinone.ll serialization.ll wrapper.ll serialization_wrapper.ll
 
-.PHONY: generate-template
-generate-template:
-	clang -stdlib=libc++ -std=c++20 -fno-discard-value-names -S -emit-llvm src/serializer_template.cpp
+.PHONY: generate-digo-linker
+generate-digo-linker:
+	clang -stdlib=libc++ -lstdc++ -std=c++2a -O3 src/metadata.cpp src/linker_main.cpp -o digo-linker
 
 .PHONY: clean
 clean:
-	rm -f serialization.ll
+	rm -f serialization.ll wrapper.ll serialization_wrapper.ll digo-dependency.ll
+	rm -f allinone.ll digo-linker
