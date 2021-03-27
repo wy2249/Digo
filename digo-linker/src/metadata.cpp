@@ -4,6 +4,7 @@
 
 #include "metadata.h"
 #include <regex>
+#include <sstream>
 
 #define FMT_HEADER_ONLY
 #include "../third-party/fmt/format.h"
@@ -190,7 +191,7 @@ string Metadata::GenerateJumpLabel(int id, const FuncPrototype &proto) {
 if.func#<id>#:
   #<arg_extractor>#
 
-  %arg0 = call i32 @#<func_name>#(#<arguments>#)
+  %result#<id># = call i64 @#<func_name>#(#<arguments>#)
 
   #<ret_serializer>#
 
@@ -207,23 +208,23 @@ if.func#<id>#:
                               fmt::arg("func_name", proto.func_name),
                               fmt::arg("arguments", GenerateArgumentsDef(proto.parameters)),
                               fmt::arg("arg_extractor", GenerateExtractor(proto.parameters, "arg")),
-                              fmt::arg("ret_serializer", GenerateSerializer(proto.return_type)));
+                              fmt::arg("ret_serializer", GenerateSerializer(proto.return_type, "result")));
     return result;
 }
 
-string Metadata::GenerateSerializer(const vector<digo_type> & types) {
+string Metadata::GenerateSerializer(const vector<digo_type> & types, const string & prefix) {
     string result;
     for (int i = 0; i < types.size(); i++) {
         auto type = types[i];
         if (type == TYPE_INT32) {
             result += R"(
-  call void @SW_AddInt32(i8* %wrapper, i32 %arg)" + to_string(i) + ")";
+  call void @SW_AddInt32(i8* %wrapper, i32 %)" + prefix + to_string(i) + ")";
         } else if (type == TYPE_INT64) {
             result += R"(
-  call void @SW_AddInt64(i8* %wrapper, i64 %arg)" + to_string(i) + ")";
+  call void @SW_AddInt64(i8* %wrapper, i64 %)" + prefix + to_string(i) + ")";
         } else if (type == TYPE_STR) {
             result += R"(
-  call void @SW_AddString(i8* %wrapper, i8* %arg)" + to_string(i) + ")";
+  call void @SW_AddString(i8* %wrapper, i8* %)" + prefix + to_string(i) + ")";
         }
     }
     return result;
@@ -272,6 +273,11 @@ string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
 string Metadata::GenerateAsyncAsLLVMIR(int id, const FuncPrototype &proto) {
     // TODO: return value undefined because of aggregated type
     string async_template = R"XXXXX(
+define i8* @digo_linker_async_call_func_#<func_name>#(#<arg_def>#) {
+  %call = call i8* @digo_linker_async_call_id_#<id>#(#<arg_def>#)
+  ret i8* %call
+}
+
 define i8* @digo_linker_async_call_id_#<id>#(#<arg_def>#) {
 entry:
   %wrapper = call i8* @SW_CreateWrapper()
@@ -291,7 +297,12 @@ entry:
   ret i8* %future_obj
 }
 
-define i32 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
+define i64 @digo_linker_await_func_#<func_name>#(i8* %arg_future_obj) {
+  %call = call i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj)
+  ret i64 %call
+}
+
+define i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
   %result = alloca i8*, align 8
   %len = alloca i32, align 4
   call void @AwaitJob(i8* %arg_future_obj, i8** %result, i32* %len)
@@ -305,7 +316,7 @@ define i32 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
 
   call void @SW_DestroyExtractor(i8* %extractor)
 
-  ret i32 %ret0
+  ret i64 %ret0
 }
 )XXXXX";
 
@@ -314,9 +325,10 @@ define i32 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
     async_template = regex_replace(async_template, regex("#<([a-z_]+)>#"), "{$1}");
 
     auto result = fmt::format(async_template, fmt::arg("id", id),
-    fmt::arg("arg_serialization", GenerateSerializer(proto.parameters)),
+    fmt::arg("arg_serialization", GenerateSerializer(proto.parameters, "arg")),
     fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters)),
-    fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")));
+    fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")),
+    fmt::arg("func_name", proto.func_name));
 
     return result;
 }
@@ -337,6 +349,11 @@ string Metadata::GenerateAsyncCalls() {
 
 string Metadata::GenerateDeclare() {
     string declare_template = R"XXXXX(
+
+declare dso_local i8* @CreateString(i8*)
+declare dso_local void @StringIncRef(i8*)
+declare dso_local void @StringDecRef(i8*)
+declare dso_local i8* @GetString(i8*)
 
 declare dso_local void @AwaitJob(i8*, i8**, i32*)
 declare dso_local void @JobDecRef(i8*)
@@ -399,6 +416,8 @@ define void @init_async_function_table() {
 define void @main() {
 entry:
   call void @init_async_function_table()
+
+  call void @digo_main()
 
   ret void
 }

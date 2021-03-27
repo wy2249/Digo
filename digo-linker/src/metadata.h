@@ -39,7 +39,7 @@ private:
 
     string  GenerateAsyncAsLLVMIR(int id, const FuncPrototype & proto);
 
-    string GenerateSerializer(const vector<digo_type> & types);
+    string GenerateSerializer(const vector<digo_type> & types, const string & prefix);
     string GenerateExtractor(const vector<digo_type> & types, const string& padding);
     string GenerateArgumentsDef(const vector<digo_type> & types);
 

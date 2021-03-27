@@ -7,15 +7,21 @@
 using namespace std;
 
 int test_serialization();
-int generate_async_call_entry(const string && input_file, const string && output_file);
+int generate_async_call_entry(const string& input_file, const string& output_file);
 
 int main() {
-    //test_serialization();
-    generate_async_call_entry("../../linker-test.ll", "../../test.ll.output");
+    string command = "async";
+    string input_file = "../../digo-test/test1.ll";
+    string output_file = "../../digo-test/test1.ll.out";
+    if (command == "async") {
+        generate_async_call_entry(input_file, output_file);
+    } else {
+        return 1;
+    }
     return 0;
 }
 
-int generate_async_call_entry(const string && input_file, const string && output_file) {
+int generate_async_call_entry(const string& input_file, const string& output_file) {
     fstream s;
     s.open(input_file, ios::in);
     string ir;
@@ -28,6 +34,8 @@ int generate_async_call_entry(const string && input_file, const string && output
 
     fstream output;
     output.open(output_file, ios::out);
+
+    output << ir;
 
     output << metadata.GenerateDeclare();
     output << metadata.GenerateAsyncCalls();

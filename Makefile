@@ -1,16 +1,15 @@
-all: test-link
-
-test-link:
-	clang++ -stdlib=libc++ -pthread dependency.ll test.ll -o executable
-
-.PHONY: test
-test: clean generate-dependency
-	clang++ -stdlib=libc++ -pthread dependency.ll test.ll -o executable
+all: compile-ll
 
 .PHONY: build
-build: generate-dependency
-	./digo-compiler/semant.native < test/hello_world.digo > hello_world.ll
-	clang++ -stdlib=libc++ -pthread dependency.ll -o executable
+build: clean generate-dependency
+	./digo-compiler/semant.native < $(digo) > tmp.compiled.ll
+	./digo-linker/digo-linker async tmp.compiled.ll tmp.async.ll
+	clang++ -stdlib=libc++ -pthread dependency.ll tmp.async.ll -o $(out)
+
+.PHONY: compile-ll
+compile-ll: clean generate-dependency
+	./digo-linker/digo-linker async $(ll) tmp.async.ll
+	clang++ -stdlib=libc++ -pthread dependency.ll tmp.async.ll -o $(out)
 
 .PHONY: generate-async-remote-lib
 generate-async-remote-lib:
@@ -30,7 +29,7 @@ generate-dependency: generate-async-remote-lib generate-digo-compiler generate-d
 
 .PHONY: clean
 clean:
-	rm -f dependency.ll executable
+	rm -f dependency.ll executable tmp.compiled.ll tmp.async.ll
 	$(MAKE) clean -C digo-linker
 	$(MAKE) clean -C async-remote-lib
 	$(MAKE) clean -C digo-compiler
