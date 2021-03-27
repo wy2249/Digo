@@ -21,6 +21,9 @@
 ```
 这里的 digo-test/test1.ll 和 Compiler 生成的是一致的（即没有经过Linker链接的LL）
 
+gitignore太难写了，在commit前如果要清理文件的话，
+直接执行一下 make clean 就行
+
 Dependencies:
 ```
   docker run --rm -it -v `pwd`:/home/microc -w=/home/microc columbiasedwards/plt
