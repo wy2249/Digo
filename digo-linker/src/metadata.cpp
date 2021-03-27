@@ -4,7 +4,9 @@
 
 #include "metadata.h"
 #include <regex>
-#include <sstream>
+
+#define FMT_HEADER_ONLY
+#include "../third-party/fmt/format.h"
 
 using namespace std;
 
@@ -14,11 +16,10 @@ const string metadata_end = "; DIGO Async Function Metadata END";
 const regex version_regex("; VERSION = (\\d+)");
 
 const regex func_decl_regex("; FUNC DECLARE BEGIN\n; FUNC_NAME = '(.+)'\n"
+                            "; FUNC_ANNOT = '(.+)'\n"
                             "; PARAMETERS = '(.+)'\n; RETURN_TYPE = '(.+)'\n"
                             "; FUNC DECLARE END\n");
 
-const regex digo_linker_async_call("\n (.+) = DigoLinkerCall AsyncCall(.+)\n");
-const regex digo_linker_await_future("\n (.+) = DigoLinkerCall AwaitFuture(.+)\n");
 
 class WrongVersionException: public exception {
 public:
@@ -47,7 +48,7 @@ vector<string> split(const string &s, char delim) {
     string item;
 
     while (getline (ss, item, delim)) {
-        result.push_back (item);
+        result.push_back(item);
     }
 
     return result;
@@ -85,8 +86,9 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
 
     for (; iter != sregex_iterator() ; iter++) {
         string func_name = iter->str(1);
-        string parameters = iter->str(2);
-        string return_type = iter->str(3);
+        string func_annotation = iter->str(2);
+        string parameters = iter->str(3);
+        string return_type = iter->str(4);
         if (func_name.empty()) {
             throw IncorrectMetadataException();
         }
@@ -95,6 +97,14 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
         return_type = regex_replace(return_type, multiple_space, "");
 
         FuncPrototype prototype;
+        if (func_annotation == "async") {
+            prototype.is_remote = 0;
+        } else if (func_annotation == "async remote") {
+            prototype.is_remote = 1;
+        } else {
+            throw IncorrectMetadataException();
+        }
+
         prototype.func_name = func_name;
         vector<string> p = split(parameters, ',');
         for(const string& str : p) {
@@ -124,30 +134,274 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
 }
 
 string Metadata::GenerateJumpTable() {
-    string templ = R"(declare dso_local void async_call_provided_by_linker(i8* %func_name, ...))";
-    return templ;
-}
+    string jump_template = R"XXXXX(
 
-string Metadata::GenerateSerializerAsLLIR(const FuncPrototype &proto) {
-    return std::string();
-}
+define i32 @linker_call_function(i32 %func_id, i8* %arg, i32 %arg_len, i8** %result, i32* %result_len) {
+  call void @Debug_Real_LinkerCallFunction(i32 %func_id, i32 %arg_len)
 
-string Metadata::GenerateDeserializerAsLLIR(const FuncPrototype &proto) {
-    return std::string();
-}
+  %wrapper = call i8* @SW_CreateWrapper()
+  %extractor = call i8* @SW_CreateExtractor(i8* %arg, i32 %arg_len)
 
-string Metadata::ReplaceDigoLinkerCall(const string &ir) {
+  switch i32 %func_id, label %if.nomatch [
 
-    auto iter = sregex_iterator(ir.begin(), ir.end(),
-                                digo_linker_async_call);
+)XXXXX";
 
-    for (; iter != sregex_iterator() ; iter++) {
-        string return_var = iter->str(1);
-        string func_closure = iter->str(2);
-        if (return_var.empty()) {
-            throw IncorrectIRException();
-        }
+    for (int i = 0 ; i < functions_prototype_.size(); i++) {
+        jump_template += "    i32 " + to_string(i) + ", label %if.func" + to_string(i);
     }
 
-    return std::string();
+    jump_template += R"XXXXX(
+
+  ]
+
+#<labels>#
+
+if.nomatch:
+  call void @NoMatchExceptionHandler(i32 %func_id)
+  ret i32 0
+
+if.end:
+
+  call void @SW_DestroyExtractor(i8* %extractor)
+
+  ret i32 0
+}
+
+)XXXXX";
+
+    jump_template = regex_replace(jump_template, regex("\\{"), "{{");
+    jump_template = regex_replace(jump_template, regex("\\}"), "}}");
+    jump_template = regex_replace(jump_template, regex("#<([a-z_]+)>#"), "{$1}");
+
+    string labels;
+
+    for (int i = 0; i < functions_prototype_.size(); i++) {
+        labels += GenerateJumpLabel(i, functions_prototype_.at(i));
+    }
+
+    auto result = fmt::format(jump_template, fmt::arg("labels", labels));
+
+    return result;
+}
+
+string Metadata::GenerateJumpLabel(int id, const FuncPrototype &proto) {
+    // TODO: %arg0 should be %arg0, arg1, ...
+    string label_template = R"XXXXX(
+if.func#<id>#:
+  #<arg_extractor>#
+
+  %arg0 = call i32 @#<func_name>#(#<arguments>#)
+
+  #<ret_serializer>#
+
+  call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %result_len)
+
+  br label %if.end
+)XXXXX";
+
+    label_template = regex_replace(label_template, regex("\\{"), "{{");
+    label_template = regex_replace(label_template, regex("\\}"), "}}");
+    label_template = regex_replace(label_template, regex("#<([a-z_]+)>#"), "{$1}");
+
+    auto result = fmt::format(label_template, fmt::arg("id", id),
+                              fmt::arg("func_name", proto.func_name),
+                              fmt::arg("arguments", GenerateArgumentsDef(proto.parameters)),
+                              fmt::arg("arg_extractor", GenerateExtractor(proto.parameters, "arg")),
+                              fmt::arg("ret_serializer", GenerateSerializer(proto.return_type)));
+    return result;
+}
+
+string Metadata::GenerateSerializer(const vector<digo_type> & types) {
+    string result;
+    for (int i = 0; i < types.size(); i++) {
+        auto type = types[i];
+        if (type == TYPE_INT32) {
+            result += R"(
+  call void @SW_AddInt32(i8* %wrapper, i32 %arg)" + to_string(i) + ")";
+        } else if (type == TYPE_INT64) {
+            result += R"(
+  call void @SW_AddInt64(i8* %wrapper, i64 %arg)" + to_string(i) + ")";
+        } else if (type == TYPE_STR) {
+            result += R"(
+  call void @SW_AddString(i8* %wrapper, i8* %arg)" + to_string(i) + ")";
+        }
+    }
+    return result;
+}
+
+// each item extracted is stored in %<padding>ID
+string Metadata::GenerateExtractor(const vector<digo_type> & types, const string& padding) {
+    // TODO: waiting for aggregated return type!
+    string result;
+    for (int i = 0; i < types.size(); i++) {
+        auto type = types[i];
+        if (type == TYPE_INT32) {
+            result += R"(
+  %)" + padding + to_string(i) +  R"( = call i32 @SW_ExtractInt32(i8* %extractor)
+)";
+        } else if (type == TYPE_INT64) {
+            result += R"(
+  %)" + padding + to_string(i) +  R"( = call i64 @SW_ExtractInt64(i8* %extractor)
+)";
+        } else if (type == TYPE_STR) {
+            result += R"(
+  %)" + padding + to_string(i) +  R"( = call i8* @SW_ExtractString(i8* %extractor)
+)";
+        }
+    }
+    return result;
+}
+
+string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
+    string result;
+    if (types.empty()) return result;
+    for (int i = 0; i < types.size(); i++) {
+        auto type = types[i];
+        if (type == TYPE_INT32) {
+            result += R"(i32 %arg)" + to_string(i) + ", ";
+        } else if (type == TYPE_INT64) {
+            result += R"(i64 %arg)" + to_string(i) + ", ";
+        } else if (type == TYPE_STR) {
+            result += R"(i8* %arg)" + to_string(i) + ", ";
+        }
+    }
+    result = result.substr(0, result.length() - 2);
+    return result;
+}
+
+string Metadata::GenerateAsyncAsLLVMIR(int id, const FuncPrototype &proto) {
+    // TODO: return value undefined because of aggregated type
+    string async_template = R"XXXXX(
+define i8* @digo_linker_async_call_id_#<id>#(#<arg_def>#) {
+entry:
+  %wrapper = call i8* @SW_CreateWrapper()
+
+  #<arg_serialization>#
+
+  %result = alloca i8*, align 8
+  %len = alloca i32, align 4
+
+  call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %len)
+
+  %result_in = load i8*, i8** %result, align 8
+  %len_in = load i32, i32* %len, align 4
+
+  %future_obj = call i8* @CreateAsyncJob(i32 0, i8* %result_in, i32 %len_in)
+
+  ret i8* %future_obj
+}
+
+define i32 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
+  %result = alloca i8*, align 8
+  %len = alloca i32, align 4
+  call void @AwaitJob(i8* %arg_future_obj, i8** %result, i32* %len)
+
+  %result_in = load i8*, i8** %result, align 8
+  %len_in = load i32, i32* %len, align 4
+
+  %extractor = call i8* @SW_CreateExtractor(i8* %result_in, i32 %len_in)
+
+  #<ret_extractor>#
+
+  call void @SW_DestroyExtractor(i8* %extractor)
+
+  ret i32 %ret0
+}
+)XXXXX";
+
+    async_template = regex_replace(async_template, regex("\\{"), "{{");
+    async_template = regex_replace(async_template, regex("\\}"), "}}");
+    async_template = regex_replace(async_template, regex("#<([a-z_]+)>#"), "{$1}");
+
+    auto result = fmt::format(async_template, fmt::arg("id", id),
+    fmt::arg("arg_serialization", GenerateSerializer(proto.parameters)),
+    fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters)),
+    fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")));
+
+    return result;
+}
+
+string Metadata::GenerateAsyncCalls() {
+    string result;
+
+    for (int i = 0; i < functions_prototype_.size(); i++) {
+        if (functions_prototype_[i].is_remote == 0)
+            result += GenerateAsyncAsLLVMIR(i, functions_prototype_[i]);
+        else
+            //TODO:
+            ;
+    }
+
+    return result;
+}
+
+string Metadata::GenerateDeclare() {
+    string declare_template = R"XXXXX(
+
+declare dso_local void @AwaitJob(i8*, i8**, i32*)
+declare dso_local void @JobDecRef(i8*)
+declare dso_local i8* @CreateAsyncJob(i32, i8*, i32)
+
+declare dso_local i8* @SW_CreateWrapper()
+declare dso_local void @SW_AddString(i8*, i8*)
+declare dso_local void @SW_AddInt32(i8*, i32)
+declare dso_local void @SW_AddInt64(i8*, i64)
+declare dso_local void @SW_GetAndDestroy(i8*, i8**, i32*)
+
+declare dso_local i8* @SW_CreateExtractor(i8*, i32)
+declare dso_local i32 @SW_ExtractInt32(i8*)
+declare dso_local i64 @SW_ExtractInt64(i8*)
+declare dso_local i8* @SW_ExtractString(i8*)
+declare dso_local void @SW_DestroyExtractor(i8*)
+
+declare dso_local void @NoMatchExceptionHandler(i32 %func_id)
+declare dso_local void @ASYNC_AddFunction(i32, i8* nocapture readonly)
+
+declare dso_local void @Debug_Real_LinkerCallFunction(i32, i32)
+
+)XXXXX";
+
+    return declare_template;
+}
+
+std::tuple<string, string> Metadata::GenerateFuncNameIdMap(int id, const FuncPrototype &proto) {
+    string str_name = "@.str.digo.linker.async.func.name" + to_string(id);
+    string str_bound = "[" + to_string(proto.func_name.size()+1) + " x i8]";
+    string str = str_name +
+            " = private unnamed_addr constant " + str_bound +
+            " c\"" + proto.func_name + "\\00\", align 1";
+    string mapadd = "call void @ASYNC_AddFunction(i32 " + to_string(id) +
+            ", i8* getelementptr inbounds (" + str_bound +
+            ", " + str_bound + "* " + str_name + ", i64 0, i64 0))";
+    return {str, mapadd};
+}
+
+string Metadata::GenerateEntry() {
+    string str_def;
+    string result = R"XXXXX(
+
+define void @init_async_function_table() {
+  )XXXXX";
+
+    for (int i = 0; i < functions_prototype_.size(); i++) {
+
+        auto [str, mapadd] = GenerateFuncNameIdMap(i, functions_prototype_[i]);
+
+        str_def += str + "\n";
+        result += mapadd + "\n";
+    }
+
+    result +=
+  R"XXXXX(
+  ret void
+}
+
+define void @main() {
+entry:
+  call void @init_async_function_table()
+
+  ret void
+}
+)XXXXX";
+    return str_def + "\n\n" + result;
 }

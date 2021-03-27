@@ -35,6 +35,8 @@ remake: clean printer semant
 .PHONY : clean
 clean :
 	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out printer semant.out semant
+	rm -rf _build
+	rm -rf semant.native
 
 generate-compiler: clean
 	ocamlbuild -use-ocamlfind semant.native -package llvm,llvm.analysis

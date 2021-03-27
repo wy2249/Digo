@@ -7,17 +7,17 @@
 using namespace std;
 
 int test_serialization();
-int metadata_parser_entry(const string && file);
+int generate_async_call_entry(const string && input_file, const string && output_file);
 
 int main() {
-    test_serialization();
-    metadata_parser_entry("../test/async.ll");
+    //test_serialization();
+    generate_async_call_entry("../../linker-test.ll", "../../test.ll.output");
     return 0;
 }
 
-int metadata_parser_entry(const string && file) {
+int generate_async_call_entry(const string && input_file, const string && output_file) {
     fstream s;
-    s.open(file, ios::in);
+    s.open(input_file, ios::in);
     string ir;
     string tmp;
     while (getline(s, tmp)) {
@@ -26,8 +26,15 @@ int metadata_parser_entry(const string && file) {
     Metadata metadata;
     metadata.ParseFuncMetadataFromLLIR(ir);
 
-    return 0;
+    fstream output;
+    output.open(output_file, ios::out);
 
+    output << metadata.GenerateDeclare();
+    output << metadata.GenerateAsyncCalls();
+    output << metadata.GenerateJumpTable();
+    output << metadata.GenerateEntry();
+
+    return 0;
 }
 
 int test_serialization() {
@@ -46,9 +53,9 @@ int test_serialization() {
     auto serialized = s.Get();
 
     Serialization s_ext;
-    auto result = s_ext.Extract(serialized);
+    s_ext.Extract(serialized);
 
-    for (const auto& cell : result.extracted_cells) {
+    for (const auto& cell : s_ext.GetResult().extracted_cells) {
         std::cout << "TypeCell: " << cell.type << " content: ";
         switch(cell.type) {
             case TYPE_STR:

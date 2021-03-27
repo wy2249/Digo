@@ -33,6 +33,10 @@ public:
 
     void Extract(byte* stream, int len);
 
+    const ExtractionResult& GetResult() {
+        return extraction_result_;
+    }
+
     TypeCell ExtractOne();
 
     byte* GetBytes();

@@ -14,6 +14,7 @@ using std::vector;
 class FuncPrototype {
 public:
     string              func_name;
+    int                 is_remote;
     vector<digo_type>   parameters;
     vector<digo_type>   return_type;
 };
@@ -27,13 +28,25 @@ public:
 class Metadata: public noncopyable {
 public:
     void    ParseFuncMetadataFromLLIR(const string & ir);
-    string  GenerateJumpTable();
-    string  GenerateSerializerAsLLIR(const FuncPrototype & proto);
-    string  GenerateDeserializerAsLLIR(const FuncPrototype & proto);
 
-    string  ReplaceDigoLinkerCall(const string & ir);
+    string  GenerateJumpTable();
+    string  GenerateAsyncCalls();
+
+    string  GenerateDeclare();
+    string  GenerateEntry();
+
 private:
+
+    string  GenerateAsyncAsLLVMIR(int id, const FuncPrototype & proto);
+
+    string GenerateSerializer(const vector<digo_type> & types);
+    string GenerateExtractor(const vector<digo_type> & types, const string& padding);
+    string GenerateArgumentsDef(const vector<digo_type> & types);
+
+    string GenerateJumpLabel(int id, const FuncPrototype & proto);
     vector<FuncPrototype> functions_prototype_;
+
+    std::tuple<string, string> GenerateFuncNameIdMap(int id, const FuncPrototype & proto);
 };
 
 #endif //DIGO_LINKER_METADATA_H

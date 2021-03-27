@@ -48,6 +48,9 @@ void* GC_Create(std::shared_ptr<T> data) {
     auto refTemplate = new ref_wrapper<T>;
     refTemplate->any_data = data;
     refTemplate->ref_cnt = 1;
+    if (GC_DEBUG) {
+        printf("GC Debug: %s, %p is created\n", typeid(T).name(), refTemplate);
+    }
     return refTemplate;
 }
 

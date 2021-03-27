@@ -4,13 +4,16 @@ target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 ; DIGO Async Function Metadata BEGIN
+
 ; VERSION = 1
+
 ; FUNC DECLARE BEGIN
 ; FUNC_NAME = 'async_func_test_string_to_int'
 ; FUNC_ANNOT = 'async'
 ; PARAMETERS = 'string, int'
 ; RETURN_TYPE = 'int'
 ; FUNC DECLARE END
+
 ; DIGO Async Function Metadata END
 
 @.str = private unnamed_addr constant [5 x i8] c"%lf\0A\00", align 1
@@ -23,27 +26,36 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind readonly
 declare dso_local i32 @atoi(i8*) #2
 
-declare dso_local void @AwaitJob(i8*, i8**, i32*)
-declare dso_local void @JobDecRef(i8*)
-
-declare dso_local i8* @CreateAsyncJob(i32, i8*, i32)
-declare dso_local i8* @GetString(i8*)
-declare dso_local void @SW_AddString(i8*, i8*)
-declare dso_local void @SW_AddInt32(i8*, i32)
-declare dso_local i8* @SW_CreateExtractor(i8*, i32)
-declare dso_local i8* @SW_CreateWrapper()
-declare dso_local i32 @SW_ExtractInt32(i8*)
-declare dso_local i64 @SW_ExtractInt64(i8*)
-declare dso_local i8* @SW_ExtractString(i8*)
-declare dso_local void @SW_GetAndDestroy(i8*, i8**, i32*)
+declare dso_local i8* @CreateString(i8*)
+declare dso_local void @StringIncRef(i8*)
 declare dso_local void @StringDecRef(i8*)
-declare dso_local void @ASYNC_AddFunction(i32, i8* nocapture readonly)
+declare dso_local i8* @GetString(i8*)
 
 declare dso_local void @printFloat(double)
 declare dso_local void @printInt(i32) 
 declare dso_local void @printString(i8* nocapture readonly)
 
+declare dso_local void @AwaitJob(i8*, i8**, i32*)
+declare dso_local void @JobDecRef(i8*)
+declare dso_local i8* @CreateAsyncJob(i32, i8*, i32)
+
+declare dso_local i8* @SW_CreateWrapper()
+declare dso_local void @SW_AddString(i8*, i8*)
+declare dso_local void @SW_AddInt32(i8*, i32)
+declare dso_local void @SW_AddInt64(i8*, i64)
+declare dso_local void @SW_GetAndDestroy(i8*, i8**, i32*)
+
+declare dso_local i8* @SW_CreateExtractor(i8*, i32)
+declare dso_local i32 @SW_ExtractInt32(i8*)
+declare dso_local i64 @SW_ExtractInt64(i8*)
+declare dso_local i8* @SW_ExtractString(i8*)
+declare dso_local void @SW_DestroyExtractor(i8*)
+
+declare dso_local void @NoMatchExceptionHandler(i32 %func_id)
+declare dso_local void @ASYNC_AddFunction(i32, i8* nocapture readonly)
+
 declare dso_local void @Debug_Real_LinkerCallFunction(i32, i32)
+
 
 declare i32 @printf(i8* nocapture readonly, ...) local_unnamed_addr #1
 
@@ -70,6 +82,7 @@ entry:
   %len_in = load i32, i32* %len, align 4
 
   %future_obj = call i8* @CreateAsyncJob(i32 0, i8* %result_in, i32 %len_in)
+  
   ret i8* %future_obj
 }
 
@@ -84,6 +97,8 @@ define i32 @digo_linker_await_func_0(i8* %arg0) {
   %extractor = call i8* @SW_CreateExtractor(i8* %result_in, i32 %len_in)
 
   %ret = call i32 @SW_ExtractInt32(i8* %extractor)
+
+  call void @SW_DestroyExtractor(i8* %extractor)
 
   ret i32 %ret
 }
@@ -109,12 +124,19 @@ if.func0:
   call void @SW_AddInt32(i8* %wrapper, i32 %call)
   call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %result_len)
 
-  br label %if.nomatch
+  br label %if.end
 
 if.func1:
-  br label %if.nomatch
+  br label %if.end
 
 if.nomatch:
+  call void @NoMatchExceptionHandler(i32 %func_id)
+  ret i32 0
+
+if.end:
+
+  call void @SW_DestroyExtractor(i8* %extractor)
+
   ret i32 0
 }
 
