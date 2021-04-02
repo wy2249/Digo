@@ -37,7 +37,7 @@ type expr =
   | Bool of bool
   | BinaryOp of expr * binary_operator * expr
   | UnaryOp  of unary_operator * expr
-  | AssignOp of string * expr list
+  | AssignOp of string * expr
   | FunctionCall of string * expr list
   | NamedVariable of string
   | SliceLiteral of builtin_type * int * expr list
@@ -46,27 +46,28 @@ type expr =
   | BuiltinFunctionCall of builtin_function * expr list
   | Await of string
 
-type simple_statement = 
-    EmptySimpleStatement
-  | SimpleDeclare of builtin_type list * string list * expr list
-  | SimpleShortDecl of string list * expr list
-  | SimpleExpr of expr
-
 type statement = 
     EmptyStatement
-  | IfStatement of expr * statement list * statement list 
+  | IfStatement of expr * statement * statement
      (* condition expression; statements if true; statements if false  *)
-  | ForStatement of simple_statement * expr * simple_statement * statement list 
+  | ForStatement of statement * expr * statement * statement
       (*  for ssmt1; expr2; ssmt3 {  statements   }  *)
   | Break
   | Continue
-  | Declare of builtin_type list * string list * expr list
-  | ShortDecl of string list * expr list
   | Return of expr list
   | Expr of expr
+  (*| Declare of builtin_type list * string list * expr list
+  | ShortDecl of string list * expr list *)
+  (*| EmptySimpleStatement
+  | SimpleDeclare of builtin_type list * string list * expr list
+  | SimpleShortDecl of string list * expr list
+  | SimpleExpr of expr*)
+  | Block of statement list
 
-type parameter = string * builtin_type
+type bind = string * builtin_type
   (* NamedParameter of string * builtin_type *)
+
+type vdeclare = builtin_type * string 
 
 type func_annotation = 
     FuncNormal
@@ -77,7 +78,8 @@ type func_decl = {
   ann : func_annotation;
   fname : string;
   typ : builtin_type list;
-  formals : parameter list;
+  formals : bind list;
+  locals : vdeclare list;
   body : statement list;
 }
 
