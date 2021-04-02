@@ -74,7 +74,7 @@ __attribute__((noinline)) void Debug_Real_LinkerCallFunction(int32_t id, int32_t
 }
 
 __attribute__((noinline)) void NoMatchExceptionHandler(int32_t id) {
-    cout << "Digo linker call function, exception, " + to_string(id) + " not valid\n";
+    cout << "Digo linker call function, NoMatchException, " + to_string(id) + " not valid\n";
     sleep(5);
     exit(1);
 }

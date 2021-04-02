@@ -8,10 +8,22 @@
 #include <string>
 using std::string;
 
-const string functions_to_trace[] = {"ExtractString", "ExtractSlice",
-                                     "CreateString", "AddString"};
+#include "metadata.h"
 
 class EscapeAnalyzer {
+public:
+    EscapeAnalyzer();
+    void AutoAddDecRef();
+
+private:
+    void GenerateDecRef(const string& function);
+    void InferFunctionRetType(const string& function);
+
+private:
+    vector<FuncPrototype> functions_to_trace_;
+
+    const string c_wrapper_funcs[4] = {"ExtractString", "ExtractSlice",
+                                      "CreateString", "AddString"};
 
 };
 
