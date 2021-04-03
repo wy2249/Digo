@@ -1,5 +1,6 @@
 open Llvm
 open Ast
+open Sast
 
 module StringMap = Map.Make(String)
 
@@ -22,26 +23,27 @@ let translate(functions) =
       (*| SliceType    -> void_t   needs work*)
       | FutureType   -> void_t   (*needs work*)
       | VoidType     -> void_t
+      | SliceType(x)    -> void_t
     in
 
 (*built-in function, needs add more*)
   let printInt_t = 
-    var_arg_function_type i32_t [| i32_t |] in
+    function_type void_t [| i32_t |] in
   let printInt = 
     declare_function "printInt" printInt_t the_module in 
 
   let printFloat_t =
-    var_arg_function_type i32_t [| float_t |] in
+    function_type void_t [| float_t |] in
   let printFloat = 
     declare_function "printFloat" printFloat_t the_module in
 
 
   let show_string (_,ex)= match ex with
-    String(ex)  -> ex
+    SString(ex)  -> ex
   | _           -> ""                    in    
 
   let printString_t= 
-    var_arg_function_type i32_t [|(pointer_type i8_t)|] in
+    function_type void_t [|(pointer_type i8_t)|] in
   let printString=
     declare_function "printString" (printString_t) the_module in  
 
@@ -51,13 +53,13 @@ let translate(functions) =
     let function_delc m fdecl=    
       let name = fdecl.sfname    
       and argument_types = 
-        Array.of_list (List.map (fun (_,t) -> ltype_of_typ t) fdecl.sformals) in          
+        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in          
           (*let ftype = 
             function_type (ltype_of_typ (List.hd fdecl.styp)) argument_types in *)                       (*assume only one return type, works latter*) 
           let stype = 
             struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
           let ftype = 
-            function_type styp argument_types in 
+            function_type stype argument_types in 
           StringMap.add name (define_function name ftype the_module,fdecl) m in
         List.fold_left function_delc StringMap.empty functions in
 
@@ -68,7 +70,7 @@ let translate(functions) =
         builder_at_end context (entry_block the_function) in
 
       let local_vars = 
-        let add_parameter m (n,t) p = 
+        let add_parameter m (t,n) p = 
           set_value_name n p;
           let local = build_alloca (ltype_of_typ t) n builder in  
           ignore (build_store p local builder);
@@ -81,14 +83,25 @@ let translate(functions) =
         in
         let arguments = List.fold_left2 add_parameter StringMap.empty fdecl.sformals
             (Array.to_list (params the_function))  in
-            List.fold_left add_vlocal arguments fdecl.slocals
+            List.fold_left add_vlocal arguments fdecl.slocals in 
 
         let lookup n = StringMap.find n local_vars in
 
-        let rec expr builder (e_typ,e) = match e with
-          SEmptyExpr                                                          ->  ()
+        let rec expr builder (e_typl,e) = match e with
+          SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
         | SAwait(s)                                                           ->  const_int i32_t 0      (*needs work*)
-        | SBinaryOp(ex1,op,ex2) when e_typ = IntegerType || e_typ = BoolType  ->                        
+        | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
+          let e1 = expr builder ex1
+          and e2 = expr builder ex2 in 
+          (match op with
+          Add       ->  build_fadd
+          | Sub       ->  build_fsub
+          | Mul       ->  build_fmul
+          | Div       ->  build_fdiv
+          | Mod       ->  build_frem 
+          | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+          ) e1 e2 "tmp" builder        
+        | SBinaryOp(ex1,op,ex2) when List.hd e_typl = IntegerType             ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
           (match op with
@@ -97,58 +110,66 @@ let translate(functions) =
           | Mul       ->  build_mul
           | Div       ->  build_sdiv
           | Mod       ->  build_srem 
-          | LessThan    ->  build_icmp Icmp.Slt
-          | LessEqual   ->  build_icmp Icmp.Sle
-          | GreaterThan   ->  build_icmp Icmp.Sgt
-          | GreaterEqual  ->  build_icmp Icmp.Sge
-          | IsEqual     ->  build_icmp Icmp.Eq
-          | IsNotEqual  ->  build_icmp Icmp.Ne
-          | LogicalAnd  ->  build_and
-          | LogicalOr   ->  build_or 
-          ) e1 e2 "tmp" builder   
-        | SBinaryOp(ex1,op,ex2) when e_typ = FloatType                        ->                        
+          | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))          
+          ) e1 e2 "tmp" builder               
+        | SBinaryOp(ex1,op,ex2) when List.hd e_typl = BoolType                           ->     
           let e1 = expr builder ex1
-          and e2 = expr builder ex2 in 
-          (match op with
-          Add       ->  build_fadd
-          | Sub       ->  build_fsub
-          | Mul       ->  build_fmul
-          | Div       ->  build_fsdiv
-          | Mod       ->  build_frem 
-          | LessThan    ->  build_fcmp Fcmp.Olt
-          | LessEqual   ->  build_fcmp Fcmp.Ole
-          | GreaterThan   ->  build_fcmp Fcmp.Ogt
-          | GreaterEqual  ->  build_fcmp Fcmp.Oge
-          | IsEqual     ->  build_fcmp Fcmp.Oeq
-          | IsNotEqual  ->  build_fcmp Fcmp.One
-          | LogicalAnd  ->  raise(Failure("codegen error: semant should reject LogicalAnd between floating numbers"))
-          | LogicalOr   ->  raise(Failure("codegen error: semant should reject LogicalOr between floating numbers")) 
-          ) e1 e2 "tmp" builder             
-        | SBinaryOp(ex1,op,ex2) when e_typ = StringType                       ->                        
-          let e1 = expr builder ex1
-          and e2 = expr builder ex2 in 
-          let e1_string = show_string e1 
-          and e2_string = show_string e2 in 
+          and e2 = expr builder ex2 in         
+          (match ex1 with
+            ([FloatType],_)                                     ->
+              (match op with
+                LessThan    ->  build_fcmp Fcmp.Olt
+              | LessEqual   ->  build_fcmp Fcmp.Ole
+              | GreaterThan   ->  build_fcmp Fcmp.Ogt
+              | GreaterEqual  ->  build_fcmp Fcmp.Oge
+              | IsEqual     ->  build_fcmp Fcmp.Oeq
+              | IsNotEqual  ->  build_fcmp Fcmp.One
+              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) e1 e2 "tmp" builder 
+          | ([IntegerType],_)                                   ->
+              (match op with
+                LessThan    ->  build_icmp Icmp.Slt
+              | LessEqual   ->  build_icmp Icmp.Sle
+              | GreaterThan   ->  build_icmp Icmp.Sgt
+              | GreaterEqual  ->  build_icmp Icmp.Sge
+              | IsEqual     ->  build_icmp Icmp.Eq
+              | IsNotEqual  ->  build_icmp Icmp.Ne
+              | _           ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) e1 e2 "tmp" builder              
+          | ([BoolType],_)                                      ->
+              (match op with
+              | LogicalAnd  ->  build_and
+              | LogicalOr   ->  build_or
+              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) e1 e2 "tmp" builder              
+          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+          )          
+        | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
+          let e1_string = show_string ex1 
+          and e2_string = show_string ex2 in 
           (match op with
             Add ->  build_global_string (e1_string^e2_string) "var" builder     (*needs to modify symbol table structure to support indirect string concatenation*)
           | _   ->  raise(Failure("codegen error: semant should reject any operation between string except add"))
           )  
-        | SUnaryOp(op,ex1)                                                     ->
+        | SUnaryOp(op,((ex1_typl,_) as ex1))                                                     ->
           let e_ = expr builder ex1 in
           (match op with
-            LogicalNot  ->  build_neg                                          (*add float cases latter*)      
-          | Negative    ->  build_not) e_ "tmp" builder
-        | SAssignOp(var,ex1)                                                   ->
-          let e_ = expr builder ex1 in              
-            ignore(build_store e_ (lookup var) builder); e_
+            LogicalNot                               ->  build_not                                              
+          | Negative when ex1_typl = [IntegerType]   ->  build_neg
+          | Negative when ex1_typl = [FloatType]     ->  build_fneg
+          | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
+          ) e_ "tmp" builder
+        | SAssignOp(varl,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+          let e_ = expr builder ex1 in   
+          ignore(build_store e_ (lookup (List.hd varl)) builder); e_
         | SFunctionCall("printInt",[e])                                        ->  
-            build_call printInt [|(expr builder e)|] "printInt" builder 
+            build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
-            build_call printFloat [|(expr builder e) |] "printFloat" builder
+            build_call printFloat [|(expr builder e) |] "" builder
         | SFunctionCall("printString",[e])                                     ->
             let string_in_printString = show_string e in 
               let current_ptr = build_global_stringptr string_in_printString "printstr" builder in
-                build_call printString [|current_ptr|] "printString" builder
+                build_call printString [|current_ptr|] "" builder
         | SFunctionCall(f_name,args)                                           ->              
           let (fdef,_) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
@@ -172,11 +193,11 @@ let translate(functions) =
 
       let rec stmt builder = function  
         SEmptyStatement                                                        ->  builder
-      | SBlock(sl)                                                             ->  List.fold stmt builder sl 
+      | SBlock(sl)                                                             ->  List.fold_left stmt builder sl 
       | SIfStatement(ex, s1, s2)                                               ->  
         let bool_val = expr builder ex in 
         let merge_bb = append_block context "merge" the_function in
-        let build_br_merge = builder_br merge_bb in
+        let build_br_merge = build_br merge_bb in
 
         let then_bb = append_block context "then" the_function in
         add_terminal (stmt (builder_at_end context then_bb) s1) build_br_merge;
@@ -186,10 +207,10 @@ let translate(functions) =
 
         ignore(build_cond_br bool_val then_bb else_bb builder);
         builder_at_end context merge_bb
-      | ForStatement(s1, ex, s2, stl)                                          ->
-        ignore(stmt builder s1);
+      | SForStatement(e1, ex, e2, stl)                                          ->
+        ignore(stmt builder (SExpr e1));
 
-        let whole_body = SBlock[stl::s2] in 
+        let whole_body = SBlock[stl;SExpr(e2)] in 
         let pred_bb = append_block context "for" the_function in
         ignore(build_br pred_bb builder);
 
@@ -208,12 +229,13 @@ let translate(functions) =
         let agg = Array.of_list (List.map (expr builder) el) in 
         ignore(build_aggregate_ret agg builder);
         builder
-      | SExpr(ex)                                                             ->  ignore(expr builder ex); builder    (*works latter*)
+      | SExpr(ex)                                                             ->  ignore(expr builder ex); builder    
 
       in
 
         let builder = stmt builder (SBlock(fdecl.sbody)) in
-        add_terminal builder build_ret_void  
+        let agg_ = [|const_int i32_t 0|] in 
+        add_terminal builder (build_aggregate_ret agg_)  
 
       in 
 

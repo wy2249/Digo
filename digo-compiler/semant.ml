@@ -1,9 +1,9 @@
 (* Semantic checking for the Digo compiler *)
 
 open Ast
+open Sast
 open Llvm
 open Llvm_analysis
-open Printer
 
 module StringMap = Map.Make(String)
 
@@ -23,13 +23,13 @@ let check (functions) =
       fname = name;
       typ = [];
       formals = [];
+      locals = [];
       body = [] } map
-    in List.fold_left add_bind StringMap.empty [("append", IntegerType);
-                              ("len", IntegerType);
-                              ("gather", IntegerType);
-                              ("printString", StringType);
-                              ("printFloat", FloatType);
-                              ("printInt",IntegerType)]
+    in 
+      let map = List.fold_left add_bind StringMap.empty [("append", IntegerType); ("len", IntegerType); ("gather", IntegerType)] in 
+      let map2 = StringMap.add "printInt" {ann = FuncNormal; fname = "printInt"; typ = [VoidType]; formals = [(IntegerType,"int")] ; locals = []; body=[]} map in 
+      let map3 = StringMap.add "printFloat" {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; formals = [(FloatType,"float")] ; locals = []; body=[]} map2 in
+      StringMap.add "printString" {ann = FuncNormal; fname = "printString"; typ = [VoidType]; formals = [(StringType,"string")] ; locals = []; body=[]} map3;
   in
 
   (* 
@@ -88,19 +88,19 @@ let check (functions) =
       ) binds;
       let rec dup_check = function 
         [] -> []
-      | ((n1,_)::(n2,_)::_) when n1 = n2 -> raise(Failure("duplicate in "^ kind ^ " : " ^ n1))
+      | ((_,n1)::(_,n2)::_) when n1 = n2 -> raise(Failure("duplicate in "^ kind ^ " : " ^ n1))
       | _::vdecls -> dup_check vdecls
       in 
-        dup_check (List.sort (fun (n1,_)(n2._)-> compare a b) binds)
+        dup_check (List.sort (fun (_,n1)(_,n2)-> compare n1 n2) binds)
     in  
 
-    check_binds "argument" func.formals;
-    check_binds "local" func.locals;
+    ignore(check_binds "argument" func.formals);
+    ignore(check_binds "local" func.locals);
 
     (* Type of each variable (global, formal, or local *)
     let symbols = Hashtbl.create 500 in                                             
-    let _ = List.iter (fun (n, t) -> Hashtbl.add symbols n t) func.formals in 
-    let _ = List.iter (fun (n, t) -> Hashtbl.add symbols n t) func.locals in 
+    let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
+    let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.locals in 
     let type_of_identifier s =
       try Hashtbl.find symbols s
       with Not_found -> raise (Failure ("undeclared identifier " ^ s))
@@ -110,78 +110,78 @@ let check (functions) =
     in   
     (* Return a semantically-checked expression, i.e., with a type *)
     let rec expr e = match e with
-        Integer(x)  -> (IntegerType, SInteger(x))
-      | Float(x) -> (FloatType, SFloat(x))
-      | Bool(x)  -> (BoolType, SBool(x))
-      | String (x)   -> (StringType,SString(x))
-      | EmptyExpr -> (VoidType,SEmptyExpr) 
-      | NamedVariable s  -> (type_of_identifier s, SNamedVariable(s))
-      | AssignOp(var, e) as ex -> 
-        let var_typ = type_of_identifier var 
-        and (ret_typ,e') = expr e in
-        let err = "illegal assignment variable type " ^ stringify_builtin_type var_type ^ " to expression type "
-          ^ stringify_builtin_type ret_typ in 
-        (check_assign var_typ ret_typ err, SAssignOp(var,(ret_typ,e')))
-      | UnaryOp(op, e) as ex -> 
-        let (ret_typ,e') = expr e in
+        Integer(x)  -> ([IntegerType], SInteger(x))
+      | Float(x) -> ([FloatType], SFloat(x))
+      | Bool(x)  -> ([BoolType], SBool(x))
+      | String (x)   -> ([StringType],SString(x))
+      | EmptyExpr -> ([VoidType],SEmptyExpr) 
+      | NamedVariable s  -> ([type_of_identifier s], SNamedVariable(s))
+      | AssignOp(varl, e) ->                                      
+        let var_typl = List.map type_of_identifier varl 
+        and (ret_typl,e') = expr e in
+        let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
+          ^ stringify_builtin_type ret_typ*) in 
+        (check_assign var_typl ret_typl err, SAssignOp(varl,(ret_typl,e')))                                     
+      | UnaryOp(op, e)   -> 
+        let (ret_typl,e') = expr e in
         let op_typ = match op with
-              Negative when ret_typ = IntegerType || ret_typ = FloatType -> ret_typ
-            | LogicalNot when ret_typ = BoolType -> ret_typ
-            | _ -> raise (Failure ("illegal unary operator " ^ stringify_unary_operator op e ^ 
-              " expression type "^stringify_builtin_type ret_typ) in
-        (op_typ,SUnaryOp(op,(ret_typ,e')))0
+              Negative when (List.hd ret_typl) = IntegerType || (List.hd ret_typl) = FloatType -> ret_typl
+            | LogicalNot when (List.hd ret_typl) = BoolType -> ret_typl
+            | _ -> raise (Failure ("illegal unary operator " (*^ stringify_unary_operator op e ^ 
+              " expression type "^stringify_builtin_type ret_typ*)  )) in
+        (op_typ,SUnaryOp(op,(ret_typl,e')))
             
-      | BinaryOp(e1, op, e2) as e -> 
-        let (ret_typ1,e1') = expr e1 and (ret_typ2,e2') = expr e2 in
+      | BinaryOp(e1, op, e2)  -> 
+        let (ret_typl1,e1') = expr e1 and (ret_typl2,e2') = expr e2 in
           (* All binary operators require operands of the same type *)
-        let same = ret_typ1 = ret_typ2 in
+        let same = ret_typl1 = ret_typl2 in
           (* Determine expression type based on operator and operand types *)
         let op_typ = match op with
-            Add | Sub | Mul | Div | Mod when same && (ret_typ1 = IntegerType) -> IntegerType
-          | Add | Sub | Mul | Div when same && (ret_typ1 = FloatType) -> FloatType
+            Add | Sub | Mul | Div | Mod when same && ((List.hd ret_typl1) = IntegerType) -> IntegerType
+          | Add | Sub | Mul | Div | Mod when same && ((List.hd ret_typl1) = FloatType) -> FloatType
           | IsEqual | IsNotEqual  when same -> BoolType
           | LessThan | LessEqual | GreaterThan | GreaterEqual
-            when same && (ret_typ1 = IntegerType || ret_typ1 = FloatType) -> BoolType
-          | LogicalAnd | LogicalOr when same && (ret_typ1 = BoolType) -> BoolType
-          | Add when same && ret_typ1 == StringType -> StringType
-          | _ -> raise ( Failure ("illegal binary operator " ^ stringify_binary_operator e1 op e2^" e1 type "^ 
-            stringify_builtin_type ret_typ1^ " e2 type "^stringify_builtin_type ret_typ2)) in 
-        (op_typ,SBinaryOp((ret_typ1,e1'),op,(ret_typ2,e2')))
+            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType) -> BoolType
+          | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
+          | Add when same && (List.hd ret_typl1) == StringType -> StringType
+          | _ -> raise ( Failure ("illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
+            stringify_builtin_type ret_typ1^ " e2 type "^stringify_builtin_type ret_typ2*)  )) in 
+        ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
 
-      | FunctionCall(fname, args) as call -> 
+      | FunctionCall(fname, args) -> 
         let fd = find_func fname in
         let param_length = List.length fd.formals in
         if List.length args != param_length then
           raise (Failure ("error: different number of aruguments passed expected " ^ string_of_int param_length ^ " aruguments but "
                           ^ string_of_int (List.length args) ^" aruguments provided"))
-        else let check_call (_, ft) e = 
-          let (ret_typ,e') = expr e in 
-          let err = "illegal argument found formal type " ^ ft ^ " real argument type " ^ ret_typ in
-          (check_assign ft ret_typ err,e')
+        else let check_call (ft, _) e = 
+          let (ret_typl,e') = expr e in 
+          let err = "illegal argument found" (*^ "formal type " ^ ft ^ " real argument type " ^ stringify_statement ret_typ*) in
+          ([check_assign ft (List.hd ret_typl) err],e')
         in 
         let args' = List.map2 check_call fd.formals args in 
         (fd.typ,SFunctionCall(fname,args'))
       
-      | BuiltinFunctionCall(_,_) -> (VoidType,SEmptyExpr)
-      | SliceLiteral(_,_,_)->(VoidType,SEmptyExpr)
-      | SliceIndex(_,_) ->(VoidType,SEmptyExpr)
-      | SliceSlice(_,_,_)->(VoidType,SEmptyExpr)
-      | Await _ -> (VoidType,SEmptyExpr)
+      | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
+      | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)
+      | SliceIndex(_,_) ->([VoidType],SEmptyExpr)
+      | SliceSlice(_,_,_)->([VoidType],SEmptyExpr)
+      | Await _ -> ([VoidType],SEmptyExpr)
     in 
     
     let check_bool_expr e = 
-      let (ret_typ,e') = expr e in 
-      if ret_typ != BoolType
+      let (ret_typl,e') = expr e in 
+      if ((List.hd ret_typl) != BoolType && e != EmptyExpr) 
       then raise (Failure ("expected Boolean expression"))
-      else (ret_typ,e')
+      else ([List.hd ret_typl],e')
     in 
 
     let rec check_stmt = function 
         EmptyStatement                    ->  SEmptyStatement
       | IfStatement(e,st1,st2)            ->  SIfStatement(check_bool_expr e, check_stmt st1, check_stmt st2)                         
-      | ForStatement(st1,e,st2,st3)       ->  SForStatement(check_stmt st1, check_bool_expr e, check_stmt st2, check_stmt st3)
+      | ForStatement(e1,e,e2,st3)         ->  SForStatement(expr e1, check_bool_expr e, expr e2, check_stmt st3)
       | Break                             ->  SBreak                                (*more on sbreak*)
-      | Continue                          ->  SContinune                            (*more on scontinune*)
+      | Continue                          ->  SContinue                            (*more on scontinune*)
       | Expr(e)                           ->  SExpr(expr e)      
       | Return(el)                        ->  
         let ret_list = List.map (fun e -> expr e) el in 
@@ -189,7 +189,7 @@ let check (functions) =
       | Block(stl)                        ->  
         let rec check_stmt_list = function 
           [Return _ as s] -> [check_stmt s]
-        | Return_::_      -> raise(Failure ("Statements appear after Return"))
+        | Return _::_      -> raise(Failure ("Statements appear after Return"))
         | Block b::ss     -> check_stmt_list (b@ss)
         | s::ss           -> check_stmt s:: check_stmt_list ss
         | []              -> []
@@ -201,7 +201,7 @@ let check (functions) =
       sfname = func.fname;
       sformals = func.formals;
       slocals = func.locals;
-      sbody = match check_stmt Block(func.body) with
+      sbody = match check_stmt (Block func.body) with
         SBlock(stl) -> stl   
       | _           -> raise(Failure("function body does not form"))
     }

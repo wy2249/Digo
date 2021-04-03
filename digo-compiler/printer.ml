@@ -102,21 +102,24 @@ and
     EmptyExpr                    -> ""
   | BinaryOp(ex1, op, ex2)       -> stringify_binary_operator ex1 op ex2
   | UnaryOp(op, ex1)              -> stringify_unary_operator op ex1
-  | AssignOp(ex1, ex2)           -> stringify_expressions ex1 ^ " = " ^ stringify_expressions ex2
-  | FunctionCall(funcName, exlist) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
-  | Literal(lit)               -> "" ^ stringify_literal lit
+  | AssignOp(str, ex2)           -> str ^ " = " ^ stringify_expressions ex2
+  | FunctionCall(funcName, [exlist]) -> "Call " ^ funcName ^ " with arguments " ^ stringify_expressions exlist
+  (*| Literal(lit)               -> "" ^ stringify_literal lit *)
+  | Integer(x)                    -> string_of_int x
+  | Float(x)                      -> string_of_float x
+  | String(x)                     -> x
+  | Bool(x)                       -> string_of_bool x
   | NamedVariable(nv)            -> "Variable " ^ nv
   | SliceLiteral(typ, len, exprs) -> stringify_builtin_type typ ^ "{" ^ String.concat "," (List.map stringify_expr exprs) ^ "}"
   | SliceIndex(ex1, ex2) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ "]"
   | SliceSlice(ex1, ex2, ex3) -> stringify_expr ex1 ^ "[" ^ stringify_expr ex2 ^ ":" ^ stringify_expr ex3 ^ "]"
-  | BuiltinFunctionCall(func, exlist) -> stringify_builtin_function(func) ^ stringify_expressions(exlist)
+  | BuiltinFunctionCall(func, [exlist]) -> stringify_builtin_function(func) ^ stringify_expressions(exlist)
   | Await(obj)                  ->  "Await on future object: " ^ obj
 
 and
 
   stringify_expressions = function
-  []           ->      ""
-| (ex :: exs)  ->      stringify_expr ex ^ ", " ^ stringify_expressions exs
+  (ex :: exs)  ->      stringify_expr ex ^ ", " ^ stringify_expressions exs
 
 and
 
