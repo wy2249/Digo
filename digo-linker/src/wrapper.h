@@ -8,8 +8,9 @@
 typedef int32_t int32;
 
 extern "C" {
-__attribute__((noinline)) void MasterEntry();
-__attribute__((noinline)) void WorkerEntry();
+
+__attribute__((noinline)) int entry(int argc, char* argv[]);
+
 __attribute__((noinline)) void* CreateAsyncJob(int32, byte*, int32);
 __attribute__((noinline)) void* CreateRemoteJob(int32, byte*, int32);
 __attribute__((noinline)) void AwaitJob(void*, byte**, int32*);

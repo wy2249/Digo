@@ -10,13 +10,13 @@
 #include "builtin_type_wrapper.h"
 
 static void SerializationExceptionHandler(const std::string& func, std::exception & e) noexcept {
-    std::cout << "Serialization wrapper exception: " << typeid(e).name() << " " << e.what() << " caught in function " << func << std::endl;
+    std::cerr << "Serialization Error: wrapper exception: " << typeid(e).name() << " " << e.what() << " caught in function " << func << std::endl;
     sleep(5);
     exit(1);
 }
 
 static void ExtractorExceptionHandler(const std::string& func, std::exception & e) noexcept {
-    std::cout << "Serialization extractor exception: " << typeid(e).name() << " " << e.what() << " caught in function " << func  << std::endl;
+    std::cerr << "Serialization Error: extractor exception: " << typeid(e).name() << " " << e.what() << " caught in function " << func  << std::endl;
     sleep(5);
     exit(1);
 }

@@ -16,3 +16,7 @@ __attribute__((noinline)) void linker_call_function(int32_t func_id, byte *conte
   memcpy(*result, content, length);
   *result_length = length;
 }
+
+__attribute__((noinline)) int32 ASYNC_GetFunctionId(const char* func_name) {
+    return 0;
+}

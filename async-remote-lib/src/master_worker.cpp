@@ -55,7 +55,7 @@ void Worker::Stop() {
   this->srv = nullptr;
 }
 
-void Master::Listen(const string &server_addr) {
+void Master::Listen(const string server_addr) {
   if (this->srv) {
     this->srv->Stop();
     this->srv = nullptr;
@@ -73,7 +73,9 @@ bytes Master::CallRemoteFunctionByName(const string &digo_func_name,
                                        const bytes &parameters) {
   do {
     // busy waiting when no workers
-    while (!this->worker_pool.size());
+    while (!this->worker_pool.size()) {
+        sleep(1);
+    }
 
     int idx = rand() % this->worker_pool.size();
     auto it = this->worker_pool.begin();

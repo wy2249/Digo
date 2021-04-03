@@ -292,7 +292,7 @@ entry:
   %result_in = load i8*, i8** %result, align 8
   %len_in = load i32, i32* %len, align 4
 
-  %future_obj = call i8* @CreateAsyncJob(i32 0, i8* %result_in, i32 %len_in)
+  %future_obj = call i8* @#<job_call>#(i32 0, i8* %result_in, i32 %len_in)
 
   ret i8* %future_obj
 }
@@ -328,7 +328,8 @@ define i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
     fmt::arg("arg_serialization", GenerateSerializer(proto.parameters, "arg")),
     fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters)),
     fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")),
-    fmt::arg("func_name", proto.func_name));
+    fmt::arg("func_name", proto.func_name),
+    fmt::arg("job_call", proto.is_remote ? "CreateRemoteJob" : "CreateAsyncJob"));
 
     return result;
 }
@@ -337,11 +338,7 @@ string Metadata::GenerateAsyncCalls() {
     string result;
 
     for (int i = 0; i < functions_prototype_.size(); i++) {
-        if (functions_prototype_[i].is_remote == 0)
-            result += GenerateAsyncAsLLVMIR(i, functions_prototype_[i]);
-        else
-            //TODO:
-            ;
+        result += GenerateAsyncAsLLVMIR(i, functions_prototype_[i]);
     }
 
     return result;
@@ -358,6 +355,7 @@ declare dso_local i8* @GetString(i8*)
 declare dso_local void @AwaitJob(i8*, i8**, i32*)
 declare dso_local void @JobDecRef(i8*)
 declare dso_local i8* @CreateAsyncJob(i32, i8*, i32)
+declare dso_local i8* @CreateRemoteJob(i32, i8*, i32)
 
 declare dso_local i8* @SW_CreateWrapper()
 declare dso_local void @SW_AddString(i8*, i8*)
@@ -372,7 +370,9 @@ declare dso_local i8* @SW_ExtractString(i8*)
 declare dso_local void @SW_DestroyExtractor(i8*)
 
 declare dso_local void @NoMatchExceptionHandler(i32 %func_id)
-declare dso_local void @ASYNC_AddFunction(i32, i8* nocapture readonly)
+declare dso_local void @ASYNC_AddFunction(i32, i8*)
+
+declare dso_local i32 @entry(i32, i8**)
 
 declare dso_local void @Debug_Real_LinkerCallFunction(i32, i32)
 
@@ -413,13 +413,23 @@ define void @init_async_function_table() {
   ret void
 }
 
-define void @main() {
+define i32 @main(i32 %argc, i8** %argv) {
 entry:
   call void @init_async_function_table()
 
-  call void @digo_main()
+  %morw = call i32 @entry(i32 %argc, i8** %argv)
 
-  ret void
+  switch i32 %morw, label %if.worker [
+    i32 1, label %if.master
+    i32 2, label %if.worker
+  ]
+
+if.master:
+  call void @digo_main()
+  ret i32 0
+
+if.worker:
+  ret i32 0
 }
 )XXXXX";
     return str_def + "\n\n" + result;

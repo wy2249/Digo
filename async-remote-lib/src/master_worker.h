@@ -21,7 +21,7 @@ class Master : public noncopyable {
  public:
   static shared_ptr<Master> GetInst();
 
-  void Listen(const string &server_addr);
+  void Listen(string server_addr);
 
   void StopListen();
 

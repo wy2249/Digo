@@ -9,7 +9,7 @@ using namespace std;
 shared_ptr<Async> Async::CreateLocal(string digo_func_name, bytes parameters) {
   shared_ptr<Async> async = make_shared<Async>();
   if (ASYNC_DEBUG) {
-      cout << "Local job created: " << async.get() << " func_name: " <<
+      cerr << "Local job created: " << async.get() << " func_name: " <<
       digo_func_name << " arg len: " << parameters.length << endl;
   }
   async->result_set_ = false;
@@ -32,7 +32,7 @@ shared_ptr<Async> Async::CreateRemote(string digo_func_name, bytes parameters) {
 bytes Async::Await() {
   std::lock_guard l(this->lock_);
   if (ASYNC_DEBUG) {
-      cout << "Awaiting on job " << this << endl;
+      cerr << "Awaiting on job " << this << endl;
   }
   if (result_set_) {
       return result_;
