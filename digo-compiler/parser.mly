@@ -189,14 +189,13 @@ p_statements:
 
 p_locals:
   { [] }
-| NEWLINE p_locals    { $2 }
 | p_local p_locals  { $1::$2 }
 
 p_local:
   /*KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required  NEWLINE  { Declare($3, $2, $5)  } */     /*list assignments and assigning value no supported yet needs work*/
 /*| KEYWORD_VAR p_variable_list p_type_list                    NEWLINE  { ($3, $2) }     */                             /*variable list not supported, needs work*/
 /*| p_variable_list ASSIGNNEW p_expr_list_required                      NEWLINE  { ShortDecl($1, $3)  }  */      /*short declare not supported yet needs work*/      
-    KEYWORD_VAR VARIABLE p_type                 NEWLINE  { ($3,$2) }
+    KEYWORD_VAR VARIABLE p_type NEWLINE              { ($3,$2) }
 
 p_if_statement:                                             /*works latter on p_locals*/
   KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement KEYWORD_ELSE p_statement { IfStatement($3,$5, $7) }
