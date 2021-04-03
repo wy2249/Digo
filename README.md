@@ -16,8 +16,8 @@
 
 可以试一下：
 ```
-  make ll=digo-test/test1.ll out=executable
-  ./executable
+  make ll=./digo-linker/test/test-async-1.ll out=executable
+  ./executable --master 127.0.0.1:20001
 ```
 这里的 digo-test/test1.ll 和 Compiler 生成的是一致的（即没有经过Linker链接的LL）
 
