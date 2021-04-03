@@ -38,7 +38,7 @@ TEST(CreateRemoteTest, Normal) {
   wk->Stop();
 }
 
-TEST(CreateRemoteTest2, Issue19) {
+TEST(CreateRemoteTest, Issue19) {
   // no real entry
   // main.cpp is not compiled in Makefile
   auto master = Master::GetInst();
