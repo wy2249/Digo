@@ -102,10 +102,10 @@ p_type_list:
 | p_type    {  [$1]  }
 | p_type COMMA p_type_list  {  $1::$3  } 
  
- p_variable_list:                                      
+/* p_variable_list:    */                                  
   /* empty variabie list is not allowed  */ 
- | VARIABLE    {  [$1]  } 
- | VARIABLE COMMA p_variable_list  {  $1::$3  } 
+/* | VARIABLE    {  [$1]  }  */
+/* | VARIABLE COMMA p_variable_list  {  [$1]::$3  } */
 
 p_parameters:
   { [] }
@@ -144,13 +144,13 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| p_variable_list ASSIGNMENT p_expr { AssignOp($1, $3) }
+| VARIABLE ASSIGNMENT p_expr { AssignOp([$1], $3) }
 /*| p_literal          { Literal($1) } */
 | INT_LITERAL     { Integer($1) }
 | STRING_LITERAL  { String($1)  }
 | FLOAT_LITERAL   { Float($1)   }
 | BOOLEAN_LITERAL { Bool($1)    }
-| VARIABLE         { NamedVariable($1) }
+| VARIABLE        { NamedVariable($1) }
 
 /*  the variable here is actually an ID (for a function)  */
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
@@ -195,7 +195,7 @@ p_local:
   /*KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required  NEWLINE  { Declare($3, $2, $5)  } */     /*list assignments and assigning value no supported yet needs work*/
 /*| KEYWORD_VAR p_variable_list p_type_list                    NEWLINE  { ($3, $2) }     */                             /*variable list not supported, needs work*/
 /*| p_variable_list ASSIGNNEW p_expr_list_required                      NEWLINE  { ShortDecl($1, $3)  }  */      /*short declare not supported yet needs work*/      
-    KEYWORD_VAR VARIABLE p_type NEWLINE              { ($3,$2) }
+    KEYWORD_VAR VARIABLE p_type                 NEWLINE  { ($3,$2) }
 
 p_if_statement:                                             /*works latter on p_locals*/
   KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement KEYWORD_ELSE p_statement { IfStatement($3,$5, $7) }

@@ -111,8 +111,9 @@ func main() void {
 	}
 */
 	
-	test_single_return(10,20)           // good 
-	// test_single_return(i,j) 	  Parse_error I don't know why
+	test_single_return(10,20)
+
+    test_single_return(i,j)
 
 	test_multi_return(10,20.0)
 
