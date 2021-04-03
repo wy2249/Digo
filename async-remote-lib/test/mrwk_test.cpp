@@ -7,26 +7,6 @@
 #include "master_worker.h"
 #include "gtest/gtest.h"
 
-TEST(ByteToString, Normal) {
-  bytes bs = {
-      .content = nullptr,
-      .length = 3,
-  };
-  byte *bb = []{
-    return new byte[3]{'f', 'o', 'o'};
-  }();
-  bs.content = shared_ptr<byte>(bb);
-  string expect = "foo";
-  string out = to_string(bs);
-  ASSERT_EQ(expect, out);
-}
-
-TEST(StringToByte, Normal) {
-  auto bytes = to_bytes("foo");
-  ASSERT_EQ(3, bytes.length);
-  ASSERT_EQ(0, memcmp("foo", bytes.content.get(), 3));
-}
-
 TEST(MasterWorkerTest, Normal) {
   auto mr = Master::GetInst();
   auto wk = Worker::GetInst();
@@ -36,10 +16,11 @@ TEST(MasterWorkerTest, Normal) {
   std::thread([&]{wk->Start("127.0.0.1:9999", "127.0.0.1:9998");}).detach();
   sleep(2);
 
-  auto params = to_bytes("bar");
-  auto result = mr->CallRemoteFunctionByName("foo", params);
-  auto result_str = to_string(result);
-  ASSERT_EQ(result_str, "bar");
+  vector<byte> body{0, 0, 'a', 'b'};
+  auto result = mr->CallRemoteFunctionByName("1234567", body);
+
+  ASSERT_TRUE(equal(body.begin(), body.end(), result.begin()));
+
 
   mr->StopListen();
   wk->Stop();

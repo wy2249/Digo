@@ -10,9 +10,9 @@
 #include "common.h"
 #include "network.h"
 
-std::string to_string(const bytes &bs);
+vector<byte> to_vector(const bytes &bs);
 
-bytes to_bytes(const string &data);
+bytes to_bytes(const vector<byte> &data);
 
 class Master : public noncopyable {
  private:
@@ -25,7 +25,7 @@ class Master : public noncopyable {
 
   void StopListen();
 
-  bytes CallRemoteFunctionByName(const string &digo_func_name, const bytes &parameters);
+  vector<byte> CallRemoteFunctionByName(const string &digo_func_name, const vector<byte> &parameters);
 
   void AddWorker(const string &worker_addr);
 

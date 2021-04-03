@@ -23,8 +23,11 @@ shared_ptr<Async> Async::CreateRemote(string digo_func_name, bytes parameters) {
   shared_ptr<Async> async = make_shared<Async>();
   async->result_set_ = false;
   async->std_future_obj_ = std::async([=] {
-    return Master::GetInst()->CallRemoteFunctionByName(
-        digo_func_name, parameters);
+
+    auto ret = Master::GetInst()->CallRemoteFunctionByName(
+        digo_func_name, to_vector(parameters));
+    auto bs = to_bytes(ret);
+    return bs;
   });
   return async;
 }

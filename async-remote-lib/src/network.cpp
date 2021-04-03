@@ -10,48 +10,53 @@
 #include <string>
 #include <cstring>
 #include <cmath>
+#include <vector>
 
 #include "network.h"
 
 
-string PackData(const string &rpc_name, const string &data) {
-  string resp;
-  resp = rpc_name + DELIM + data;
-  string resp_length = to_string(resp.length());
-  resp = string(4 - resp_length.length(), '0') + resp_length + resp;
-  return resp;
+vector<byte> PackData(const string &rpc_name, const vector<byte> &data) {
+  string prefix = rpc_name + DELIM;
+  string p_length = to_string(prefix.length() + data.size());
+  p_length = string(10 - p_length.length(), '0') + p_length;
+
+  vector<byte> ret;
+  ret.insert(ret.end(), p_length.begin(), p_length.end());
+  ret.insert(ret.end(), prefix.begin(), prefix.end());
+  ret.insert(ret.end(), data.begin(), data.end());
+  return ret;
 }
 
-int ReadUnpack(int fd, string &rpc_name, string &data) {
+int ReadUnpack(int fd, string &rpc_name, vector<byte> &data) {
   int n;
   char buf[1024];
   memset(buf, 0, sizeof(buf));
+  data.clear();
 
-  // read the first 4 bytes and convert it to the total length
-  if ((n = read(fd, buf, 4)) != 4) {
+  // read the first 10 bytes and convert it to the total length
+  if ((n = read(fd, buf, HEADER_LENGTH_SIZE)) != HEADER_LENGTH_SIZE) {
     return -1;
   }
 
   auto packet_length = strtoul(buf, nullptr, 10);
-  auto read_left = packet_length;
-  while (data.length() != packet_length &&
-      (n = read(fd, buf, std::min(read_left, sizeof(buf) - 1))) > 0) {
-    buf[n] = '\0';
+  size_t read_left = packet_length;
+  while (data.size() != packet_length && read_left > 0 &&
+      (n = read(fd, buf, std::min(read_left, sizeof(buf)))) > 0) {
+    data.insert(data.end(), buf, buf+n);
     read_left -= n;
-    data += buf;
   }
 
   if (n < 0) {
     return -1;
   }
 
-  int pos;
-  if ((pos = data.find(DELIM)) == -1) {
+  int pos = string(data.begin(), data.end()).find(DELIM);
+  if (pos == -1) {
     cerr << "the request format is incorrect" << endl;
     return -1;
   }
-  rpc_name = data.substr(0, pos);
-  data = data.substr(pos + sizeof(DELIM) - 1);
+  rpc_name = string(data.begin(), data.begin()+pos);
+  data = vector(data.begin()+pos+sizeof(DELIM)-1, data.end());
   return 0;
 }
 
@@ -74,7 +79,7 @@ shared_ptr<Client> Client::Create() {
 }
 
 int Client::Call(const string &server_addr, const string &rpc_name,
-                 const string &data, string &resp) {
+                 const vector<byte> &data, vector<byte> &resp) {
   string hostname;
   unsigned short port;
   if (ParseAddr(server_addr, hostname, port) != 0) {
@@ -94,9 +99,8 @@ int Client::Call(const string &server_addr, const string &rpc_name,
     exit(EXIT_FAILURE);
   }
 
-  string req = PackData(rpc_name, data);
-  cout << req << endl;
-  if (send(this->socket_, req.c_str(), req.length(), 0) < 0) {
+  vector<byte> req = PackData(rpc_name, data);
+  if (send(this->socket_, req.data(), req.size(), 0) < 0) {
     perror("send");
     exit(EXIT_FAILURE);
   }
@@ -193,19 +197,18 @@ void Server::Start() {
 void Server::HandleConn(int fd, const string &client_addr) {
   /* 4bytes: <packet_length> */
 
-  cout << "handling..." << endl;
-
-  string rpc_name, data;
+  string rpc_name;
+  vector<byte> data;
 
   if (ReadUnpack(fd, rpc_name, data) != 0) {
     close(fd);
     return;
   }
 
-  cout << this->handlers_.count("foo") << endl;
-  string resp = this->handlers_[rpc_name](data);
+  vector<byte> resp = this->handlers_[rpc_name](data);
   resp = PackData(rpc_name, resp);
-  send(fd, resp.c_str(), resp.length(), 0);
+  send(fd, resp.data(), resp.size(), 0);
   close(fd);
+
 }
 
