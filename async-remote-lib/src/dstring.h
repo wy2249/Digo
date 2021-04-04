@@ -8,32 +8,39 @@
 class DigoString {
  public:
   DigoString() = default;
-  DigoString(const char *);
-  DigoString(const string&);
+  explicit DigoString(const char *);
+  explicit DigoString(const string&);
 
-  DigoString operator+ (const DigoString&);
+  DigoString operator+ (const DigoString&) const;
 
-  DigoString operator+ (const char*);
+  DigoString operator+ (const char*) const;
 
-  int64_t Compare(const DigoString&);
+  const string &Data() const;
 
-  int64_t Size();
+  int64_t Compare(const DigoString&) const;
+
+  int64_t Size() const;
+
  private:
-  string raw_data;
+  string raw_data_;
 
 };
 
-__attribute__((noinline)) shared_ptr<DigoString> CreateString(char*);
+__attribute__((noinline)) shared_ptr<DigoString> CreateString(const char*);
 
 __attribute__((noinline)) shared_ptr<DigoString> CreateEmptyString();
 
-__attribute__((noinline)) shared_ptr<DigoString> AddString(DigoString*, DigoString*);
+__attribute__((noinline)) shared_ptr<DigoString> AddString(const DigoString*, const DigoString*);
 
-__attribute__((noinline)) shared_ptr<DigoString> CloneString(DigoString*);
+__attribute__((noinline)) shared_ptr<DigoString> AddCString(const DigoString*, const char*);
 
-__attribute__((noinline)) int64_t CompareString(DigoString*, DigoString*);
+__attribute__((noinline)) shared_ptr<DigoString> CloneString(const DigoString*);
 
-__attribute__((noinline)) int64_t GetStringSize(DigoString*);
+__attribute__((noinline)) int64_t CompareString(const DigoString*, const DigoString*);
+
+__attribute__((noinline)) int64_t GetStringSize(const DigoString*);
+
+__attribute__((noinline)) const char* GetCStr(const DigoString*);
 
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_
