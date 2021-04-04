@@ -37,7 +37,6 @@ let translate(functions) =
   let printFloat = 
     declare_function "printFloat" printFloat_t the_module in
 
-
   let show_string (_,ex)= match ex with
     SString(ex)  -> ex
   | _           -> ""                    in    
@@ -68,6 +67,8 @@ let translate(functions) =
         StringMap.find fdecl.sfname function_decls in
       let builder = 
         builder_at_end context (entry_block the_function) in
+
+      let str_format_str = build_global_stringptr "%s\n" "str" builder in
 
       let local_vars = 
         let add_parameter m (t,n) p = 
