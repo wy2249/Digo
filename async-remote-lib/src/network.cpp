@@ -56,7 +56,7 @@ int ReadUnpack(int fd, string &rpc_name, vector<byte> &data) {
     return -1;
   }
   rpc_name = string(data.begin(), data.begin()+pos);
-  data = vector(data.begin()+pos+sizeof(DELIM)-1, data.end());
+  data = vector<byte>(data.begin()+pos+sizeof(DELIM)-1, data.end());
   return 0;
 }
 
