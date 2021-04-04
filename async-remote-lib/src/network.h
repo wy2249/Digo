@@ -14,14 +14,15 @@
 
 
 #define DELIM "\r\n\r\n"
+#define HEADER_LENGTH_SIZE 10
 
-typedef std::function<string (const string &)> Handler;
+typedef std::function<vector<byte> (const vector<byte> &)> Handler;
 
 class Client : public noncopyable {
  public:
   static shared_ptr<Client> Create();
   int Call(const string &server_addr,
-           const string &rpc_name, const string &data, string &resp);
+           const string &rpc_name, const vector<byte> &data, vector<byte> &resp);
 
  private:
   int socket_;

@@ -6,6 +6,7 @@
 #include <memory>
 #include <map>
 #include <iostream>
+#include <vector>
 
 using std::string;
 using std::shared_ptr;
@@ -13,6 +14,7 @@ using std::map;
 using std::to_string;
 using std::cout;
 using std::cerr;
+using std::vector;
 using std::endl;
 using std::make_shared;
 
