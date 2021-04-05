@@ -3,35 +3,35 @@
 #include "dstring.h"
 
 
-__attribute__((noinline)) shared_ptr<DigoString> CreateString(const char* src) {
+shared_ptr<DigoString> CreateString(const char* src) {
   return make_shared<DigoString>(DigoString(src));
 }
 
-__attribute__((noinline)) shared_ptr<DigoString> CreateEmptyString() {
+shared_ptr<DigoString> CreateEmptyString() {
   return make_shared<DigoString>(DigoString());
 }
 
-__attribute__((noinline)) shared_ptr<DigoString> AddString(const DigoString* l, const DigoString* r) {
+shared_ptr<DigoString> AddString(const DigoString* l, const DigoString* r) {
   return make_shared<DigoString>(*l+*r);
 }
 
-__attribute__((noinline)) shared_ptr<DigoString> AddCString(const DigoString* l, const char* r) {
+shared_ptr<DigoString> AddCString(const DigoString* l, const char* r) {
   return make_shared<DigoString>(*l+r);
 }
 
-__attribute__((noinline)) shared_ptr<DigoString> CloneString(const DigoString* src) {
+shared_ptr<DigoString> CloneString(const DigoString* src) {
   return make_shared<DigoString>(DigoString(*src));
 }
 
-__attribute__((noinline)) int64_t CompareString(const DigoString* l, const DigoString* r) {
+int64_t CompareString(const DigoString* l, const DigoString* r) {
   return l->Compare(*r);
 }
 
-__attribute__((noinline)) int64_t GetStringSize(const DigoString* s) {
+int64_t GetStringSize(const DigoString* s) {
   return s->Size();
 }
 
-__attribute__((noinline)) const char* GetCStr(const DigoString* s) {
+const char* GetCStr(const DigoString* s) {
   return s->Data().c_str();
 }
 

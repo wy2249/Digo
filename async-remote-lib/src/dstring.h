@@ -26,21 +26,21 @@ class DigoString {
 
 };
 
-__attribute__((noinline)) shared_ptr<DigoString> CreateString(const char*);
+shared_ptr<DigoString> CreateString(const char*);
 
-__attribute__((noinline)) shared_ptr<DigoString> CreateEmptyString();
+shared_ptr<DigoString> CreateEmptyString();
 
-__attribute__((noinline)) shared_ptr<DigoString> AddString(const DigoString*, const DigoString*);
+shared_ptr<DigoString> AddString(const DigoString*, const DigoString*);
 
-__attribute__((noinline)) shared_ptr<DigoString> AddCString(const DigoString*, const char*);
+shared_ptr<DigoString> AddCString(const DigoString*, const char*);
 
-__attribute__((noinline)) shared_ptr<DigoString> CloneString(const DigoString*);
+shared_ptr<DigoString> CloneString(const DigoString*);
 
-__attribute__((noinline)) int64_t CompareString(const DigoString*, const DigoString*);
+int64_t CompareString(const DigoString*, const DigoString*);
 
-__attribute__((noinline)) int64_t GetStringSize(const DigoString*);
+int64_t GetStringSize(const DigoString*);
 
-__attribute__((noinline)) const char* GetCStr(const DigoString*);
+const char* GetCStr(const DigoString*);
 
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_
