@@ -15,6 +15,12 @@ enum digo_type {
     TYPE_STR = 1,
     TYPE_INT32 = 2,
     TYPE_INT64 = 3,
+    TYPE_DOUBLE = 4,
+    TYPE_SLICE = 5,
+    /*  future object cannot be serialized,
+     *  but may be stored in Slice
+     */
+    TYPE_FUTURE_OBJ = 6,
 };
 
 class TypeCell {
@@ -24,9 +30,14 @@ public:
     explicit TypeCell(int32_t num) : num32(num), type(TYPE_INT32) {}
     explicit TypeCell(int64_t num) : num64(num), type(TYPE_INT64) {}
     digo_type type = TYPE_UNDEFINED;
-    string   str;
     int32_t  num32 = 0;
     int64_t  num64 = 0;
+    double   num_double = 0.0;
+    void*    slice_obj = nullptr;
+    /*  use str_obj for a digo string object  */
+    string   str;
+    void*    str_obj = nullptr;
+    void*    future_obj = nullptr;
 };
 
 class noncopyable {
