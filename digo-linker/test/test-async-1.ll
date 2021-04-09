@@ -9,9 +9,9 @@ target triple = "x86_64-pc-linux-gnu"
 ; VERSION = 1
 
 ; FUNC DECLARE BEGIN
-; FUNC_NAME = 'async_func_test_string_to_int'
+; FUNC_NAME = 'add_int_100'
 ; FUNC_ANNOT = 'async'
-; PARAMETERS = 'string'
+; PARAMETERS = 'int'
 ; RETURN_TYPE = 'int'
 ; FUNC DECLARE END
 
@@ -20,35 +20,26 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [5 x i8] c"%lf\0A\00", align 1
 @.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
-@.str.test.num20 = private unnamed_addr constant [4 x i8] c"20\0A\00", align 1
-
-; Function Attrs: nounwind readonly
-declare dso_local i32 @atoi(i8*) #2
-
 declare dso_local void @printFloat(double)
 declare dso_local void @printInt(i32) 
 declare dso_local void @printString(i8* nocapture readonly)
 
 
 ; THIS IS AN ASYNC FUNCTION
-define i64 @async_func_test_string_to_int(i8* %arg_str_ref) #0 {
-  %arg0 = call i8* @GetString(i8* %arg_str_ref)
+define {i64} @add_int_100(i64 %i) #0 {
+  %add = add nsw i64 %i, 100
 
-  %r2 = alloca i8*, align 8
-  store i8* %arg0, i8** %r2, align 8
-  %r3 = load i8*, i8** %r2, align 8
-  %r4 = call i32 @atoi(i8* %r3) #4
-  
-  %r5 = sext i32 %r4 to i64
-  ret i64 %r5
+  %aggRet = insertvalue {i64} undef, i64 %add, 0
+  ret {i64} %aggRet
 }
 
 define void @digo_main() {
 entry:
 
-  %future_obj = call i8* @digo_linker_async_call_func_async_func_test_string_to_int(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.test.num20, i64 0, i64 0))
-  %retval = call i64 @digo_linker_await_func_async_func_test_string_to_int(i8* %future_obj)
+  %future_obj = call i8* @digo_linker_async_call_func_add_int_100(i64 502)
+  %retaggval = call {i64} @digo_linker_await_func_add_int_100(i8* %future_obj)
 
+  %retval = extractvalue {i64} %retaggval, 0
   call void @JobDecRef(i8* %future_obj)
 
   %conv = trunc i64 %retval to i32

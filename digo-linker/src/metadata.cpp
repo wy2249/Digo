@@ -186,15 +186,11 @@ if.end:
 }
 
 string Metadata::GenerateJumpLabel(int id, const FuncPrototype &proto) {
-    // TODO: %arg0 should be %arg0, arg1, ...
     string label_template = R"XXXXX(
 if.func#<id>#:
   #<arg_extractor>#
-
-  %result#<id># = call i64 @#<func_name>#(#<arguments>#)
-
+  %aggResult#<id># = call #<ret_type># @#<func_name>#(#<arguments>#)
   #<ret_serializer>#
-
   call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %result_len)
 
   br label %if.end
@@ -204,14 +200,20 @@ if.func#<id>#:
     label_template = regex_replace(label_template, regex("\\}"), "}}");
     label_template = regex_replace(label_template, regex("#<([a-z_]+)>#"), "{$1}");
 
+    string ret_type = "{ " + GenerateArgumentsType(proto.return_type) + " }";
+
     auto result = fmt::format(label_template, fmt::arg("id", id),
                               fmt::arg("func_name", proto.func_name),
+                              fmt::arg("ret_type", ret_type),
                               fmt::arg("arguments", GenerateArgumentsDef(proto.parameters)),
                               fmt::arg("arg_extractor", GenerateExtractor(proto.parameters, "arg")),
-                              fmt::arg("ret_serializer", GenerateSerializer(proto.return_type, "result")));
+                              fmt::arg("ret_serializer",
+                                       GenerateSerializerAggregated(proto.return_type,
+                                                                    "%aggResult" + to_string(id))));
     return result;
 }
 
+// serialize %<prefix>0, 1, ...
 string Metadata::GenerateSerializer(const vector<digo_type> & types, const string & prefix) {
     string result;
     for (int i = 0; i < types.size(); i++) {
@@ -230,9 +232,46 @@ string Metadata::GenerateSerializer(const vector<digo_type> & types, const strin
     return result;
 }
 
-// each item extracted is stored in %<padding>ID
+// serialize an aggregate type, agg_name should include "%"
+string Metadata::GenerateSerializerAggregated(const vector<digo_type> & types, const string & agg_name) {
+    string result;
+    int auto_inc_reg = 0;
+    string agg_type = "{ " + GenerateArgumentsType(types) + " }";
+
+    string extract_value_template =
+            "{to_reg} = extractvalue {agg_type} " + agg_name + ", {i}\n";
+
+    for (int i = 0; i < types.size(); i++) {
+        auto type = types[i];
+        string reg = "%tmp_" + to_string(auto_inc_reg++);
+        if (type == TYPE_INT32) {
+            result += fmt::format(extract_value_template,
+                                  fmt::arg("to_reg", reg),
+                                  fmt::arg("agg_type", agg_type),
+                                  fmt::arg("i", i));
+            result += R"(
+  call void @SW_AddInt32(i8* %wrapper, i32 )" + reg + ")";
+        } else if (type == TYPE_INT64) {
+            result += fmt::format(extract_value_template,
+                                  fmt::arg("to_reg", reg),
+                                  fmt::arg("agg_type", agg_type),
+                                  fmt::arg("i", i));
+            result += R"(
+  call void @SW_AddInt64(i8* %wrapper, i64 )" + reg + ")";
+        } else if (type == TYPE_STR) {
+            result += fmt::format(extract_value_template,
+                                  fmt::arg("to_reg", reg),
+                                  fmt::arg("agg_type", agg_type),
+                                  fmt::arg("i", i));
+            result += R"(
+  call void @SW_AddString(i8* %wrapper, i8* )" + reg + ")";
+        }
+    }
+    return result;
+}
+
+// each item extracted is stored in %<padding>0, 1, ...
 string Metadata::GenerateExtractor(const vector<digo_type> & types, const string& padding) {
-    // TODO: waiting for aggregated return type!
     string result;
     for (int i = 0; i < types.size(); i++) {
         auto type = types[i];
@@ -253,6 +292,25 @@ string Metadata::GenerateExtractor(const vector<digo_type> & types, const string
     return result;
 }
 
+// type list. e.g. i8, i32, i8* ....
+string Metadata::GenerateArgumentsType(const vector<digo_type> &types) {
+    string result;
+    if (types.empty()) return result;
+    for (int i = 0; i < types.size(); i++) {
+        auto type = types[i];
+        if (type == TYPE_INT32) {
+            result += R"(i32, )";
+        } else if (type == TYPE_INT64) {
+            result += R"(i64, )";
+        } else if (type == TYPE_STR) {
+            result += R"(i8*, )";
+        }
+    }
+    result = result.substr(0, result.length() - 2);
+    return result;
+}
+
+// each argument is named %arg0, %arg1, ...
 string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
     string result;
     if (types.empty()) return result;
@@ -271,7 +329,6 @@ string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
 }
 
 string Metadata::GenerateAsyncAsLLVMIR(int id, const FuncPrototype &proto) {
-    // TODO: return value undefined because of aggregated type
     string async_template = R"XXXXX(
 define i8* @digo_linker_async_call_func_#<func_name>#(#<arg_def>#) {
   %call = call i8* @digo_linker_async_call_id_#<id>#(#<arg_def>#)
@@ -297,12 +354,12 @@ entry:
   ret i8* %future_obj
 }
 
-define i64 @digo_linker_await_func_#<func_name>#(i8* %arg_future_obj) {
-  %call = call i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj)
-  ret i64 %call
+define #<ret_type_list># @digo_linker_await_func_#<func_name>#(i8* %arg_future_obj) {
+  %call = call #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj)
+  ret #<ret_type_list># %call
 }
 
-define i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
+define #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
   %result = alloca i8*, align 8
   %len = alloca i32, align 4
   call void @AwaitJob(i8* %arg_future_obj, i8** %result, i32* %len)
@@ -316,7 +373,9 @@ define i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
 
   call void @SW_DestroyExtractor(i8* %extractor)
 
-  ret i64 %ret0
+  #<ret_formation>#
+
+  ret #<ret_type_list># %aggRet
 }
 )XXXXX";
 
@@ -324,12 +383,42 @@ define i64 @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
     async_template = regex_replace(async_template, regex("\\}"), "}}");
     async_template = regex_replace(async_template, regex("#<([a-z_]+)>#"), "{$1}");
 
+    string ret_formation;
+    string ret_type = "{ " + GenerateArgumentsType(proto.return_type) + " }";
+
+    string ret_formation_template = "{this_var} = insertvalue {ret_type} {last_var}, {this_type} %ret{i}, {i}\n";
+
+    for (int i = 0; i < proto.return_type.size(); i++) {
+        string last_var = "undef";
+        if (i > 0) last_var = "%ret_agg_" + to_string(i - 1);
+        string this_var = "%ret_agg_" + to_string(i);
+        if (i == (int)proto.return_type.size() - 1) this_var = "%aggRet";
+
+        string this_type;
+        auto type = proto.return_type[i];
+        if (type == TYPE_INT32) {
+            this_type = "i32";
+        } else if (type == TYPE_INT64) {
+            this_type = "i64";
+        } else if (type == TYPE_STR) {
+            this_type = "i8*";
+        }
+
+        ret_formation += fmt::format(ret_formation_template, fmt::arg("this_var", this_var),
+                                     fmt::arg("ret_type", ret_type),
+                                     fmt::arg("last_var", last_var),
+                                     fmt::arg("this_type", this_type),
+                                     fmt::arg("i", i));
+    }
+
     auto result = fmt::format(async_template, fmt::arg("id", id),
     fmt::arg("arg_serialization", GenerateSerializer(proto.parameters, "arg")),
     fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters)),
+    fmt::arg("ret_type_list", ret_type),
     fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")),
     fmt::arg("func_name", proto.func_name),
-    fmt::arg("job_call", proto.is_remote ? "CreateRemoteJob" : "CreateAsyncJob"));
+    fmt::arg("job_call", proto.is_remote ? "CreateRemoteJob" : "CreateAsyncJob"),
+    fmt::arg("ret_formation", ret_formation));
 
     return result;
 }
@@ -348,8 +437,6 @@ string Metadata::GenerateDeclare() {
     string declare_template = R"XXXXX(
 
 declare dso_local i8* @CreateString(i8*)
-declare dso_local void @StringIncRef(i8*)
-declare dso_local void @StringDecRef(i8*)
 declare dso_local i8* @GetString(i8*)
 
 declare dso_local void @AwaitJob(i8*, i8**, i32*)
