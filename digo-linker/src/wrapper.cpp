@@ -2,8 +2,21 @@
 // Created by VM on 2021/3/25.
 //
 
+// This file provides library API - LLVM IR boundaries
+// for the Digo compiler.
+// This wrapper is for future object(Async) and
+// linker-reserved objects only.
+// For built-in types, the library
+// directly uses gc.h template.
+
+// This wrapper:
+// 1. Adds GC wrapper for future object.
+// 2. Catches and handles all exceptions from C++.
+// 3. Provides an entry for the whole program.
+
 #include "../../async-remote-lib/src/async.h"
 #include "../../async-remote-lib/src/master_worker.h"
+
 #include "wrapper.h"
 #include "gc.h"
 #include "serialization_wrapper.h"
@@ -72,7 +85,7 @@ __attribute__((noinline)) void* CreateAsyncJob(int32 func, byte* args, int32 arg
     try {
         auto future_obj = Async::CreateLocal(ASYNC_FUNC_ID2NAME[func],
                   bytes{.content=shared_ptr<byte>(args), .length=arg_len});
-        return GC_Create(future_obj);
+        return DObject<Async>::Create(future_obj);
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("CreateAsyncJob", e);
@@ -84,7 +97,7 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
     try {
         auto future_obj = Async::CreateRemote(ASYNC_FUNC_ID2NAME[func],
                   bytes{.content=shared_ptr<byte>(args), .length=arg_len});
-        return GC_Create(future_obj);
+        return DObject<Async>::Create(future_obj);
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("CreateRemoteJob", e);
@@ -94,7 +107,7 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
 
 __attribute__((noinline)) void JobIncRef(void* future_obj) {
     try {
-        GC_IncRef((ref_wrapper<Async>*)(future_obj));
+        ((DObject<Async>*)future_obj)->IncRef();
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("JobIncRef", e);
@@ -103,7 +116,7 @@ __attribute__((noinline)) void JobIncRef(void* future_obj) {
 
 __attribute__((noinline)) void JobDecRef(void* future_obj) {
     try {
-        GC_DecRef((ref_wrapper<Async>*)(future_obj));
+        ((DObject<Async>*)future_obj)->DecRef();
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("JobDecRef", e);
@@ -112,7 +125,7 @@ __attribute__((noinline)) void JobDecRef(void* future_obj) {
 
 __attribute__((noinline)) void AwaitJob(void* future_obj, byte** result, int32* len) {
     try {
-        auto r =  ((ref_wrapper<Async>*)future_obj)->any_data->Await();
+        auto r = ((DObject<Async>*)future_obj)->Get()->Await();
         // the result will not be deconstructed because
         // we have a reference in Async->result_
         *result = r.content.get();

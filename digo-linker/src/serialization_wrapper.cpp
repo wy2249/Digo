@@ -7,7 +7,7 @@
 #include "serialization_wrapper.h"
 
 #include "gc.h"
-#include "builtin_type_wrapper.h"
+#include "builtin_types.h"
 
 static void SerializationExceptionHandler(const std::string& func, std::exception & e) noexcept {
     std::cerr << "Serialization Error: wrapper exception: " << typeid(e).name() << " " << e.what() << " caught in function " << func << std::endl;

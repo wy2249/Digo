@@ -39,6 +39,7 @@ void EscapeAnalyzer::AutoAddDecRef() {
 
 EscapeAnalyzer::EscapeAnalyzer() {
     this->funcs_to_infer_ = std::make_shared<dsu>();
+
 }
 
 class dsu {

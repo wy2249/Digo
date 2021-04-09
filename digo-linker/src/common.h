@@ -40,14 +40,28 @@ public:
     void*    future_obj = nullptr;
 };
 
-class noncopyable {
- protected:
-  noncopyable() = default;
-  ~noncopyable() = default;
+namespace Linker {
 
- public:
-  noncopyable(const noncopyable &) = delete;
-  noncopyable &operator=(const noncopyable &) = delete;
-};
+    class noncopyable {
+    protected:
+        noncopyable() = default;
+
+        virtual ~noncopyable() = default;
+
+    public:
+        noncopyable(const noncopyable &) = delete;
+
+        noncopyable &operator=(const noncopyable &) = delete;
+    };
+
+    class serializable {
+    public:
+        serializable() = default;
+        virtual ~serializable() = default;
+        virtual string ToString() = 0;
+        virtual serializable* ToObject(const string & str) = 0;
+    };
+
+}
 
 #endif //DIGO_LINKER_COMMON_H_

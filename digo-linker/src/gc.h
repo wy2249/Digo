@@ -19,68 +19,75 @@ const bool GC_DEBUG = false;
 
 #include <mutex>
 #include <memory>
+#include "common.h"
 
 // gc.h provides a C++ template for objects that need reference count gc.
 
-// Wraps the data with a multi-thread safe reference counter
-template <typename T> class ref_wrapper {
+/*  A Digo object with ref count GC support  */
+template <typename T>
+class DObject {
 public:
-    std::shared_ptr<T> any_data;
+    DObject() = default;
+    virtual ~DObject() = default;
+
+    static void* Create(T* ptr) {
+        return Create(std::shared_ptr<T>(ptr));
+    }
+
+    static void* Create(std::shared_ptr<T> ptr) {
+        auto ret = new DObject();
+        ret->obj_ = ptr;
+        ret->ref_cnt = 1;
+        if (GC_DEBUG) {
+            printf("GC Debug: %s, %p is created\n", typeid(T).name(), ret);
+        }
+        return ret;
+    }
+
+    void IncRef() {
+        this->ref_lock.lock();
+        this->ref_cnt++;
+        if (GC_DEBUG) {
+            printf("GC Debug: ref cnt of %s, %p is incremented to %d\n", typeid(T).name(), this, this->ref_cnt);
+        }
+        this->ref_lock.unlock();
+    }
+
+    void DecRef() {
+        this->ref_lock.lock();
+        this->ref_cnt--;
+        if (GC_DEBUG) {
+            printf("GC Debug: ref cnt of %s, %p is decremented to %d\n", typeid(T).name(), this, this->ref_cnt);
+        }
+        if (this->ref_cnt < 0) {
+            printf("using an already released object\n");
+            exit(1);
+        }
+        if (this->ref_cnt == 0) {
+            this->ref_lock.unlock();
+            delete this;
+        } else {
+            this->ref_lock.unlock();
+        }
+    }
+
+    std::shared_ptr<T> Get() {
+        return obj_;
+    }
+
+    T* GetPtr() {
+        return obj_.get();
+    }
+
+    T GetObj() {
+        return *obj_;
+    }
+
+private:
+    std::shared_ptr<T> obj_;
     std::mutex ref_lock;
-    std::mutex data_lock;
     int ref_cnt = 0;
 };
 
-// these two APIs provide the lock for the data in a reference wrapper.
-template <typename T>
-void* AcquireLock(ref_wrapper<T>* ref) {
-    ref->data_lock.lock();
-    return ref->any_data;
-}
-
-template <typename T>
-void ReleaseLock(ref_wrapper<T>* ref) {
-    ref->data_lock.unlock();
-}
-
-template <typename T>
-void* GC_Create(std::shared_ptr<T> data) {
-    auto refTemplate = new ref_wrapper<T>;
-    refTemplate->any_data = data;
-    refTemplate->ref_cnt = 1;
-    if (GC_DEBUG) {
-        printf("GC Debug: %s, %p is created\n", typeid(T).name(), refTemplate);
-    }
-    return refTemplate;
-}
-
-template <typename T>
-void GC_IncRef(ref_wrapper<T>* ref) {
-    ref->ref_lock.lock();
-    ref->ref_cnt++;
-    if (GC_DEBUG) {
-        printf("GC Debug: ref cnt of %s, %p is incremented to %d\n", typeid(T).name(), ref, ref->ref_cnt);
-    }
-    ref->ref_lock.unlock();
-}
-
-template <typename T>
-void GC_DecRef(ref_wrapper<T>* r) {
-    r->ref_lock.lock();
-    r->ref_cnt--;
-    if (GC_DEBUG) {
-        printf("GC Debug: ref cnt of %s, %p is decremented to %d\n", typeid(T).name(), r, r->ref_cnt);
-    }
-    if (r->ref_cnt < 0) {
-        printf("using an already released object\n");
-        exit(1);
-    }
-    if (r->ref_cnt == 0) {
-        r->ref_lock.unlock();
-        delete r;
-    } else {
-        r->ref_lock.unlock();
-    }
-}
 
 #endif //DIGO_LINKER_GC_H
