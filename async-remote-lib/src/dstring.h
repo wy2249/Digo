@@ -1,5 +1,5 @@
-#ifndef ASYNC_REMOTE_LIB_SRC_RESOURCE_H_
-#define ASYNC_REMOTE_LIB_SRC_RESOURCE_H_
+#ifndef ASYNC_REMOTE_LIB_SRC_DSTRING_H_
+#define ASYNC_REMOTE_LIB_SRC_DSTRING_H_
 
 #include "common.h"
 #include <memory>
@@ -30,15 +30,15 @@ class DigoString {
 
 using DStrObject = DObject<DigoString>;
 
-void* CreateString(const char*);
+DStrObject* CreateString(const char*);
 
-void* CreateEmptyString();
+DStrObject* CreateEmptyString();
 
-void* AddString(DStrObject*, DStrObject*);
+DStrObject* AddString(DStrObject*, DStrObject*);
 
-void* AddCString(DStrObject*, const char*);
+DStrObject* AddCString(DStrObject*, const char*);
 
-void* CloneString(DStrObject*);
+DStrObject* CloneString(DStrObject*);
 
 int64_t CompareString(DStrObject*, DStrObject*);
 

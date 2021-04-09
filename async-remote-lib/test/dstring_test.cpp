@@ -7,25 +7,25 @@
 
 TEST(DigoStringTest, Normal) {
   auto ds = CreateString("foo");
-  ASSERT_STREQ(GetCStr(ds.get()), "foo");
+  ASSERT_STREQ(GetCStr(ds), "foo");
 
-  auto ds_2 = AddCString(ds.get(), "foo");
-  auto ds_3 = AddString(ds.get(), ds.get());
+  auto ds_2 = AddCString(ds, "foo");
+  auto ds_3 = AddString(ds, ds);
 
-  ASSERT_STREQ(GetCStr(ds_2.get()),
-      GetCStr(ds_3.get()));
+  ASSERT_STREQ(GetCStr(ds_2),
+      GetCStr(ds_3));
 
-  auto ds_4 = CloneString(ds.get());
-  ASSERT_STREQ(GetCStr(ds_4.get()),
-      GetCStr(ds.get()));
+  auto ds_4 = CloneString(ds);
+  ASSERT_STREQ(GetCStr(ds_4),
+      GetCStr(ds));
 
-  ASSERT_EQ(0, CompareString(ds.get(), ds.get()));
-  ASSERT_GT(0, CompareString(ds.get(), ds_2.get()));
-  ASSERT_LT(0, CompareString(ds_2.get(), ds.get()));
+  ASSERT_EQ(0, CompareString(ds, ds));
+  ASSERT_GT(0, CompareString(ds, ds_2));
+  ASSERT_LT(0, CompareString(ds_2, ds));
 
-  ASSERT_EQ(3, GetStringSize(ds.get()));
+  ASSERT_EQ(3, GetStringSize(ds));
 
   auto ds_5 = CreateEmptyString();
-  ASSERT_EQ(0, GetStringSize(ds_5.get()));
+  ASSERT_EQ(0, GetStringSize(ds_5));
 }
 

@@ -2,28 +2,28 @@
 
 #include "dstring.h"
 
-void* CreateString(const char* src) {
+DStrObject* CreateString(const char* src) {
   return DObject<DigoString>::Create(new DigoString(src));
 }
 
-void* CreateEmptyString() {
+DStrObject* CreateEmptyString() {
     return DObject<DigoString>::Create(new DigoString());
 }
 
-void* AddString(DObject<DigoString>* l,
+DStrObject* AddString(DObject<DigoString>* l,
                 DObject<DigoString>* r) {
     return DObject<DigoString>::Create(new DigoString(
             l->GetObj() + r->GetObj()
             ));
 }
 
-void* AddCString(DObject<DigoString>* l, const char* r) {
+DStrObject* AddCString(DObject<DigoString>* l, const char* r) {
     return DObject<DigoString>::Create(new DigoString(
             l->GetObj() + r
             ));
 }
 
-void* CloneString(DObject<DigoString>* src) {
+DStrObject* CloneString(DObject<DigoString>* src) {
     return DObject<DigoString>::Create(new DigoString(
             src->GetObj()
             ));
