@@ -106,12 +106,12 @@ DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx) {
   return static_cast<DStrObject*>(obj->GetPtr()->Index(idx).str_obj);
 }
 
-int64_t& GetSliceIndexInt(DSliObject* obj, int64_t idx) {
-  return obj->GetPtr()->Index(idx).num64;
+int64_t* GetSliceIndexInt(DSliObject* obj, int64_t idx) {
+  return &(obj->GetPtr()->Index(idx).num64);
 }
 
-double& GetSliceIndexDouble(DSliObject* obj, int64_t idx) {
-  return obj->GetPtr()->Index(idx).num_double;
+double* GetSliceIndexDouble(DSliObject* obj, int64_t idx) {
+  return &(obj->GetPtr()->Index(idx).num_double);
 }
 
 void* GetSliceIndexFuture(DSliObject* obj, int64_t idx) {

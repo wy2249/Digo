@@ -30,6 +30,8 @@ class DigoString {
 
 using DStrObject = DObject<DigoString>;
 
+extern "C" {
+
 DStrObject* CreateString(const char*);
 
 DStrObject* CreateEmptyString();
@@ -45,6 +47,9 @@ int64_t CompareString(DStrObject*, DStrObject*);
 int64_t GetStringSize(DStrObject*);
 
 const char* GetCStr(DStrObject*);
+
+};
+
 
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_

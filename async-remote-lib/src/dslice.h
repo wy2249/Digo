@@ -35,6 +35,8 @@ class DigoSlice {
 
 using DSliObject = DObject<DigoSlice>;
 
+extern "C" {
+
 DSliObject* CreateSlice(int64_t type);
 
 DSliObject* SliceSlice(DSliObject* obj, int64_t begin, int64_t end);
@@ -49,10 +51,13 @@ DSliObject* GetSliceIndexSlice(DSliObject* obj, int64_t idx);
 
 DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx);
 
-int64_t& GetSliceIndexInt(DSliObject* obj, int64_t idx);
+int64_t* GetSliceIndexInt(DSliObject* obj, int64_t idx);
 
-double& GetSliceIndexDouble(DSliObject* obj, int64_t idx);
+double* GetSliceIndexDouble(DSliObject* obj, int64_t idx);
 
 void* GetSliceIndexFuture(DSliObject* obj, int64_t idx);
+
+}
+
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_
