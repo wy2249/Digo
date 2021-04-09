@@ -26,21 +26,25 @@ class DigoString {
 
 };
 
-shared_ptr<DigoString> CreateString(const char*);
+#include "../../digo-linker/src/gc.h"
 
-shared_ptr<DigoString> CreateEmptyString();
+using DStrObject = DObject<DigoString>;
 
-shared_ptr<DigoString> AddString(const DigoString*, const DigoString*);
+void* CreateString(const char*);
 
-shared_ptr<DigoString> AddCString(const DigoString*, const char*);
+void* CreateEmptyString();
 
-shared_ptr<DigoString> CloneString(const DigoString*);
+void* AddString(DStrObject*, DStrObject*);
 
-int64_t CompareString(const DigoString*, const DigoString*);
+void* AddCString(DStrObject*, const char*);
 
-int64_t GetStringSize(const DigoString*);
+void* CloneString(DStrObject*);
 
-const char* GetCStr(const DigoString*);
+int64_t CompareString(DStrObject*, DStrObject*);
+
+int64_t GetStringSize(DStrObject*);
+
+const char* GetCStr(DStrObject*);
 
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_

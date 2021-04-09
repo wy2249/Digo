@@ -2,37 +2,44 @@
 
 #include "dstring.h"
 
-
-shared_ptr<DigoString> CreateString(const char* src) {
-  return make_shared<DigoString>(DigoString(src));
+void* CreateString(const char* src) {
+  return DObject<DigoString>::Create(new DigoString(src));
 }
 
-shared_ptr<DigoString> CreateEmptyString() {
-  return make_shared<DigoString>(DigoString());
+void* CreateEmptyString() {
+    return DObject<DigoString>::Create(new DigoString());
 }
 
-shared_ptr<DigoString> AddString(const DigoString* l, const DigoString* r) {
-  return make_shared<DigoString>(*l+*r);
+void* AddString(DObject<DigoString>* l,
+                DObject<DigoString>* r) {
+    return DObject<DigoString>::Create(new DigoString(
+            l->GetObj() + r->GetObj()
+            ));
 }
 
-shared_ptr<DigoString> AddCString(const DigoString* l, const char* r) {
-  return make_shared<DigoString>(*l+r);
+void* AddCString(DObject<DigoString>* l, const char* r) {
+    return DObject<DigoString>::Create(new DigoString(
+            l->GetObj() + r
+            ));
 }
 
-shared_ptr<DigoString> CloneString(const DigoString* src) {
-  return make_shared<DigoString>(DigoString(*src));
+void* CloneString(DObject<DigoString>* src) {
+    return DObject<DigoString>::Create(new DigoString(
+            src->GetObj()
+            ));
 }
 
-int64_t CompareString(const DigoString* l, const DigoString* r) {
-  return l->Compare(*r);
+int64_t CompareString(DObject<DigoString>* l,
+                      DObject<DigoString>* r) {
+    return l->GetPtr()->Compare(r->GetObj());
 }
 
-int64_t GetStringSize(const DigoString* s) {
-  return s->Size();
+int64_t GetStringSize(DObject<DigoString>* s) {
+    return s->GetPtr()->Size();
 }
 
-const char* GetCStr(const DigoString* s) {
-  return s->Data().c_str();
+const char* GetCStr(DObject<DigoString>* s) {
+    return s->GetPtr()->Data().c_str();
 }
 
 DigoString::DigoString(const char *src) {

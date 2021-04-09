@@ -25,7 +25,7 @@ public:
     vector<TypeCell>    parameters;
 };
 
-class Metadata: public noncopyable {
+class Metadata: public Linker::noncopyable {
 public:
     void    ParseFuncMetadataFromLLIR(const string & ir);
 
