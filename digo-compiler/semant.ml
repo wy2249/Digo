@@ -118,6 +118,7 @@ let check (functions) =
         print_string (" check " ^ s ^ " " ^ string_of_bool (Hashtbl.mem symbols s) ^ "\n");
         ([type_of_identifier s], SNamedVariable(s))
       | AssignOp(var, e) -> 
+        print_string "assignment called semant\n";
         let var_typ = type_of_identifier var
         and (ret_typ,e') = expr e in
         let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
@@ -221,17 +222,20 @@ let check (functions) =
         in
         SShortDecl(nl, ret_list)
       | Expr(e)                           ->  SExpr(expr e)
-      | Return(el)                        ->  
+      | Return(el)                        -> 
         let ret_list = List.map (fun e -> expr e) el in 
         SReturn(ret_list)
-      | Block(stl)                        ->  
+      | Block(stl)                        -> 
         let rec check_stmt_list = function 
           [Return _ as s] -> [check_stmt s]
-        | Return _::_      -> raise(Failure ("Statements appear after Return"))
+        | Return _ :: _      -> raise(Failure ("Statements appear after Return"))
         | Block b::ss     -> check_stmt_list (b@ss)
-        | s::ss           -> check_stmt s:: check_stmt_list ss
-        | []              -> []
-        in SBlock(check_stmt_list stl)  
+        | s::ss           ->
+          let a = check_stmt s in
+          a :: check_stmt_list ss
+        | []              ->   [SEmptyStatement]
+        in
+        SBlock(check_stmt_list stl) 
 
     in (* body of check_function *)
     { sann = func.ann;
@@ -239,10 +243,9 @@ let check (functions) =
       sfname = func.fname;
       sformals = func.formals;
       sbody = match check_stmt (Block func.body) with
-        SBlock(stl) -> stl   
+        SBlock(stl) ->   stl   
       | _           -> raise(Failure("function body does not form"))
     }
-
   in  List.map check_function functions
 ;;
 
