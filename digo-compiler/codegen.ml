@@ -76,19 +76,12 @@ let translate(functions) =
           let local = build_alloca (ltype_of_typ t) n builder in  
           ignore (build_store p local builder);
           StringMap.add n local m    
-
-          (* need to add local variable here *)
-        and add_vlocal m (t,n) =
-          let local_var = build_alloca (ltype_of_typ t) n builder in
-          StringMap.add n local_var m
         in
-        let arguments = List.fold_left2 add_parameter StringMap.empty fdecl.sformals
-            (Array.to_list (params the_function))  in
-            List.fold_left add_vlocal arguments fdecl.slocals in 
+        List.fold_left2 add_parameter StringMap.empty fdecl.sformals (Array.to_list (params the_function))  in
 
-        let lookup n = StringMap.find n local_vars in
+      let lookup n = StringMap.find n local_vars in
 
-        let rec expr builder (e_typl,e) = match e with
+      let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
         | SAwait(s)                                                           ->  const_int i32_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
