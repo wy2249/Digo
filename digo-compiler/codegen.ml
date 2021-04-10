@@ -160,7 +160,8 @@ let translate(functions) =
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           let e_ = expr builder ex1 in   
           ignore(build_store e_ (lookup var) builder); e_
-        | SFunctionCall("printInt",[e])                                        ->  
+        | SFunctionCall("printInt",[e])                                        -> 
+            print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
             build_call printFloat [|(expr builder e) |] "" builder
@@ -222,18 +223,15 @@ let translate(functions) =
         builder_at_end context merge_bb 
       | SDeclare(nl,ty,el) ->
         let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
-        in List.iter add_decl nl; 
-        print_string ("codegen check 1 " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
+        in List.iter add_decl nl;
+        print_string ("declare called codegen\n");
+        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         
         let ck = match el with
           [([VoidType],SEmptyExpr)] -> builder
           | _ ->
-          
-            print_string "test here\n";
-            let build_decll n e = expr builder ([ty],SAssignOp(n,e)) in 
-            let _ = print_string "test here\n"
+            let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
-            print_string "test here\n";
             builder
         in ck
       | SBreak                                                                ->  builder   (*more work on continue and break*)

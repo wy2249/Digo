@@ -1,7 +1,14 @@
-func main(a int) void {
-    printInt(3)
+func main(a int, b float) void {
     a = 5
+    b = 10.5
+    printInt(a)
+    printFloat(b)
+
+    printInt(i)
+
     var i, j int = 5, 6
+    
+    //printInt(i)
 }
 
 /*
