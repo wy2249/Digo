@@ -21,15 +21,14 @@ let check (functions) =
     let add_bind map (name, ty) = StringMap.add name {
       ann = FuncNormal; 
       fname = name;
-      typ = [];
+      typ = [ty];
       formals = [];
-      locals = [];
       body = [] } map
     in 
-      let map = List.fold_left add_bind StringMap.empty [("append", IntegerType); ("len", IntegerType); ("gather", IntegerType)] in 
-      let map2 = StringMap.add "printInt" {ann = FuncNormal; fname = "printInt"; typ = [VoidType]; formals = [(IntegerType,"int")] ; locals = []; body=[]} map in 
-      let map3 = StringMap.add "printFloat" {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; formals = [(FloatType,"float")] ; locals = []; body=[]} map2 in
-      StringMap.add "printString" {ann = FuncNormal; fname = "printString"; typ = [VoidType]; formals = [(StringType,"string")] ; locals = []; body=[]} map3;
+      let map = List.fold_left add_bind StringMap.empty [("append", VoidType); ("len", VoidType); ("gather", VoidType)] in 
+      let map2 = StringMap.add "printInt" {ann = FuncNormal; fname = "printInt"; typ = [VoidType]; formals = [(IntegerType,"int")] ; body=[]} map in 
+      let map3 = StringMap.add "printFloat" {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; formals = [(FloatType,"float")] ; body=[]} map2 in
+      StringMap.add "printString" {ann = FuncNormal; fname = "printString"; typ = [VoidType]; formals = [(StringType,"string")] ; body=[]} map3;
   in
 
   (* 
@@ -95,12 +94,10 @@ let check (functions) =
     in  
 
     ignore(check_binds "argument" func.formals);
-    ignore(check_binds "local" func.locals);
 
     (* Type of each variable (global, formal, or local *)
     let symbols = Hashtbl.create 500 in                                             
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
-    let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.locals in 
     let type_of_identifier s =
       try Hashtbl.find symbols s
       with Not_found -> raise (Failure ("undeclared identifier " ^ s))
@@ -174,7 +171,7 @@ let check (functions) =
       if ((List.hd ret_typl) != BoolType && e != EmptyExpr) 
       then raise (Failure ("expected Boolean expression"))
       else ([List.hd ret_typl],e')
-    in 
+    in
 
     let rec check_stmt = function 
         EmptyStatement                    ->  SEmptyStatement
@@ -182,7 +179,22 @@ let check (functions) =
       | ForStatement(e1,e,e2,st3)         ->  SForStatement(expr e1, check_bool_expr e, expr e2, check_stmt st3)
       | Break                             ->  SBreak                                (*more on sbreak*)
       | Continue                          ->  SContinue                            (*more on scontinune*)
-      | Expr(e)                           ->  SExpr(expr e)      
+      | Expr(e)                           ->  SExpr(expr e)
+      | Declare(nl,t,el) ->
+        let check_dup_var n =
+          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n t)
+        in List.iter check_dup_var nl;
+        let ret_list = List.map (fun e -> expr e) el in 
+        let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment ")) ret_list
+        in
+        SDeclare(nl, t, ret_list)
+      | ShortDecl(nl,el) -> 
+        let ret_list = List.map (fun e -> expr e) el in
+        let check_dup_var n (rt,_) =
+          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
+        in 
+        let _ = List.map2 check_dup_var nl ret_list in
+        SShortDecl(nl, ret_list)
       | Return(el)                        ->  
         let ret_list = List.map (fun e -> expr e) el in 
         SReturn(ret_list)
@@ -200,7 +212,6 @@ let check (functions) =
       styp = func.typ;
       sfname = func.fname;
       sformals = func.formals;
-      slocals = func.locals;
       sbody = match check_stmt (Block func.body) with
         SBlock(stl) -> stl   
       | _           -> raise(Failure("function body does not form"))
@@ -209,10 +220,14 @@ let check (functions) =
   in  List.map check_function functions
 ;;
 
+
 let _ =
   let lexbuf = Lexing.from_channel stdin in
+  Parser.functions Scanner.tokenize lexbuf
+(*
   let ast = Parser.functions Scanner.tokenize lexbuf in
   let sast = check ast in
   let m =Codegen.translate sast in
   assert_valid_module m;
   print_string(string_of_llmodule m)
+*)

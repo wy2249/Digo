@@ -16,14 +16,6 @@ IntegerType
 | FutureType
 | VoidType
 
-(*
-type literal = 
-Integer of int
-| Float of float
-| String of string
-| Bool of bool
-*)
-
 type builtin_function = 
   Gather
 | Len
@@ -56,15 +48,13 @@ type statement =
 | Continue
 | Return of expr list
 | Expr of expr
-(*| Declare of builtin_type list * string list * expr list
-| ShortDecl of string list * expr list *)
+| Declare of string list * builtin_type * expr list
+| ShortDecl of string list * expr list
 (*| EmptySimpleStatement
 | SimpleDeclare of builtin_type list * string list * expr list
 | SimpleShortDecl of string list * expr list
 | SimpleExpr of expr*)
 | Block of statement list
-
-(* NamedParameter of string * builtin_type *)
 
 type bind = builtin_type * string 
 
@@ -78,23 +68,10 @@ ann : func_annotation;
 fname : string;
 typ : builtin_type list;
 formals : bind list;
-locals : bind list;
 body : statement list;
 }
 
-(*
-type func_proto = 
-(*  annotation,  function name,  type of return value,  parameters,   statements    *)
-  FunctionProto of func_annotation * string * builtin_type list * parameter list
-
-type func_impl = 
-  FunctionImpl of statement list
-
-type func_proto_impl = 
-  Function of func_proto * func_impl
-*)
-
-type functions = func_decl list (* func_proto_impl list *)
+type functions = func_decl list
 
 
 let string_of_op = function
@@ -129,3 +106,5 @@ let rec stringify_builtin_function = function
 Gather       ->    "Builtin_Gather"
 | Len          ->    "Builtin_Len"
 | Append       ->    "Builtin_Append"
+
+
