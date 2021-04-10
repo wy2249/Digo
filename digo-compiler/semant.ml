@@ -191,13 +191,16 @@ let check (functions) =
         in List.iter check_dup_var nl;
         print_string (" declare check " ^ (List.hd nl) ^ " " ^ string_of_typ (Hashtbl.find symbols (List.hd nl)) ^"\n");
         let ck = match el with
-          [EmptyExpr] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
+          [] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
           | _ ->
+            if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
             let ret_list = List.map (fun e -> expr e) el in 
-            let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment 1")) ret_list
+            let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment type")) ret_list
             in SDeclare(nl, t, ret_list)
         in ck
       | ShortDecl(nl,el) -> 
+        print_string "short declare called semant\n";
+        if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         let ret_list = List.map (fun e -> expr e) el in
         let check_dup_var n (rt,_) =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))

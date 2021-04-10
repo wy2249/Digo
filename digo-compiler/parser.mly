@@ -215,7 +215,7 @@ p_statement:
 | p_if_statement                   { $1 }
 // Declare
 | KEYWORD_VAR p_variable_list p_type ASSIGNMENT p_expr_list_required NEWLINE  { Declare($2, $3, $5)  }
-| KEYWORD_VAR p_variable_list p_type NEWLINE  { Declare($2, $3, [EmptyExpr])  }
+| KEYWORD_VAR p_variable_list p_type NEWLINE  { Declare($2, $3, [])  }
 | p_variable_list ASSIGNNEW p_expr_list_required NEWLINE  { ShortDecl($1, $3)}
 // For loop
 | KEYWORD_FOR LEFT_PARENTHE p_expr SEMICOLON p_expr SEMICOLON p_expr RIGHT_PARENTHE p_statement {ForStatement($3, $5, $7, $9)}

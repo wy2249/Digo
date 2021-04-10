@@ -234,6 +234,7 @@ let translate(functions) =
             in List.map2 build_decll nl el;
             builder
         in ck
+      | SShortDecl(nl,el) -> builder
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           ->  
