@@ -30,11 +30,11 @@ public:
     DObject() = default;
     virtual ~DObject() = default;
 
-    static void* Create(T* ptr) {
+    static DObject<T>* Create(T* ptr) {
         return Create(std::shared_ptr<T>(ptr));
     }
 
-    static void* Create(std::shared_ptr<T> ptr) {
+    static DObject<T>* Create(std::shared_ptr<T> ptr) {
         auto ret = new DObject();
         ret->obj_ = ptr;
         ret->ref_cnt = 1;
