@@ -47,8 +47,6 @@ DSliObject* SliceAppend(DSliObject* obj, ...);
 
 int64_t GetSliceSize(DSliObject* obj);
 
-DSliObject* GetSliceIndexSlice(DSliObject* obj, int64_t idx);
-
 DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx);
 
 int64_t* GetSliceIndexInt(DSliObject* obj, int64_t idx);

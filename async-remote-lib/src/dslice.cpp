@@ -75,20 +75,17 @@ DSliObject* SliceAppend(DSliObject* obj, ...) {
     case TYPE_INT64:
       tv.num64 = va_arg(valist, int64_t);
       break;
-    case TYPE_INT32:
-      tv.num32 = va_arg(valist, int32_t);
-      break;
     case TYPE_STR:
       tv.str_obj = va_arg(valist, void*);
       break;
     case TYPE_FUTURE_OBJ:
       tv.future_obj = va_arg(valist, void*);
+      break;
     case TYPE_DOUBLE:
       tv.num_double = va_arg(valist, double);
-    case TYPE_SLICE:
-      tv.slice_obj = va_arg(valist, void*);
+      break;
     default:
-      cerr << "Error: DigoSlice has type undefined" << endl;
+      cerr << "Error: type undefined" << endl;
   }
   va_end(valist);
   return DSliObject::Create(new DigoSlice(obj->GetPtr()->Append(tv)));
@@ -96,10 +93,6 @@ DSliObject* SliceAppend(DSliObject* obj, ...) {
 
 int64_t GetSliceSize(DSliObject* obj) {
   return obj->GetPtr()->Size();
-}
-
-DSliObject* GetSliceIndexSlice(DSliObject* obj, int64_t idx) {
-  return static_cast<DSliObject*>(obj->GetPtr()->Index(idx).slice_obj);
 }
 
 DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx) {
