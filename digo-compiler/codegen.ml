@@ -69,22 +69,21 @@ let translate(functions) =
         builder_at_end context (entry_block the_function) in
 
       let str_format_str = build_global_stringptr "%s\n" "str" builder in
-
-      let local_vars = 
-        let add_parameter m (t,n) p = 
-          set_value_name n p;
-          let local = build_alloca (ltype_of_typ t) n builder in  
-          ignore (build_store p local builder);
-          StringMap.add n local m    
-        in
-        List.fold_left2 add_parameter StringMap.empty fdecl.sformals (Array.to_list (params the_function))  
-      in
-
-      let add_var_decl vname llvalue = StringMap.add vname llvalue local_vars
       
+      let local_vars = Hashtbl.create 5000 in
+      let add_formal (t, n) p =
+        set_value_name n p;
+        let local = build_alloca (ltype_of_typ t) n builder in ignore (build_store p local builder); 
+        Hashtbl.replace local_vars n local 
+      in
+      ignore (List.iter2 add_formal fdecl.sformals (Array.to_list (params the_function)));
+
+      let add_var_decl id llvalue = Hashtbl.add local_vars id llvalue
       in
 
-      let lookup n = StringMap.find n local_vars in
+      let lookup n = if Hashtbl.mem local_vars n then Hashtbl.find local_vars n
+        else raise (Failure("cannot find symbol in local_vars"))
+      in
 
       let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
@@ -222,9 +221,9 @@ let translate(functions) =
         ignore(build_cond_br bool_val body_bb merge_bb pred_builder);
         builder_at_end context merge_bb 
       | SDeclare(nl,ty,el) ->
-        let add_decl n = ignore(StringMap.add n (build_alloca (ltype_of_typ ty) n builder) local_vars)
+        let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
         in List.iter add_decl nl; 
-        print_string ("codegen check 1 " ^ (List.hd nl) ^ " " ^ string_of_bool (StringMap.mem (List.hd nl) local_vars) ^"\n");
+        print_string ("codegen check 1 " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         
         let ck = match el with
           [([VoidType],SEmptyExpr)] -> builder
@@ -233,7 +232,7 @@ let translate(functions) =
             print_string "test here\n";
             let build_decll n e = expr builder ([ty],SAssignOp(n,e)) in 
             let _ = print_string "test here\n"
-            in build_decll (List.hd nl) (List.hd el);
+            in List.map2 build_decll nl el;
             print_string "test here\n";
             builder
         in ck

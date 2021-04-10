@@ -1,0 +1,32 @@
+func main(a int) void {
+    printInt(3)
+    a = 5
+    var i, j int = 5, 6
+}
+
+/*
+
+ModuleID = 'Digo'
+source_filename = "Digo"
+
+@str = private unnamed_addr constant [4 x i8] c"%s\0A\00"
+
+declare void @printInt(i32)
+
+declare void @printFloat(double)
+
+declare void @printString(i8*)
+
+define { void } @main(i32 %a) {
+entry:
+  %a1 = alloca i32
+  store i32 %a, i32* %a1
+  call void @printInt(i32 3)
+  store i32 5, i32* %a1
+  %i = alloca i32
+  %j = alloca i32
+  store i32 5, i32* %i
+  store i32 6, i32* %j
+  ret { void } zeroinitializer
+}
+*/
