@@ -77,7 +77,12 @@ let translate(functions) =
           ignore (build_store p local builder);
           StringMap.add n local m    
         in
-        List.fold_left2 add_parameter StringMap.empty fdecl.sformals (Array.to_list (params the_function))  in
+        List.fold_left2 add_parameter StringMap.empty fdecl.sformals (Array.to_list (params the_function))  
+      in
+
+      let add_var_decl vname llvalue = StringMap.add vname llvalue local_vars
+      
+      in
 
       let lookup n = StringMap.find n local_vars in
 
@@ -153,9 +158,9 @@ let translate(functions) =
           | Negative when ex1_typl = [FloatType]     ->  build_fneg
           | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
           ) e_ "tmp" builder
-        | SAssignOp(varl,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+        | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           let e_ = expr builder ex1 in   
-          ignore(build_store e_ (lookup (List.hd varl)) builder); e_
+          ignore(build_store e_ (lookup var) builder); e_
         | SFunctionCall("printInt",[e])                                        ->  
             build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
@@ -216,7 +221,22 @@ let translate(functions) =
         let merge_bb = append_block context "merge" the_function in
         ignore(build_cond_br bool_val body_bb merge_bb pred_builder);
         builder_at_end context merge_bb 
-
+      | SDeclare(nl,ty,el) ->
+        let add_decl n = ignore(StringMap.add n (build_alloca (ltype_of_typ ty) n builder) local_vars)
+        in List.iter add_decl nl; 
+        print_string ("codegen check 1 " ^ (List.hd nl) ^ " " ^ string_of_bool (StringMap.mem (List.hd nl) local_vars) ^"\n");
+        
+        let ck = match el with
+          [([VoidType],SEmptyExpr)] -> builder
+          | _ ->
+          
+            print_string "test here\n";
+            let build_decll n e = expr builder ([ty],SAssignOp(n,e)) in 
+            let _ = print_string "test here\n"
+            in build_decll (List.hd nl) (List.hd el);
+            print_string "test here\n";
+            builder
+        in ck
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           ->  

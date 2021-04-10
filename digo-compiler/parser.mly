@@ -141,7 +141,7 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| VARIABLE ASSIGNMENT p_expr { AssignOp([$1], $3) }
+| VARIABLE ASSIGNMENT p_expr { AssignOp($1, $3) }
 
 /* literals */
 | INT_LITERAL     { Integer($1) }

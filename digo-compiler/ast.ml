@@ -29,7 +29,7 @@ type expr =
 | Bool of bool
 | BinaryOp of expr * binary_operator * expr
 | UnaryOp  of unary_operator * expr
-| AssignOp of string list * expr
+| AssignOp of string * expr
 | FunctionCall of string * expr list
 | NamedVariable of string
 | SliceLiteral of builtin_type * int * expr list

@@ -113,12 +113,12 @@ let check (functions) =
       | String (x)   -> ([StringType],SString(x))
       | EmptyExpr -> ([VoidType],SEmptyExpr) 
       | NamedVariable s  -> ([type_of_identifier s], SNamedVariable(s))
-      | AssignOp(varl, e) ->                                      
-        let var_typl = List.map type_of_identifier varl 
-        and (ret_typl,e') = expr e in
+      | AssignOp(var, e) ->                                      
+        let var_typ = type_of_identifier var
+        and (ret_typ,e') = expr e in
         let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
-          ^ stringify_builtin_type ret_typ*) in 
-        (check_assign var_typl ret_typl err, SAssignOp(varl,(ret_typl,e')))                                     
+          ^ stringify_builtin_type ret_typ*) in
+          ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(var,(ret_typ, e')))     
       | UnaryOp(op, e)   -> 
         let (ret_typl,e') = expr e in
         let op_typ = match op with
@@ -184,10 +184,14 @@ let check (functions) =
         let check_dup_var n =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n t)
         in List.iter check_dup_var nl;
-        let ret_list = List.map (fun e -> expr e) el in 
-        let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment ")) ret_list
-        in
-        SDeclare(nl, t, ret_list)
+        print_string ("check " ^ (List.hd nl) ^ " " ^ string_of_typ (Hashtbl.find symbols (List.hd nl)) ^"\n");
+        let ck = match el with
+          [EmptyExpr] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
+          | _ ->
+            let ret_list = List.map (fun e -> expr e) el in 
+            let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment 1")) ret_list
+            in SDeclare(nl, t, ret_list)
+        in ck
       | ShortDecl(nl,el) -> 
         let ret_list = List.map (fun e -> expr e) el in
         let check_dup_var n (rt,_) =
@@ -223,11 +227,9 @@ let check (functions) =
 
 let _ =
   let lexbuf = Lexing.from_channel stdin in
-  Parser.functions Scanner.tokenize lexbuf
-(*
   let ast = Parser.functions Scanner.tokenize lexbuf in
+
   let sast = check ast in
   let m =Codegen.translate sast in
   assert_valid_module m;
   print_string(string_of_llmodule m)
-*)
