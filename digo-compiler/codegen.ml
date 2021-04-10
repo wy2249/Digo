@@ -240,10 +240,16 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
-        let add_decl n e = 
+        (match el with 
+        | [(etl,SFunctionCall(_,_))] -> 
+          let add_decl n et = 
+          ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
+          in List.iter2 add_decl nl etl 
+        | _ -> 
+          let add_decl n e = 
           let (et, _) = e in
           ignore(add_var_decl n (build_alloca (ltype_of_typ (List.hd et)) n builder))
-        in List.iter2 add_decl nl el;
+          in List.iter2 add_decl nl el);
         print_string ("short declare called codegen\n");
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
 
@@ -253,7 +259,7 @@ let translate(functions) =
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()
-              | a::tl       ->  ignore(build_store (const_extractvalue e_ [|current_idx|]) (lookup a) builder);   
+              | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
                                 apply_extractvaluef (current_idx+1) tl  
             in  ignore(apply_extractvaluef 0 nl); 
             builder

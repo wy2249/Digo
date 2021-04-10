@@ -211,7 +211,14 @@ let check (functions) =
         let check_dup_var n (rt,_) =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
-        let _ = List.map2 check_dup_var nl ret_list in
+        let check_dup_var_function n rt =
+          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
+        in 
+        let _ = 
+          match ret_list with
+            [(etl,SFunctionCall(_,_))]    -> List.map2 check_dup_var_function nl etl
+          | _                             -> List.map2 check_dup_var nl ret_list         
+        in
         SShortDecl(nl, ret_list)
       | Expr(e)                           ->  SExpr(expr e)
       | Return(el)                        ->  
