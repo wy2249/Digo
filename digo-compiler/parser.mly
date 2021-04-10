@@ -102,7 +102,7 @@ p_type_list:
 p_variable_list:
   /* empty variabie list is not allowed  */ 
 | VARIABLE    {  [$1]  } 
-| VARIABLE COMMA p_variable_list  {  [$1]::$3  }
+| VARIABLE COMMA p_variable_list  {  $1::$3  }
 
 p_parameters:
   { [] }
@@ -162,6 +162,7 @@ p_expr:
 | KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Append, $3)  }
 
 | LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
+
 | p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE { SliceLiteral($1, List.length $3, $3) }
 /* index */
 | p_expr LEFT_BRACKET p_expr RIGHT_BRACKET { SliceIndex($1, $3) }
@@ -188,16 +189,8 @@ p_statements:
 | NEWLINE p_statements    { $2 }
 | p_statement p_statements  { $1::$2 }
 
-//p_locals:
-//  { [] }
-//| p_local p_locals  { $1::$2 }
 
-/* declare */
-//p_declare_statement:
-
-//| KEYWORD_VAR VARIABLE p_type                 NEWLINE  { ($3,$2) }
-
-p_if_statement:                                             /*works latter on p_locals*/
+p_if_statement:
   KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement KEYWORD_ELSE p_statement { IfStatement($3,$5, $7) }
 | KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement %prec NOELSE  {IfStatement($3, $5,EmptyStatement) }
 
@@ -221,8 +214,8 @@ p_statement:
 // If
 | p_if_statement                   { $1 }
 // Declare
-| KEYWORD_VAR p_variable_list p_type ASSIGNMENT p_expr_list_required NEWLINE  { Declare($3, $2, $5)  }
-| KEYWORD_VAR p_variable_list p_type NEWLINE  { Declare($3, $2, [EmptyExpr])  }
+| KEYWORD_VAR p_variable_list p_type ASSIGNMENT p_expr_list_required NEWLINE  { Declare($2, $3, $5)  }
+| KEYWORD_VAR p_variable_list p_type NEWLINE  { Declare($2, $3, [EmptyExpr])  }
 | p_variable_list ASSIGNNEW p_expr_list_required NEWLINE  { ShortDecl($1, $3)}
 // For loop
 | KEYWORD_FOR LEFT_PARENTHE p_expr SEMICOLON p_expr SEMICOLON p_expr RIGHT_PARENTHE p_statement {ForStatement($3, $5, $7, $9)}
@@ -230,7 +223,10 @@ p_statement:
 | KEYWORD_FOR LEFT_PARENTHE SEMICOLON SEMICOLON RIGHT_PARENTHE p_statement  {ForStatement(EmptyExpr, EmptyExpr, EmptyExpr, $6)  }
 | KEYWORD_FOR LEFT_PARENTHE SEMICOLON p_expr SEMICOLON p_expr RIGHT_PARENTHE p_statement {ForStatement(EmptyExpr, $4, $6 , $8)}
 | KEYWORD_FOR LEFT_PARENTHE p_expr SEMICOLON p_expr SEMICOLON RIGHT_PARENTHE p_statement {ForStatement($3, $5, EmptyExpr, $8)}
+// Break
 | KEYWORD_BREAK   NEWLINE        {  Break  }
+// Continue
 | KEYWORD_CONTINUE   NEWLINE     {  Continue  }
+// Block
 | LEFT_BRACE NEWLINE p_statements RIGHT_BRACE NEWLINE {Block($3)}
 
