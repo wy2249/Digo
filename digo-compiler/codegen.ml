@@ -158,6 +158,7 @@ let translate(functions) =
           | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
           ) e_ "tmp" builder
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+          print_string "assign called codegen\n";
           let e_ = expr builder ex1 in   
           ignore(build_store e_ (lookup var) builder); e_
         | SFunctionCall("printInt",[e])                                        -> 
@@ -193,7 +194,8 @@ let translate(functions) =
 
       let rec stmt builder = function  
         SEmptyStatement                                                        ->  builder
-      | SBlock(sl)                                                             ->  List.fold_left stmt builder sl 
+      | SBlock(sl)                                                             ->  
+        List.fold_left stmt builder sl 
       | SIfStatement(ex, s1, s2)                                               ->  
         let bool_val = expr builder ex in 
         let merge_bb = append_block context "merge" the_function in
@@ -254,7 +256,7 @@ let translate(functions) =
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()
               | a::tl       ->  ignore(build_store (const_extractvalue e_ [|current_idx|]) (lookup a) builder);   
-                                apply_extractvaluef (current_idx+1) tl  
+            apply_extractvaluef (current_idx+1) tl  
             in  ignore(apply_extractvaluef 0 nl); 
             builder
           | _ ->
@@ -279,7 +281,7 @@ let translate(functions) =
         let agg_ = [|const_int i32_t 0|] in 
         add_terminal builder (build_aggregate_ret agg_)  
 
-      in 
+      in
 
         List.iter build_function_body functions;
         the_module

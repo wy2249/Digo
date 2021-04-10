@@ -65,7 +65,7 @@ p_function_decl:
     fname = $3;
     typ = [$7];
     formals = $5;
-    body = $10 } }
+    body = List.rev $10 } }
 | /* 2. func FuncName(parameters)  */
   p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
   LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
@@ -74,7 +74,7 @@ p_function_decl:
     fname = $3;
     typ = [];
     formals = $5;
-    body = $9 } }
+    body = List.rev $9 } }
 | /* 3. func FuncName(parameters)  (retType1, retType2, ...)  */
   p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE 
   LEFT_PARENTHE p_type_list RIGHT_PARENTHE 
@@ -84,7 +84,7 @@ p_function_decl:
     fname = $3;
     typ = $8;
     formals = $5;
-    body = $12 } }
+    body = List.rev $12 } }
 
 
 /*p_function_impl:*/
@@ -186,8 +186,8 @@ p_type:
 
 p_statements:
   { [] }
-| NEWLINE p_statements    { $2 }
-| p_statement p_statements  { $1::$2 }
+| p_statements NEWLINE     { $1 }
+| p_statements p_statement  { $2::$1 }
 
 
 p_if_statement:
