@@ -5,6 +5,7 @@
 #include "metadata.h"
 #include <regex>
 #include <sstream>
+#include <utility>
 
 #define FMT_HEADER_ONLY
 #include "../third-party/fmt/format.h"
@@ -31,9 +32,13 @@ public:
 
 class IncorrectMetadataException: public exception {
 public:
+    IncorrectMetadataException(): msg("incorrect metadata") {}
+    IncorrectMetadataException(string m): msg(std::move(m)) {}
     const char * what() const noexcept override {
-        return "incorrect metadata";
+        return msg.c_str();
     }
+private:
+    string msg;
 };
 
 class IncorrectIRException: public exception {
@@ -103,7 +108,7 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
         } else if (func_annotation == "async remote") {
             prototype.is_remote = 1;
         } else {
-            throw IncorrectMetadataException();
+            throw IncorrectMetadataException("async/async remote expected");
         }
 
         prototype.func_name = func_name;
@@ -113,6 +118,12 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
                 prototype.parameters.push_back(TYPE_INT64);
             } else if (str == "string") {
                 prototype.parameters.push_back(TYPE_STR);
+            } else if (str == "double") {
+                prototype.parameters.push_back(TYPE_DOUBLE);
+            } else if (str == "slice") {
+                prototype.parameters.push_back(TYPE_SLICE);
+            } else {
+                throw IncorrectMetadataException("wrong parameter type");
             }
         }
 
@@ -123,12 +134,15 @@ void Metadata::ParseFuncMetadataFromLLIR(const string &ir) {
                 prototype.return_type.push_back(TYPE_INT64);
             } else if (str == "string") {
                 prototype.return_type.push_back(TYPE_STR);
+            } else if (str == "double") {
+                prototype.return_type.push_back(TYPE_DOUBLE);
+            } else if (str == "slice") {
+                prototype.return_type.push_back(TYPE_SLICE);
             } else {
-                throw IncorrectMetadataException();
+                throw IncorrectMetadataException("wrong return type");
             }
         }
         ret.push_back(prototype);
-
     }
 
     functions_prototype_ = ret;
@@ -190,7 +204,7 @@ string Metadata::GenerateJumpLabel(int id, const FuncPrototype &proto) {
 if.func#<id>#:
   #<arg_extractor>#
   %aggResult#<id># = call #<ret_type># @#<func_name>#(#<arguments>#)
-  #<ret_serializer>#
+#<ret_serializer>#
   call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %result_len)
 
   br label %if.end
@@ -227,6 +241,12 @@ string Metadata::GenerateSerializer(const vector<digo_type> & types, const strin
         } else if (type == TYPE_STR) {
             result += R"(
   call void @SW_AddString(i8* %wrapper, i8* %)" + prefix + to_string(i) + ")";
+        } else if (type == TYPE_SLICE) {
+            result += R"(
+  call void @SW_AddSlice(i8* %wrapper, i8* %)" + prefix + to_string(i) + ")";
+        } else if (type == TYPE_DOUBLE) {
+            result += R"(
+  call void @SW_AddDouble(i8* %wrapper, double %)" + prefix + to_string(i) + ")";
         }
     }
     return result;
@@ -239,7 +259,7 @@ string Metadata::GenerateSerializerAggregated(const vector<digo_type> & types, c
     string agg_type = "{ " + GenerateArgumentsType(types) + " }";
 
     string extract_value_template =
-            "{to_reg} = extractvalue {agg_type} " + agg_name + ", {i}\n";
+            "  {to_reg} = extractvalue {agg_type} " + agg_name + ", {i}\n";
 
     for (int i = 0; i < types.size(); i++) {
         auto type = types[i];
@@ -250,21 +270,35 @@ string Metadata::GenerateSerializerAggregated(const vector<digo_type> & types, c
                                   fmt::arg("agg_type", agg_type),
                                   fmt::arg("i", i));
             result += R"(
-  call void @SW_AddInt32(i8* %wrapper, i32 )" + reg + ")";
+  call void @SW_AddInt32(i8* %wrapper, i32 )" + reg + ")\n";
         } else if (type == TYPE_INT64) {
             result += fmt::format(extract_value_template,
                                   fmt::arg("to_reg", reg),
                                   fmt::arg("agg_type", agg_type),
                                   fmt::arg("i", i));
             result += R"(
-  call void @SW_AddInt64(i8* %wrapper, i64 )" + reg + ")";
+  call void @SW_AddInt64(i8* %wrapper, i64 )" + reg + ")\n";
         } else if (type == TYPE_STR) {
             result += fmt::format(extract_value_template,
                                   fmt::arg("to_reg", reg),
                                   fmt::arg("agg_type", agg_type),
                                   fmt::arg("i", i));
             result += R"(
-  call void @SW_AddString(i8* %wrapper, i8* )" + reg + ")";
+  call void @SW_AddString(i8* %wrapper, i8* )" + reg + ")\n";
+        } else if (type == TYPE_SLICE) {
+            result += fmt::format(extract_value_template,
+                                  fmt::arg("to_reg", reg),
+                                  fmt::arg("agg_type", agg_type),
+                                  fmt::arg("i", i));
+            result += R"(
+  call void @SW_AddSlice(i8* %wrapper, i8* )" + reg + ")\n";
+        } else if (type == TYPE_DOUBLE) {
+            result += fmt::format(extract_value_template,
+                                  fmt::arg("to_reg", reg),
+                                  fmt::arg("agg_type", agg_type),
+                                  fmt::arg("i", i));
+            result += R"(
+  call void @SW_AddDouble(i8* %wrapper, double )" + reg + ")\n";
         }
     }
     return result;
@@ -287,6 +321,14 @@ string Metadata::GenerateExtractor(const vector<digo_type> & types, const string
             result += R"(
   %)" + padding + to_string(i) +  R"( = call i8* @SW_ExtractString(i8* %extractor)
 )";
+        } else if (type == TYPE_SLICE) {
+            result += R"(
+  %)" + padding + to_string(i) +  R"( = call i8* @SW_ExtractSlice(i8* %extractor)
+)";
+        } else if (type == TYPE_DOUBLE) {
+            result += R"(
+  %)" + padding + to_string(i) +  R"( = call double @SW_ExtractDouble(i8* %extractor)
+)";
         }
     }
     return result;
@@ -304,6 +346,10 @@ string Metadata::GenerateArgumentsType(const vector<digo_type> &types) {
             result += R"(i64, )";
         } else if (type == TYPE_STR) {
             result += R"(i8*, )";
+        } else if (type == TYPE_SLICE) {
+            result += R"(i8*, )";
+        } else if (type == TYPE_DOUBLE) {
+            result += R"(double, )";
         }
     }
     result = result.substr(0, result.length() - 2);
@@ -322,6 +368,10 @@ string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
             result += R"(i64 %arg)" + to_string(i) + ", ";
         } else if (type == TYPE_STR) {
             result += R"(i8* %arg)" + to_string(i) + ", ";
+        } else if (type == TYPE_SLICE) {
+            result += R"(i8* %arg)" + to_string(i) + ", ";
+        } else if (type == TYPE_DOUBLE) {
+            result += R"(double %arg)" + to_string(i) + ", ";
         }
     }
     result = result.substr(0, result.length() - 2);
@@ -373,7 +423,7 @@ define #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
 
   call void @SW_DestroyExtractor(i8* %extractor)
 
-  #<ret_formation>#
+#<ret_formation>#
 
   ret #<ret_type_list># %aggRet
 }
@@ -386,7 +436,7 @@ define #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
     string ret_formation;
     string ret_type = "{ " + GenerateArgumentsType(proto.return_type) + " }";
 
-    string ret_formation_template = "{this_var} = insertvalue {ret_type} {last_var}, {this_type} %ret{i}, {i}\n";
+    string ret_formation_template = "  {this_var} = insertvalue {ret_type} {last_var}, {this_type} %ret{i}, {i}\n";
 
     for (int i = 0; i < proto.return_type.size(); i++) {
         string last_var = "undef";
@@ -402,6 +452,10 @@ define #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
             this_type = "i64";
         } else if (type == TYPE_STR) {
             this_type = "i8*";
+        } else if (type == TYPE_SLICE) {
+            this_type = "i8*";
+        } else if (type == TYPE_DOUBLE) {
+            this_type = "double";
         }
 
         ret_formation += fmt::format(ret_formation_template, fmt::arg("this_var", this_var),
@@ -437,7 +491,22 @@ string Metadata::GenerateDeclare() {
     string declare_template = R"XXXXX(
 
 declare dso_local i8* @CreateString(i8*)
-declare dso_local i8* @GetString(i8*)
+declare dso_local i8* @CreateEmptyString()
+declare dso_local i8* @AddString(i8*, i8*)
+declare dso_local i8* @AddCString(i8*, i8*)
+declare dso_local i8* @CloneString(i8*)
+declare dso_local i64 @CompareString(i8*, i8*)
+declare dso_local i64 @GetStringSize(i8*)
+declare dso_local i8* @GetCStr(i8*)
+
+declare dso_local void @print(i8*, ...)
+declare dso_local void @println(i8*, ...)
+
+declare dso_local i8* @CreateSlice(i64)
+declare dso_local i8* @SliceSlice(i8*, i64, i64)
+declare dso_local i8* @SliceAppend(i8*, ...)
+declare dso_local i8* @CloneSlice(i8*)
+declare dso_local i64 @GetSliceSize(i8*)
 
 declare dso_local void @AwaitJob(i8*, i8**, i32*)
 declare dso_local void @JobDecRef(i8*)
@@ -448,12 +517,16 @@ declare dso_local i8* @SW_CreateWrapper()
 declare dso_local void @SW_AddString(i8*, i8*)
 declare dso_local void @SW_AddInt32(i8*, i32)
 declare dso_local void @SW_AddInt64(i8*, i64)
+declare dso_local void @SW_AddDouble(i8*, double)
+declare dso_local void @SW_AddSlice(i8*, i8*)
 declare dso_local void @SW_GetAndDestroy(i8*, i8**, i32*)
 
 declare dso_local i8* @SW_CreateExtractor(i8*, i32)
 declare dso_local i32 @SW_ExtractInt32(i8*)
 declare dso_local i64 @SW_ExtractInt64(i8*)
+declare dso_local double @SW_ExtractDouble(i8*)
 declare dso_local i8* @SW_ExtractString(i8*)
+declare dso_local i8* @SW_ExtractSlice(i8*)
 declare dso_local void @SW_DestroyExtractor(i8*)
 
 declare dso_local void @NoMatchExceptionHandler(i32 %func_id)

@@ -6,7 +6,7 @@
 #include <cstdint>
 
 class DigoString {
- public:
+public:
   DigoString() = default;
   explicit DigoString(const char *);
   explicit DigoString(const string&);
@@ -21,7 +21,7 @@ class DigoString {
 
   int64_t Size() const;
 
- private:
+private:
   string raw_data_;
 
 };
@@ -32,23 +32,23 @@ using DStrObject = DObject<DigoString>;
 
 extern "C" {
 
-DStrObject* CreateString(const char*);
+void* CreateString(const char*);
 
-DStrObject* CreateEmptyString();
+void* CreateEmptyString();
 
-DStrObject* AddString(DStrObject*, DStrObject*);
+void* AddString(void*, void*);
 
-DStrObject* AddCString(DStrObject*, const char*);
+void* AddCString(void*, const char*);
 
-DStrObject* CloneString(DStrObject*);
+void* CloneString(void*);
 
-int64_t CompareString(DStrObject*, DStrObject*);
+int64_t CompareString(void*, void*);
 
-int64_t GetStringSize(DStrObject*);
+int64_t GetStringSize(void*);
 
-const char* GetCStr(DStrObject*);
+const char* GetCStr(void*);
 
-};
+}
 
 
 

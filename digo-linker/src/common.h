@@ -6,6 +6,8 @@
 #include <memory>
 #include <map>
 #include <iostream>
+#include <utility>
+#include <vector>
 
 using std::string;
 typedef unsigned char byte;
@@ -29,15 +31,22 @@ public:
     explicit TypeCell(string s) : str(std::move(s)), type(TYPE_STR) {}
     explicit TypeCell(int32_t num) : num32(num), type(TYPE_INT32) {}
     explicit TypeCell(int64_t num) : num64(num), type(TYPE_INT64) {}
+    explicit TypeCell(double num) : num_double(num), type(TYPE_DOUBLE) {}
+    explicit TypeCell(std::vector<TypeCell> a, digo_type t) : arr(std::move(a)), arr_slice_type(t), type(TYPE_SLICE) {}
+
     digo_type type = TYPE_UNDEFINED;
     int32_t  num32 = 0;
     int64_t  num64 = 0;
     double   num_double = 0.0;
     void*    slice_obj = nullptr;
     /*  use str_obj for a digo string object  */
-    string   str;
     void*    str_obj = nullptr;
     void*    future_obj = nullptr;
+
+    /*   serializer reserved  */
+    string   str;
+    std::vector<TypeCell> arr;
+    digo_type arr_slice_type = TYPE_UNDEFINED;
 };
 
 namespace Linker {
@@ -52,14 +61,6 @@ namespace Linker {
         noncopyable(const noncopyable &) = delete;
 
         noncopyable &operator=(const noncopyable &) = delete;
-    };
-
-    class serializable {
-    public:
-        serializable() = default;
-        virtual ~serializable() = default;
-        virtual string ToString() = 0;
-        virtual serializable* ToObject(const string & str) = 0;
     };
 
 }

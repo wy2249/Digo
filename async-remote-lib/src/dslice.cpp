@@ -3,7 +3,8 @@
 //
 
 #include "dslice.h"
-#include "dstring.h"
+#include <iterator>
+#include <cstdarg>
 
 DigoSlice::DigoSlice(digo_type t) {
   this->raw_data_ = make_shared<vector<TypeCell>>();
@@ -12,8 +13,9 @@ DigoSlice::DigoSlice(digo_type t) {
 }
 
 
-shared_ptr<vector<TypeCell>> DigoSlice::Data() const {
-  return this->raw_data_;
+std::tuple<vector<TypeCell>&, size_t&, size_t&> DigoSlice::Data() {
+  return std::make_tuple(std::ref(*this->raw_data_),
+                         std::ref(this->begin_), std::ref(this->end_));
 }
 
 int64_t DigoSlice::Size() const {
@@ -47,27 +49,28 @@ DigoSlice DigoSlice::Append(const TypeCell &tv) {
   return DigoSlice(*this);
 }
 
-DSliObject* CreateSlice(int64_t type) {
+void* CreateSlice(int64_t type) {
   return DSliObject::Create(new DigoSlice(digo_type(type)));
 }
 
-DSliObject* SliceSlice(DSliObject* obj,
+void* SliceSlice(void* obj,
     int64_t begin, int64_t end) {
   return DSliObject::Create(new DigoSlice(
-      obj->GetPtr()->Slice(begin, end)
+      ((DSliObject*)obj)->GetPtr()->Slice(begin, end)
       ));
 }
 
-DSliObject* CloneSlice(DSliObject* obj) {
+void* CloneSlice(void* obj) {
   return DSliObject::Create(new DigoSlice(
-      obj->GetObj()
+       ((DSliObject*)obj)->GetObj()
   ));
 }
 
-DSliObject* SliceAppend(DSliObject* obj, ...) {
+void* SliceAppend(void* vobj, ...) {
   va_list valist;
-  va_start(valist, obj);
+  va_start(valist, vobj);
 
+  auto obj = (DSliObject*)vobj;
   TypeCell tv;
   tv.type = obj->GetPtr()->Type();
 
@@ -91,11 +94,12 @@ DSliObject* SliceAppend(DSliObject* obj, ...) {
   return DSliObject::Create(new DigoSlice(obj->GetPtr()->Append(tv)));
 }
 
-int64_t GetSliceSize(DSliObject* obj) {
-  return obj->GetPtr()->Size();
+int64_t GetSliceSize(void* obj) {
+  return ((DSliObject*)obj)->GetPtr()->Size();
 }
 
-DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx) {
+/*
+void* GetSliceIndexString(DSliObject* obj, int64_t idx) {
   return static_cast<DStrObject*>(obj->GetPtr()->Index(idx).str_obj);
 }
 
@@ -110,7 +114,4 @@ double* GetSliceIndexDouble(DSliObject* obj, int64_t idx) {
 void* GetSliceIndexFuture(DSliObject* obj, int64_t idx) {
   return obj->GetPtr()->Index(idx).future_obj;
 }
-
-
-
-
+*/

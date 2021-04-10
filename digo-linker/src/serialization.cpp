@@ -3,35 +3,10 @@
 //
 
 #include "serialization.h"
-#include <exception>
-using std::exception;
 
 Serialization::Serialization() {
 
 }
-
-class EmptyStreamException: public exception {
-public:
-    const char * what() const noexcept override {
-        return "empty stream";
-    }
-};
-
-class ExtractionWrongIndexException: public exception {
-public:
-    ExtractionWrongIndexException(int i, int len)
-    {
-        msg = "Index: ";
-        msg += std::to_string(i);
-        msg += ", out of bound ";
-        msg += std::to_string(len);
-    }
-    const char * what() const noexcept override {
-        return msg.c_str();
-    }
-private:
-    string msg;
-};
 
 void Serialization::Extract(byte *stream, int len) {
     if (stream == nullptr || len == 0) {
@@ -51,7 +26,7 @@ void Serialization::Extract(vector<byte> & stream) {
     int iter = 0;
     for ( ; ; ) {
         // 4 bytes header indicating the type
-        int type = ExtractInt32NoHeader(stream, &iter);
+        auto type = (digo_type)ExtractInt32NoHeader(stream, &iter);
         switch (type) {
             case TYPE_STR: {
                 auto str = (ExtractStringNoHeader(stream, &iter));
@@ -68,6 +43,20 @@ void Serialization::Extract(vector<byte> & stream) {
                 result.extracted_cells.emplace_back(num);
                 break;
             }
+            case TYPE_DOUBLE: {
+                auto num = ExtractDoubleNoHeader(stream, &iter);
+                result.extracted_cells.emplace_back(num);
+                break;
+            }
+            case TYPE_SLICE: {
+                auto slice = ExtractSliceNoHeader(stream, &iter);
+                result.extracted_cells.emplace_back(std::get<0>(slice), std::get<1>(slice));
+                break;
+            }
+            case TYPE_FUTURE_OBJ:
+                throw NotSerializableException("future_obj cannot be serialized");
+            case TYPE_UNDEFINED:
+                throw NotSerializableException("type undefined");
         }
         if (iter == stream.size()) {
             break;
@@ -86,6 +75,84 @@ TypeCell Serialization::ExtractOne() {
     auto ret = this->extraction_result_.extracted_cells.at(this->extraction_ptr_);
     this->extraction_ptr_++;
     return ret;
+}
+
+void Serialization::AddSlice(const vector<TypeCell> && arr, digo_type sliceType) {
+    return AddSlice(arr, sliceType);
+}
+
+void Serialization::AddSlice(const vector<TypeCell> & arr, digo_type sliceType) {
+    AddHeader(TYPE_SLICE);
+    AddInt32NoHeader(arr.size());
+    AddInt32NoHeader((int32_t)sliceType);
+    for (int i = 0; i < arr.size(); i++) {
+        digo_type type = arr[i].type;
+        auto cell = arr[i];
+        switch (type) {
+            case TYPE_STR: {
+                AddString(cell.str);
+                break;
+            }
+            case TYPE_INT32: {
+                AddInt32(cell.num32);
+                break;
+            }
+            case TYPE_INT64: {
+                AddInt64(cell.num64);
+                break;
+            }
+            case TYPE_DOUBLE: {
+                AddDouble(cell.num_double);
+                break;
+            }
+            case TYPE_SLICE: {
+                throw NotSerializableException("are you sure to support nested slice?");
+            }
+            case TYPE_FUTURE_OBJ:
+                throw NotSerializableException("future_obj cannot be serialized");
+            case TYPE_UNDEFINED:
+                throw NotSerializableException("type undefined");
+        }
+    }
+}
+
+std::tuple<vector<TypeCell>, digo_type> Serialization::ExtractSliceNoHeader(vector<byte> & stream, int *iter) {
+    auto size = ExtractInt32NoHeader(stream, iter);
+    auto sliceType = static_cast<digo_type>(ExtractInt32NoHeader(stream, iter));
+    vector<TypeCell> result;
+    for (int32_t i = 0; i < size; i++) {
+        auto type = (digo_type)ExtractInt32NoHeader(stream, iter);
+        switch (type) {
+            case TYPE_STR: {
+                auto str = (ExtractStringNoHeader(stream, iter));
+                result.emplace_back(str);
+                break;
+            }
+            case TYPE_INT32: {
+                auto num = ExtractInt32NoHeader(stream, iter);
+                result.emplace_back(num);
+                break;
+            }
+            case TYPE_INT64: {
+                auto num = ExtractInt64NoHeader(stream, iter);
+                result.emplace_back(num);
+                break;
+            }
+            case TYPE_DOUBLE: {
+                auto num = ExtractDoubleNoHeader(stream, iter);
+                result.emplace_back(num);
+                break;
+            }
+            case TYPE_SLICE: {
+                throw NotSerializableException("are you sure to support nested slice? (ext)");
+            }
+            case TYPE_FUTURE_OBJ:
+                throw NotSerializableException("future_obj cannot be extracted");
+            case TYPE_UNDEFINED:
+                throw NotSerializableException("type undefined (ext)");
+        }
+    }
+    return std::make_tuple(result, sliceType);
 }
 
 void Serialization::AddString(const string & str) {
@@ -114,6 +181,24 @@ void Serialization::AddInt32(int32_t num) {
 void Serialization::AddInt64(int64_t num) {
     AddHeader(TYPE_INT64);
     AddInt64NoHeader(num);
+}
+
+void Serialization::AddDouble(double num) {
+    AddHeader(TYPE_DOUBLE);
+    byte* ptr = (byte*)(&num);
+    for (int i = 0; i < sizeof(double); i++) {
+        AddToEnd({ptr[i]});
+    }
+};
+
+double Serialization::ExtractDoubleNoHeader(vector<byte> & stream, int *iter) {
+    double result;
+    byte* ptr = (byte*)(&result);
+    for (int i = 0; i < sizeof(double); i++) {
+        ptr[i] = stream.at((*iter));
+        (*iter)++;
+    }
+    return result;
 }
 
 void Serialization::AddHeader(digo_type type) {

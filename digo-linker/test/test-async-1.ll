@@ -17,13 +17,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; DIGO Async Function Metadata END
 
-@.str = private unnamed_addr constant [5 x i8] c"%lf\0A\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-
-declare dso_local void @printFloat(double)
-declare dso_local void @printInt(i32) 
-declare dso_local void @printString(i8* nocapture readonly)
-
+@.str.format.1 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
 ; THIS IS AN ASYNC FUNCTION
 define {i64} @add_int_100(i64 %i) #0 {
@@ -42,9 +36,9 @@ entry:
   %retval = extractvalue {i64} %retaggval, 0
   call void @JobDecRef(i8* %future_obj)
 
-  %conv = trunc i64 %retval to i32
+  %str_ptr = getelementptr inbounds [3 x i8], [3 x i8]* @.str.format.1, i64 0, i64 0
 
-  call void @printInt(i32 %conv)
+  call void (i8*, ...) @println(i8* %str_ptr, i64 %retval)
   ret void
 }
 

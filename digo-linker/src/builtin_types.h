@@ -6,5 +6,6 @@
 #define DIGO_LINKER_BUILTIN_TYPES_H
 
 #include "../../async-remote-lib/src/dstring.h"
+#include "../../async-remote-lib/src/dslice.h"
 
 #endif //DIGO_LINKER_BUILTIN_TYPES_H

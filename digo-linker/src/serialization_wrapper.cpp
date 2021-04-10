@@ -1,6 +1,7 @@
 //
 // Created by VM on 2021/3/21.
 //
+// This file wraps the serialzation class and provides LLVM IR boundaries.
 
 #include <unistd.h>
 #include "serialization.h"
@@ -49,9 +50,46 @@ void SW_AddInt64(void* w, int64_t n) {
     }
 }
 
-void SW_AddString(void* w, char* n) {
+void SW_AddDouble(void* w, double n) {
     try {
-        ((Serialization*)w)->AddString(string(n));
+        ((Serialization*)w)->AddDouble(n);
+    }
+    catch (std::exception & e) {
+        SerializationExceptionHandler("SW_AddDouble", e);
+    }
+}
+
+void SW_AddString(void* wi, void* wj) {
+    Serialization * w = (Serialization*)wi;
+    DStrObject * strWrapper = (DStrObject*)wj;
+    try {
+        /*   unwrap here  */
+        w->AddString(strWrapper->Get()->Data());
+    }
+    catch (std::exception & e) {
+        SerializationExceptionHandler("SW_AddString", e);
+    }
+}
+
+void SW_AddSlice(void* wi, void* wj) {
+    Serialization * w = (Serialization*)wi;
+    DSliObject * sliceWrapper = (DSliObject*)wj;
+    try {
+        /*   unwrap here  */
+        /*   generates an array with necessary data only   */
+        vector<TypeCell> arr;
+        auto [underlying_arr, begin, end] = sliceWrapper->Get()->Data();
+        digo_type sliceType = sliceWrapper->Get()->Type();
+        arr.reserve(end - begin);
+        for (auto i = begin; i < end; i++) {
+            TypeCell cell = underlying_arr[i];
+            if (sliceType == TYPE_STR) {
+                cell.str = ((DStrObject*)(cell.str_obj))->Get()->Data();
+            }
+            cell.type = sliceType;
+            arr.push_back(cell);
+        }
+        w->AddSlice(arr, sliceType);
     }
     catch (std::exception & e) {
         SerializationExceptionHandler("SW_AddString", e);
@@ -120,6 +158,22 @@ int64_t SW_ExtractInt64(void* s) {
     return -1;
 }
 
+double SW_ExtractDouble(void* s) {
+    try {
+        auto se = (Serialization*)s;
+        auto cell = se->ExtractOne();
+        if (cell.type != TYPE_DOUBLE) {
+            printf("Wrong extraction type\n");
+            return -1;
+        }
+        return cell.num_double;
+    }
+    catch (std::exception & e) {
+        ExtractorExceptionHandler("SW_ExtractDouble", e);
+    }
+    return -1;
+}
+
 void* SW_ExtractString(void* s) {
     try {
         auto se = (Serialization*)s;
@@ -129,6 +183,38 @@ void* SW_ExtractString(void* s) {
             return nullptr;
         }
         return CreateString(cell.str.c_str());
+    }
+    catch (std::exception & e) {
+        ExtractorExceptionHandler("SW_ExtractString", e);
+    }
+    return nullptr;
+}
+
+void* SW_ExtractSlice(void* s) {
+    try {
+        auto se = (Serialization*)s;
+        auto cell = se->ExtractOne();
+        if (cell.type != TYPE_SLICE) {
+            printf("Wrong extraction type\n");
+            return nullptr;
+        }
+        /*  wraps it to Digo Object  */
+        auto sliceObj = (DSliObject*)CreateSlice(cell.arr_slice_type);
+        /*  directly set data  */
+        auto [underlying_arr, begin, end] = sliceObj->Get()->Data();
+        begin = 0; end = 0;
+        for (int i = 0; i < (int)cell.arr.size(); i++) {
+            auto nested_cell = cell.arr[i];
+            if (cell.arr_slice_type == TYPE_STR) {
+                /* wraps nested cell to Digo Object */
+                nested_cell.str_obj = CreateString(nested_cell.str.c_str());
+                nested_cell.str = "";
+            }
+            nested_cell.type = cell.arr_slice_type;
+            underlying_arr.push_back(nested_cell);
+            end++;
+        }
+        return sliceObj;
     }
     catch (std::exception & e) {
         ExtractorExceptionHandler("SW_ExtractString", e);

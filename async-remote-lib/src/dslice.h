@@ -4,15 +4,12 @@
 #include "common.h"
 #include "dstring.h"
 #include "../../digo-linker/src/common.h"
-#include <memory>
-#include <cstdint>
-#include <iterator>
 
 class DigoSlice {
- public:
+public:
   DigoSlice(digo_type t);
 
-  shared_ptr<vector<TypeCell>> Data() const;
+  std::tuple<vector<TypeCell>&, size_t&, size_t&> Data();
 
   int64_t Size() const;
 
@@ -24,7 +21,7 @@ class DigoSlice {
 
   TypeCell &Index(int64_t idx) const;
 
- private:
+private:
   shared_ptr<vector<TypeCell>> raw_data_;
 
   digo_type type = TYPE_UNDEFINED;
@@ -37,24 +34,25 @@ using DSliObject = DObject<DigoSlice>;
 
 extern "C" {
 
-DSliObject* CreateSlice(int64_t type);
+void* CreateSlice(int64_t type);
 
-DSliObject* SliceSlice(DSliObject* obj, int64_t begin, int64_t end);
+void* SliceSlice(void* obj, int64_t begin, int64_t end);
 
-DSliObject* CloneSlice(DSliObject* obj);
+void* CloneSlice(void* obj);
 
-DSliObject* SliceAppend(DSliObject* obj, ...);
+void* SliceAppend(void* obj, ...);
 
-int64_t GetSliceSize(DSliObject* obj);
+int64_t GetSliceSize(void* obj);
 
-DStrObject* GetSliceIndexString(DSliObject* obj, int64_t idx);
+/*
+void* GetSliceIndexString(void* obj, int64_t idx);
 
-int64_t* GetSliceIndexInt(DSliObject* obj, int64_t idx);
+int64_t* GetSliceIndexInt(void* obj, int64_t idx);
 
-double* GetSliceIndexDouble(DSliObject* obj, int64_t idx);
+double* GetSliceIndexDouble(void* obj, int64_t idx);
 
-void* GetSliceIndexFuture(DSliObject* obj, int64_t idx);
-
+void* GetSliceIndexFuture(void* obj, int64_t idx);
+*/
 }
 
 

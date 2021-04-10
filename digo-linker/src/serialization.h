@@ -9,7 +9,9 @@
 
 #include <utility>
 #include <vector>
+#include <exception>
 
+using std::exception;
 using std::vector;
 
 class ExtractionResult {
@@ -22,13 +24,16 @@ public:
 
 };
 
-class Serialization: public Linker::noncopyable {
+class Serialization {
 public:
     Serialization();
     void Extract(vector<byte> & stream);
     void AddString(const string &);
     void AddInt32(int32_t);
     void AddInt64(int64_t);
+    void AddDouble(double);
+    void AddSlice(const vector<TypeCell> & arr, digo_type sliceType);
+    void AddSlice(const vector<TypeCell> && arr, digo_type sliceType);
     vector<byte> Get();
 
     void Extract(byte* stream, int len);
@@ -41,9 +46,8 @@ public:
 
     byte* GetBytes();
     int GetSize();
-    // TODO: add more types
 
-private:
+protected:
     void AddHeader(digo_type);
     vector<byte> && PaddingFront(vector<byte> &&, int length);
     void AddToEnd(vector<byte> &&);
@@ -52,14 +56,50 @@ private:
     string ExtractStringNoHeader(vector<byte> &, int *iter);
     int32_t ExtractInt32NoHeader(vector<byte> &, int *iter);
     int64_t ExtractInt64NoHeader(vector<byte> &, int *iter);
+    double ExtractDoubleNoHeader(vector<byte> &, int *iter);
+
+    std::tuple<vector<TypeCell>, digo_type> ExtractSliceNoHeader(vector<byte> &, int *iter);
 
     vector<byte> content_;
 
     ExtractionResult extraction_result_;
 
-    int extraction_ptr_;
+    int extraction_ptr_ = 0;
 
 };
 
+class EmptyStreamException: public exception {
+public:
+    const char * what() const noexcept override {
+        return "empty stream";
+    }
+};
+
+class ExtractionWrongIndexException: public exception {
+public:
+    ExtractionWrongIndexException(int i, int len) {
+        msg = "Index: ";
+        msg += std::to_string(i);
+        msg += ", out of bound ";
+        msg += std::to_string(len);
+    }
+    const char * what() const noexcept override {
+        return msg.c_str();
+    }
+private:
+    string msg;
+};
+
+class NotSerializableException: public exception {
+public:
+    NotSerializableException(string err) {
+        msg = std::move(err);
+    }
+    const char * what() const noexcept override {
+        return msg.c_str();
+    }
+private:
+    string msg;
+};
 
 #endif //DIGO_LINKER_SERIALIZATION_H
