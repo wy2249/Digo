@@ -1,0 +1,18 @@
+func main(a int, b float) void {
+    a = 5
+    b = 10.5
+    printInt(a)
+    printFloat(b)
+
+    // mismatch
+    // i,j := 5
+    // Fatal error: exception Failure("assignment mismatch: 2 variables but 1 values")
+
+    // duplicate
+    a := 7.5
+    // Fatal error: exception Failure("duplicate local variable declarations")
+
+    
+
+}
+

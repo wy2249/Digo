@@ -234,7 +234,21 @@ let translate(functions) =
             in List.map2 build_decll nl el;
             builder
         in ck
-      | SShortDecl(nl,el) -> builder
+
+      | SShortDecl(nl,el) ->
+        let add_decl n e = 
+          let (et, _) = e in
+          ignore(add_var_decl n (build_alloca (ltype_of_typ (List.hd et)) n builder))
+        in List.iter2 add_decl nl el;
+        print_string ("short declare called codegen\n");
+        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
+        
+        let build_decll n e = 
+          let (et, _) = e in
+          expr builder (et,SAssignOp(n,e))
+        in List.map2 build_decll nl el;
+        builder
+
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           ->  
