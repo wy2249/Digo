@@ -22,7 +22,7 @@ public:
 
 };
 
-class Serialization: public noncopyable {
+class Serialization: public Linker::noncopyable {
 public:
     Serialization();
     void Extract(vector<byte> & stream);

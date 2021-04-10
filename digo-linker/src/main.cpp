@@ -11,8 +11,8 @@ int generate_async_call_entry(const string& input_file, const string& output_fil
 
 int main() {
     string command = "async";
-    string input_file = "../../digo-test/test1.ll";
-    string output_file = "../../digo-test/test1.ll.out";
+    string input_file = "../../digo-linker/test/test-async-1.ll";
+    string output_file = "../../digo-linker/test/test-async-1.ll.out";
     if (command == "async") {
         generate_async_call_entry(input_file, output_file);
     } else {

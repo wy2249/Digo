@@ -6,7 +6,7 @@ generate-print-only: clean
 
 .PHONY: generate-llvm
 generate-llvm: clean
-	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm ./src/async.cpp ./src/master_worker.cpp ./src/network.cpp
+	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm ./src/async.cpp ./src/master_worker.cpp ./src/network.cpp ./src/dstring.cpp
 	clang -O3 -S -emit-llvm ./src/print.c
 
 .PHONY: link-all-llvm
