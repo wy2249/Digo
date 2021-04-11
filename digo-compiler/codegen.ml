@@ -26,7 +26,7 @@ let translate(functions) =
       | SliceType(x)    -> void_t
     in
 
-(*built-in function, needs add more*)
+(* built-in function *)
   let printInt_t = 
     function_type void_t [| i32_t |] in
   let printInt = 
@@ -46,6 +46,17 @@ let translate(functions) =
   let printString=
     declare_function "printString" (printString_t) the_module in  
 
+    (* String related functions *)
+  let createString_t= 
+      function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
+  let createString=
+      declare_function "CreateString" (createString_t) the_module in
+  
+  let createEmptyString_t= 
+        function_type (pointer_type i8_t) [|  |] in
+  let createEmptyString=
+        declare_function "CreateEmptyString" (createEmptyString_t) the_module in
+  
 (*usr function*)
 
   let function_decls = 
@@ -168,17 +179,29 @@ let translate(functions) =
             build_call printFloat [|(expr builder e) |] "" builder
         | SFunctionCall("printString",[e])                                     ->
             let string_in_printString = show_string e in 
-            let current_ptr = build_global_stringptr string_in_printString "printstr" builder in
-            build_call printString [|current_ptr|] "" builder
-        | SFunctionCall(f_name,args)                                           ->              
+            let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
+            build_call printString [|current_ptr|] "" builder 
+        | SFunctionCall("CreateString",[e])                                     ->
+            print_string "Helo! CreateString! \n"; 
+            let string_in_printString = show_string e in 
+            let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
+            build_call createString [|current_ptr|] "createstr" builder
+        | SFunctionCall("CreateEmptyString",_)                                     ->
+            print_string "CreateEmptyString called codegen \n";     
+            build_call createEmptyString [|  |] "emptystr" builder 
+        | SFunctionCall(f_name,args)                                           -> 
+          print_string "Helo!\n";            
           let (fdef,_) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
           build_call fdef (Array.of_list llargs) result builder
         | SInteger(ex)                                                         ->  const_int i32_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
-        | SString(ex)  ->  build_global_stringptr ex "str" builder
-
+        | SString(ex)  ->  
+        (* build_global_stringptr ex "str" builder *)
+          print_string "Helo! CreateString should be called for string literal! \n"; 
+          let current_ptr = build_global_stringptr ex "createstr_ptr" builder in
+          build_call createString [|current_ptr|] "createstr" builder
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
 
@@ -231,11 +254,16 @@ let translate(functions) =
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         let (t,_) = List.hd el in
         let ck = match t with
-          [VoidType] -> builder
-          | [StringType] -> 
-            print_string ("string not imple\n");
+          [VoidType] -> 
+            print_string ("   void do nothing\n");  
             builder
+(*
+          | [StringType] -> 
+            print_string ("   string not imple\n");
+            builder
+*)
           | _ ->
+            print_string ("   good types\n");
             let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
             builder

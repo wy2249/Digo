@@ -18,18 +18,50 @@ let check (functions) =
     To fix: parser directly gives error: "Fatal error: exception Stdlib.Parsing.Parse_error"
   *)
   let built_in_decls = 
-    let add_bind map (name, ty) = StringMap.add name {
-      ann = FuncNormal; 
-      fname = name;
-      typ = [ty];
-      formals = [];
-      body = [] } map
+    let builtins = 
+      [
+        (* print functions*)
+        ("printInt", { ann = FuncNormal; fname = "printInt"; typ=[VoidType];
+        formals = [(IntegerType,"int")] ; body=[] });
+        ("printFloat", {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; 
+        formals = [(FloatType,"float")] ; body=[]});
+        ("printString", {ann = FuncNormal; fname = "printString"; typ = [VoidType]; 
+        formals = [(StringType,"string")] ; body=[]});
+  
+        (* string related*)
+        (* Accepts a C-layout string and returns a wrapped Digo String object *)
+        ("CreateString", {ann = FuncNormal; fname = "CreateString"; typ = [StringType]; 
+        formals = [(StringType,"string")] ; body=[]});
+        (* Returns an empty Digo String object *)
+        ("CreateEmptyString", {ann = FuncNormal; fname = "CreateEmptyString"; typ = [StringType]; 
+        formals = [] ; body=[]});
+        (* concat(Digo String A + Digo String B) *)
+        ("AddString", {ann = FuncNormal; fname = "AddString"; typ = [StringType]; 
+        formals = [(StringType,"string"); (StringType,"string")] ; body=[]});
+        (* the second parameter is a C-style string *)
+        ("AddCString", {ann = FuncNormal; fname = "AddCString"; typ = [StringType]; 
+        formals = [(StringType,"string"); (StringType,"string")] ; body=[]});
+        (* Get a copy of Digo String *)
+        ("CloneString", {ann = FuncNormal; fname = "CloneString"; typ = [StringType]; 
+        formals = [(StringType,"string")] ; body=[]});
+        (* Returns strcmp(strA, strB) *)
+        ("CompareString", {ann = FuncNormal; fname = "CompareString"; typ = [StringType]; 
+        formals = [(StringType,"string"); (StringType,"string")] ; body=[]});
+        (* Returns strlen *)
+        ("GetStringSize", {ann = FuncNormal; fname = "GetStringSize"; typ = [IntegerType]; 
+        formals = [(StringType,"string")] ; body=[]});
+        (* Get C-style string *)
+        ("GetCStr", {ann = FuncNormal; fname = "GetCStr"; typ = [StringType]; 
+        formals = [(StringType,"string")] ; body=[]});
+  
+  
+      ]
+    in
+    let add_bind map (name, ty) = StringMap.add name ty map
     in 
-      let map = List.fold_left add_bind StringMap.empty [("append", VoidType); ("len", VoidType); ("gather", VoidType)] in 
-      let map2 = StringMap.add "printInt" {ann = FuncNormal; fname = "printInt"; typ = [VoidType]; formals = [(IntegerType,"int")] ; body=[]} map in 
-      let map3 = StringMap.add "printFloat" {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; formals = [(FloatType,"float")] ; body=[]} map2 in
-      StringMap.add "printString" {ann = FuncNormal; fname = "printString"; typ = [VoidType]; formals = [(StringType,"string")] ; body=[]} map3;
-  in
+      List.fold_left add_bind StringMap.empty builtins
+    in
+    
 
   (* 
     This part is 
@@ -110,7 +142,9 @@ let check (functions) =
         Integer(x)  -> ([IntegerType], SInteger(x))
       | Float(x) -> ([FloatType], SFloat(x))
       | Bool(x)  -> ([BoolType], SBool(x))
-      | String (x)   -> ([StringType],SString(x))
+      | String (x)   -> 
+        print_string("string lit here\n");
+        ([StringType],SString(x))
       | EmptyExpr -> ([VoidType],SEmptyExpr) 
       | NamedVariable s  -> 
         print_string "namedvariable called semant\n";
@@ -152,7 +186,7 @@ let check (functions) =
 
       | FunctionCall(fname, args) ->
         print_string "functioncall called semant\n";
-        let fd = find_func fname in
+        let fd = find_func fname in 
         let param_length = List.length fd.formals in
         if List.length args != param_length then
           raise (Failure ("error: different number of aruguments passed expected " ^ string_of_int param_length ^ " aruguments but "
