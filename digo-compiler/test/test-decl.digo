@@ -1,0 +1,11 @@
+func main(a int, b float) void {
+    a = 5
+    b = 10.5
+    printInt(a)
+    printFloat(b)
+
+    var i,j int 
+
+    var x,y int = 5, 6
+}
+

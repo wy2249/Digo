@@ -26,7 +26,7 @@ let translate(functions) =
       | SliceType(x)    -> void_t
     in
 
-(*built-in function, needs add more*)
+(* built-in function *)
   let printInt_t = 
     function_type void_t [| i32_t |] in
   let printInt = 
@@ -46,6 +46,17 @@ let translate(functions) =
   let printString=
     declare_function "printString" (printString_t) the_module in  
 
+    (* String related functions *)
+  let createString_t= 
+      function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
+  let createString=
+      declare_function "CreateString" (createString_t) the_module in
+  
+  let createEmptyString_t= 
+        function_type (pointer_type i8_t) [|  |] in
+  let createEmptyString=
+        declare_function "CreateEmptyString" (createEmptyString_t) the_module in
+  
 (*usr function*)
 
   let function_decls = 
@@ -69,26 +80,23 @@ let translate(functions) =
         builder_at_end context (entry_block the_function) in
 
       let str_format_str = build_global_stringptr "%s\n" "str" builder in
+      
+      let local_vars = Hashtbl.create 5000 in
+      let add_formal (t, n) p =
+        set_value_name n p;
+        let local = build_alloca (ltype_of_typ t) n builder in ignore (build_store p local builder); 
+        Hashtbl.replace local_vars n local 
+      in
+      ignore (List.iter2 add_formal fdecl.sformals (Array.to_list (params the_function)));
 
-      let local_vars = 
-        let add_parameter m (t,n) p = 
-          set_value_name n p;
-          let local = build_alloca (ltype_of_typ t) n builder in  
-          ignore (build_store p local builder);
-          StringMap.add n local m    
+      let add_var_decl id llvalue = Hashtbl.add local_vars id llvalue
+      in
 
-          (* need to add local variable here *)
-        and add_vlocal m (t,n) =
-          let local_var = build_alloca (ltype_of_typ t) n builder in
-          StringMap.add n local_var m
-        in
-        let arguments = List.fold_left2 add_parameter StringMap.empty fdecl.sformals
-            (Array.to_list (params the_function))  in
-            List.fold_left add_vlocal arguments fdecl.slocals in 
+      let lookup n = if Hashtbl.mem local_vars n then Hashtbl.find local_vars n
+        else raise (Failure("cannot find symbol in local_vars"))
+      in
 
-        let lookup n = StringMap.find n local_vars in
-
-        let rec expr builder (e_typl,e) = match e with
+      let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
         | SAwait(s)                                                           ->  const_int i32_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
@@ -160,25 +168,40 @@ let translate(functions) =
           | Negative when ex1_typl = [FloatType]     ->  build_fneg
           | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
           ) e_ "tmp" builder
-        | SAssignOp(varl,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+        | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+          print_string "assign called codegen\n";
           let e_ = expr builder ex1 in   
-          ignore(build_store e_ (lookup (List.hd varl)) builder); e_
-        | SFunctionCall("printInt",[e])                                        ->  
+          ignore(build_store e_ (lookup var) builder); e_
+        | SFunctionCall("printInt",[e])                                        -> 
+            print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
             build_call printFloat [|(expr builder e) |] "" builder
         | SFunctionCall("printString",[e])                                     ->
             let string_in_printString = show_string e in 
-              let current_ptr = build_global_stringptr string_in_printString "printstr" builder in
-                build_call printString [|current_ptr|] "" builder
-        | SFunctionCall(f_name,args)                                           ->              
+            let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
+            build_call printString [|current_ptr|] "" builder 
+        | SFunctionCall("CreateString",[e])                                     ->
+            print_string "Helo! CreateString! \n"; 
+            let string_in_printString = show_string e in 
+            let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
+            build_call createString [|current_ptr|] "createstr" builder
+        | SFunctionCall("CreateEmptyString",_)                                     ->
+            print_string "CreateEmptyString called codegen \n";     
+            build_call createEmptyString [|  |] "emptystr" builder 
+        | SFunctionCall(f_name,args)                                           -> 
+          print_string "Helo!\n";            
           let (fdef,_) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
           build_call fdef (Array.of_list llargs) result builder
         | SInteger(ex)                                                         ->  const_int i32_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
-        | SString(ex)                                                          ->  const_string context ex
+        | SString(ex)  ->  
+        (* build_global_stringptr ex "str" builder *)
+          print_string "Helo! CreateString should be called for string literal! \n"; 
+          let current_ptr = build_global_stringptr ex "createstr_ptr" builder in
+          build_call createString [|current_ptr|] "createstr" builder
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
 
@@ -194,7 +217,8 @@ let translate(functions) =
 
       let rec stmt builder = function  
         SEmptyStatement                                                        ->  builder
-      | SBlock(sl)                                                             ->  List.fold_left stmt builder sl 
+      | SBlock(sl)                                                             ->  
+        List.fold_left stmt builder sl 
       | SIfStatement(ex, s1, s2)                                               ->  
         let bool_val = expr builder ex in 
         let merge_bb = append_block context "merge" the_function in
@@ -223,6 +247,59 @@ let translate(functions) =
         let merge_bb = append_block context "merge" the_function in
         ignore(build_cond_br bool_val body_bb merge_bb pred_builder);
         builder_at_end context merge_bb 
+      | SDeclare(nl,ty,el) ->
+        let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
+        in List.iter add_decl nl;
+        print_string ("declare called codegen\n");
+        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
+        let (t,_) = List.hd el in
+        let ck = match t with
+          [VoidType] -> 
+            print_string ("   void do nothing\n");  
+            builder
+(*
+          | [StringType] -> 
+            print_string ("   string not imple\n");
+            builder
+*)
+          | _ ->
+            print_string ("   good types\n");
+            let build_decll n e = expr builder ([ty],SAssignOp(n,e))
+            in List.map2 build_decll nl el;
+            builder
+        in ck
+
+      | SShortDecl(nl,el) ->
+        (match el with 
+        | [(etl,SFunctionCall(_,_))] -> 
+          let add_decl n et = 
+          ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
+          in List.iter2 add_decl nl etl 
+        | _ -> 
+          let add_decl n e = 
+          let (et, _) = e in
+          ignore(add_var_decl n (build_alloca (ltype_of_typ (List.hd et)) n builder))
+          in List.iter2 add_decl nl el);
+        print_string ("short declare called codegen\n");
+        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
+
+        let check_func_call = 
+          match (List.hd el) with
+          (_,SFunctionCall(_,_))  -> 
+            let e_ = expr builder (List.hd el) in 
+            let rec apply_extractvaluef current_idx = function 
+              []          ->  ()
+              | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
+                                apply_extractvaluef (current_idx+1) tl  
+            in  ignore(apply_extractvaluef 0 nl); 
+            builder
+          | _ ->
+            let build_decll n e = 
+              let (et, _) = e in
+              expr builder (et,SAssignOp(n,e)) 
+            in List.map2 build_decll nl el;
+            builder
+        in check_func_call
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
@@ -238,7 +315,7 @@ let translate(functions) =
         let agg_ = [|const_int i32_t 0|] in 
         add_terminal builder (build_aggregate_ret agg_)  
 
-      in 
+      in
 
         List.iter build_function_body functions;
         the_module

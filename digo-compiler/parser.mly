@@ -59,35 +59,32 @@ p_function_decl:
   /*   the variable here is actually an ID     */
   /* 1. func FuncName(parameters) retType */
   p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE 
-  p_type LEFT_BRACE NEWLINE p_locals p_statements RIGHT_BRACE
+  p_type LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
   /*{ FunctionProto($1, $3, [$7], $5) }*/
   { { ann = $1;
     fname = $3;
     typ = [$7];
     formals = $5;
-    locals = $10;
-    body = $11 } }
+    body = List.rev $10 } }
 | /* 2. func FuncName(parameters)  */
   p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE
-  LEFT_BRACE NEWLINE p_locals p_statements RIGHT_BRACE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
   /* { FunctionProto($1, $3, [], $5) } */
   { { ann = $1;
     fname = $3;
     typ = [];
     formals = $5;
-    locals = $9;
-    body = $10 } }
+    body = List.rev $9 } }
 | /* 3. func FuncName(parameters)  (retType1, retType2, ...)  */
   p_function_annotation KEYWORD_FUNC VARIABLE LEFT_PARENTHE p_parameters RIGHT_PARENTHE 
   LEFT_PARENTHE p_type_list RIGHT_PARENTHE 
-  LEFT_BRACE NEWLINE p_locals p_statements RIGHT_BRACE
+  LEFT_BRACE NEWLINE p_statements RIGHT_BRACE
   /* { FunctionProto($1, $3, $8, $5) } */
   { { ann = $1;
     fname = $3;
     typ = $8;
     formals = $5;
-    locals = $12;
-    body = $13 } }
+    body = List.rev $12 } }
 
 
 /*p_function_impl:*/
@@ -101,11 +98,11 @@ p_type_list:
   /* empty type list is not allowed  */
 | p_type    {  [$1]  }
 | p_type COMMA p_type_list  {  $1::$3  } 
- 
-/* p_variable_list:    */                                  
+
+p_variable_list:
   /* empty variabie list is not allowed  */ 
-/* | VARIABLE    {  [$1]  }  */
-/* | VARIABLE COMMA p_variable_list  {  [$1]::$3  } */
+| VARIABLE    {  [$1]  } 
+| VARIABLE COMMA p_variable_list  {  $1::$3  }
 
 p_parameters:
   { [] }
@@ -144,23 +141,28 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| VARIABLE ASSIGNMENT p_expr { AssignOp([$1], $3) }
-/*| p_literal          { Literal($1) } */
+| VARIABLE ASSIGNMENT p_expr { AssignOp($1, $3) }
+
+/* literals */
 | INT_LITERAL     { Integer($1) }
 | STRING_LITERAL  { String($1)  }
 | FLOAT_LITERAL   { Float($1)   }
 | BOOLEAN_LITERAL { Bool($1)    }
+
+/* identifier */
 | VARIABLE        { NamedVariable($1) }
 
 /*  the variable here is actually an ID (for a function)  */
 | VARIABLE LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { FunctionCall($1, $3)  }
 
+/* built-in functions */
 | KEYWORD_AWAIT  VARIABLE {  Await($2)  }
 | KEYWORD_GATHER LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Gather, $3)  }
 | KEYWORD_LEN    LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Len, $3)  }
 | KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Append, $3)  }
 
 | LEFT_PARENTHE p_expr RIGHT_PARENTHE { $2 }
+
 | p_slice_type LEFT_BRACE p_expr_list RIGHT_BRACE { SliceLiteral($1, List.length $3, $3) }
 /* index */
 | p_expr LEFT_BRACKET p_expr RIGHT_BRACKET { SliceIndex($1, $3) }
@@ -184,20 +186,11 @@ p_type:
 
 p_statements:
   { [] }
-| NEWLINE p_statements    { $2 }
-| p_statement p_statements  { $1::$2 }
+| p_statements NEWLINE     { $1 }
+| p_statements p_statement  { $2::$1 }
 
-p_locals:
-  { [] }
-| p_local p_locals  { $1::$2 }
 
-p_local:
-  /*KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required  NEWLINE  { Declare($3, $2, $5)  } */     /*list assignments and assigning value no supported yet needs work*/
-/*| KEYWORD_VAR p_variable_list p_type_list                    NEWLINE  { ($3, $2) }     */                             /*variable list not supported, needs work*/
-/*| p_variable_list ASSIGNNEW p_expr_list_required                      NEWLINE  { ShortDecl($1, $3)  }  */      /*short declare not supported yet needs work*/      
-    KEYWORD_VAR VARIABLE p_type                 NEWLINE  { ($3,$2) }
-
-p_if_statement:                                             /*works latter on p_locals*/
+p_if_statement:
   KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement KEYWORD_ELSE p_statement { IfStatement($3,$5, $7) }
 | KEYWORD_IF LEFT_PARENTHE p_expr RIGHT_PARENTHE p_statement %prec NOELSE  {IfStatement($3, $5,EmptyStatement) }
 
@@ -216,18 +209,24 @@ p_if_statement:                                             /*works latter on p_
 
 p_statement:
   p_expr                 NEWLINE   { Expr($1) }
+// Return
 | KEYWORD_RETURN p_expr_list  NEWLINE   { Return($2) }
-| p_if_statement                   { $1 }                                 /*works latter on p_locals*/
-/*| KEYWORD_FOR LEFT_PARENTHE p_simple_statement SEMICOLON p_expr SEMICOLON p_simple_statement RIGHT_PARENTHE p_statement {ForStatement($3, $5, $7, $9)}*/
-/*| KEYWORD_FOR LEFT_PARENTHE SEMICOLON p_expr SEMICOLON RIGHT_PARENTHE p_statement {  ForStatement(EmptyStatement, $4, EmptyStatement, $7)}*/
-/*| KEYWORD_FOR LEFT_PARENTHE RIGHT_PARENTHE p_statement  {ForStatement(EmptyStatement, EmptyExpr, EmptyStatement, $4)  }*/
-/*| KEYWORD_FOR LEFT_PARENTHE SEMICOLON p_expr SEMICOLON p_simple_statement RIGHT_PARENTHE p_statement {ForStatement(EmptyStatement, $4, $6 , $8)} */
+// If
+| p_if_statement                   { $1 }
+// Declare
+| KEYWORD_VAR p_variable_list p_type ASSIGNMENT p_expr_list_required NEWLINE  { Declare($2, $3, $5)  }
+| KEYWORD_VAR p_variable_list p_type NEWLINE  { Declare($2, $3, [])  }
+| p_variable_list ASSIGNNEW p_expr_list_required NEWLINE  { ShortDecl($1, $3)}
+// For loop
 | KEYWORD_FOR LEFT_PARENTHE p_expr SEMICOLON p_expr SEMICOLON p_expr RIGHT_PARENTHE p_statement {ForStatement($3, $5, $7, $9)}
 | KEYWORD_FOR LEFT_PARENTHE SEMICOLON p_expr SEMICOLON RIGHT_PARENTHE p_statement {  ForStatement(EmptyExpr, $4, EmptyExpr, $7)}
 | KEYWORD_FOR LEFT_PARENTHE SEMICOLON SEMICOLON RIGHT_PARENTHE p_statement  {ForStatement(EmptyExpr, EmptyExpr, EmptyExpr, $6)  }
 | KEYWORD_FOR LEFT_PARENTHE SEMICOLON p_expr SEMICOLON p_expr RIGHT_PARENTHE p_statement {ForStatement(EmptyExpr, $4, $6 , $8)}
 | KEYWORD_FOR LEFT_PARENTHE p_expr SEMICOLON p_expr SEMICOLON RIGHT_PARENTHE p_statement {ForStatement($3, $5, EmptyExpr, $8)}
+// Break
 | KEYWORD_BREAK   NEWLINE        {  Break  }
+// Continue
 | KEYWORD_CONTINUE   NEWLINE     {  Continue  }
+// Block
 | LEFT_BRACE NEWLINE p_statements RIGHT_BRACE NEWLINE {Block($3)}
 
