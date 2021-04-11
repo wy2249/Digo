@@ -172,8 +172,7 @@ let translate(functions) =
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
           (match op with
-            Add ->  
-            build_call addString [|e1; e2|] "addstr" builder  
+            Add ->  build_call addString [|e1; e2|] "addstr" builder 
           | _   ->  raise(Failure("codegen error: semant should reject any operation between string except add"))
           )  
         | SUnaryOp(op,((ex1_typl,_) as ex1))                                                     ->
@@ -197,14 +196,16 @@ let translate(functions) =
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
             build_call printString [|current_ptr|] "" builder 
-        | SFunctionCall("CreateString",[e])                                     ->
+        (*
+            | SFunctionCall("CreateString",[e])                                     ->
             print_string "Helo! CreateString! \n"; 
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
             build_call createString [|current_ptr|] "create_str" builder
         | SFunctionCall("CreateEmptyString",_)                                     ->
             print_string "CreateEmptyString called codegen \n";     
-            build_call createEmptyString [|  |] "empty_str" builder 
+            build_call createEmptyString [|  |] "empty_str" builder
+        *) 
         | SFunctionCall("GetStringSize",[e])                                     ->
             print_string "GetStringSize called codegen \n";
             let e_ = expr builder e in 
