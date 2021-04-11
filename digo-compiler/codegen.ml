@@ -48,7 +48,7 @@ let translate(functions) =
 
     (* String related functions *)
   let createString_t= 
-      function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
+      function_type (pointer_type i8_t) [|pointer_type i8_t|] in
   let createString=
       declare_function "CreateString" (createString_t) the_module in
   
@@ -56,6 +56,11 @@ let translate(functions) =
         function_type (pointer_type i8_t) [|  |] in
   let createEmptyString=
         declare_function "CreateEmptyString" (createEmptyString_t) the_module in
+
+  let addString_t= 
+      function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
+  let addString=
+      declare_function "AddString" (addString_t) the_module in
   
 (*usr function*)
 
@@ -154,10 +159,11 @@ let translate(functions) =
           | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
-          let e1_string = show_string ex1 
-          and e2_string = show_string ex2 in 
+          let e1 = expr builder ex1
+          and e2 = expr builder ex2 in 
           (match op with
-            Add ->  build_global_string (e1_string^e2_string) "var" builder     (*needs to modify symbol table structure to support indirect string concatenation*)
+            Add ->  
+            build_call addString [|e1; e2|] "addstr" builder  
           | _   ->  raise(Failure("codegen error: semant should reject any operation between string except add"))
           )  
         | SUnaryOp(op,((ex1_typl,_) as ex1))                                                     ->
