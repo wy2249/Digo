@@ -198,6 +198,15 @@ let check (functions) =
         in 
         let args' = List.map2 check_call fd.formals args in 
         (fd.typ,SFunctionCall(fname,args'))
+
+      | Len(e) ->
+        print_string "len called semant\n";
+        (* only string and slice type*)
+        let (ret_typ,e') = expr e in
+        let ck = match (List.hd ret_typ) with
+          StringType -> ([IntegerType],SFunctionCall("GetStringSize", [(ret_typ,e')]))
+          |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
+        in ck
       
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
       | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)

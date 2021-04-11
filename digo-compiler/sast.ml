@@ -11,7 +11,8 @@ and sx =
   | SUnaryOp  of unary_operator * sexpr
   | SAssignOp of string * sexpr 
   | SFunctionCall of string * sexpr list
-  | SNamedVariable of string 
+  | SNamedVariable of string
+  | Len of sexpr
   | SSliceLiteral of builtin_type * int * sexpr list
   | SSliceIndex of sexpr * sexpr
   | SSliceSlice of sexpr * sexpr * sexpr

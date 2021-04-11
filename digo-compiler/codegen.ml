@@ -8,7 +8,7 @@ let translate(functions) =
   let context = global_context () in
   let the_module = create_module context "Digo" in
 
-  let i32_t      = i32_type    context 
+  let i64_t      = i64_type    context 
     and i8_t       = i8_type     context
     and i1_t       = i1_type     context
     and float_t    = double_type context
@@ -16,7 +16,7 @@ let translate(functions) =
     and void_t     = void_type   context in
     
     let ltype_of_typ = function
-        IntegerType  -> i32_t
+        IntegerType  -> i64_t
       | FloatType    -> float_t
       | BoolType     -> i1_t
       | StringType   -> pointer_type i8_t     
@@ -28,7 +28,7 @@ let translate(functions) =
 
 (* built-in function *)
   let printInt_t = 
-    function_type void_t [| i32_t |] in
+    function_type void_t [| i64_t |] in
   let printInt = 
     declare_function "printInt" printInt_t the_module in 
 
@@ -61,6 +61,16 @@ let translate(functions) =
       function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
   let addString=
       declare_function "AddString" (addString_t) the_module in
+  
+  let compareString_t= 
+        function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
+  let compareString=
+        declare_function "CompareString" (compareString_t) the_module in
+  
+  let lenString_t= 
+      function_type (i64_t) [|pointer_type i8_t|] in
+  let lenString=
+      declare_function "GetStringSize" (lenString_t) the_module in
   
 (*usr function*)
 
@@ -103,7 +113,7 @@ let translate(functions) =
 
       let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
-        | SAwait(s)                                                           ->  const_int i32_t 0      (*needs work*)
+        | SAwait(s)                                                           ->  const_int i64_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
@@ -191,17 +201,21 @@ let translate(functions) =
             print_string "Helo! CreateString! \n"; 
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
-            build_call createString [|current_ptr|] "createstr" builder
+            build_call createString [|current_ptr|] "create_str" builder
         | SFunctionCall("CreateEmptyString",_)                                     ->
             print_string "CreateEmptyString called codegen \n";     
-            build_call createEmptyString [|  |] "emptystr" builder 
+            build_call createEmptyString [|  |] "empty_str" builder 
+        | SFunctionCall("GetStringSize",[e])                                     ->
+            print_string "GetStringSize called codegen \n";
+            let e_ = expr builder e in 
+            build_call lenString [| e_ |] "str_len" builder 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
           let (fdef,_) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
           build_call fdef (Array.of_list llargs) result builder
-        | SInteger(ex)                                                         ->  const_int i32_t ex
+        | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
         (* build_global_stringptr ex "str" builder *)
@@ -211,9 +225,9 @@ let translate(functions) =
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
 
-        | SSliceLiteral(built_typ,len,e1_l)                                    ->  const_int i32_t 0      (*needs work*)
-        | SSliceIndex(ex1,ex2)                                                 ->  const_int i32_t 0
-        | SSliceSlice(ex1,ex2,ex3)                                             ->  const_int i32_t 0
+        | SSliceLiteral(built_typ,len,e1_l)                                    ->  const_int i64_t 0      (*needs work*)
+        | SSliceIndex(ex1,ex2)                                                 ->  const_int i64_t 0
+        | SSliceSlice(ex1,ex2,ex3)                                             ->  const_int i64_t 0
       in
 
       let add_terminal builder instr  =
@@ -318,7 +332,7 @@ let translate(functions) =
       in
 
         let builder = stmt builder (SBlock(fdecl.sbody)) in
-        let agg_ = [|const_int i32_t 0|] in 
+        let agg_ = [|const_int i64_t 0|] in 
         add_terminal builder (build_aggregate_ret agg_)  
 
       in

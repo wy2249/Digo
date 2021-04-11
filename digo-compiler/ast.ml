@@ -18,7 +18,6 @@ IntegerType
 
 type builtin_function = 
   Gather
-| Len
 | Append
 
 type expr =
@@ -35,6 +34,7 @@ type expr =
 | SliceLiteral of builtin_type * int * expr list
 | SliceIndex of expr * expr
 | SliceSlice of expr * expr * expr
+| Len of expr
 | BuiltinFunctionCall of builtin_function * expr list
 | Await of string
 
@@ -102,9 +102,5 @@ IntegerType -> "int"
 | FutureType -> "future"
 | VoidType -> "void"
 
-let rec stringify_builtin_function = function
-Gather       ->    "Builtin_Gather"
-| Len          ->    "Builtin_Len"
-| Append       ->    "Builtin_Append"
 
 
