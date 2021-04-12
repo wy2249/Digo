@@ -44,7 +44,7 @@ void* SliceAppend(void* obj, ...);
 
 int64_t GetSliceSize(void* obj);
 
-/*
+
 void* GetSliceIndexString(void* obj, int64_t idx);
 
 int64_t* GetSliceIndexInt(void* obj, int64_t idx);
@@ -52,7 +52,6 @@ int64_t* GetSliceIndexInt(void* obj, int64_t idx);
 double* GetSliceIndexDouble(void* obj, int64_t idx);
 
 void* GetSliceIndexFuture(void* obj, int64_t idx);
-*/
 }
 
 

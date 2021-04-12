@@ -98,20 +98,18 @@ int64_t GetSliceSize(void* obj) {
   return ((DSliObject*)obj)->GetPtr()->Size();
 }
 
-/*
-void* GetSliceIndexString(DSliObject* obj, int64_t idx) {
-  return static_cast<DStrObject*>(obj->GetPtr()->Index(idx).str_obj);
+void* GetSliceIndexString(void* obj, int64_t idx) {
+  return ((DSliObject*)obj)->GetPtr()->Index(idx).str_obj;
 }
 
-int64_t* GetSliceIndexInt(DSliObject* obj, int64_t idx) {
-  return &(obj->GetPtr()->Index(idx).num64);
+int64_t* GetSliceIndexInt(void* obj, int64_t idx) {
+  return &((DSliObject*)obj)->GetPtr()->Index(idx).num64;
 }
 
-double* GetSliceIndexDouble(DSliObject* obj, int64_t idx) {
-  return &(obj->GetPtr()->Index(idx).num_double);
+double* GetSliceIndexDouble(void* obj, int64_t idx) {
+  return &((DSliObject*)obj)->GetPtr()->Index(idx).num_double;
 }
 
-void* GetSliceIndexFuture(DSliObject* obj, int64_t idx) {
-  return obj->GetPtr()->Index(idx).future_obj;
+void* GetSliceIndexFuture(void* obj, int64_t idx) {
+  return ((DSliObject*)obj)->GetPtr()->Index(idx).future_obj;
 }
-*/
