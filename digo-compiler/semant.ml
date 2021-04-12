@@ -200,11 +200,10 @@ let check (functions) =
         (fd.typ,SFunctionCall(fname,args'))
 
       | Len(e) ->
-        print_string "len called semant\n";
         (* only string and slice type*)
         let (ret_typ,e') = expr e in
         let ck = match (List.hd ret_typ) with
-          StringType -> ([IntegerType],SFunctionCall("GetStringSize", [(ret_typ,e')]))
+          StringType -> ([IntegerType],SLen((ret_typ,e')))
           |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
         in ck
       

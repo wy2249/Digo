@@ -12,7 +12,7 @@ and sx =
   | SAssignOp of string * sexpr 
   | SFunctionCall of string * sexpr list
   | SNamedVariable of string
-  | Len of sexpr
+  | SLen of sexpr
   | SSliceLiteral of builtin_type * int * sexpr list
   | SSliceIndex of sexpr * sexpr
   | SSliceSlice of sexpr * sexpr * sexpr

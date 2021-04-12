@@ -216,6 +216,10 @@ let translate(functions) =
               | _ -> 
                 ignore(build_store e_ (lookup var) builder); e_
             in check_string
+        | SLen (e) ->
+            print_string "GetStringSize called codegen \n";
+            let e_ = expr builder e in 
+            build_call lenString [| e_ |] "str_len" builder 
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
@@ -235,10 +239,6 @@ let translate(functions) =
             print_string "CreateEmptyString called codegen \n";     
             build_call createEmptyString [|  |] "empty_str" builder
         *) 
-        | SFunctionCall("GetStringSize",[e])                                     ->
-            print_string "GetStringSize called codegen \n";
-            let e_ = expr builder e in 
-            build_call lenString [| e_ |] "str_len" builder 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
           let (fdef,_) = StringMap.find f_name function_decls in
@@ -304,16 +304,8 @@ let translate(functions) =
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         let (t,_) = List.hd el in
         let ck = match t with
-          [VoidType] -> 
-            print_string ("   void do nothing\n");  
-            builder
-(*
-          | [StringType] -> 
-            print_string ("   string not imple\n");
-            builder
-*)
+          [VoidType] -> builder
           | _ ->
-            print_string ("   good types\n");
             let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
             builder
@@ -321,7 +313,7 @@ let translate(functions) =
 
       | SShortDecl(nl,el) ->
         (match el with 
-        | [(etl,SFunctionCall(_,_))] -> 
+        [(etl,SFunctionCall(_,_))] -> 
           let add_decl n et = 
           ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
           in List.iter2 add_decl nl etl 
