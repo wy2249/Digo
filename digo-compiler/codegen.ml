@@ -21,7 +21,7 @@ let translate(functions) =
       | BoolType     -> i1_t
       | StringType   -> pointer_type i8_t     
       (*| SliceType    -> void_t   needs work*)
-      | FutureType   -> void_t   (*needs work*)
+      | FutureType   -> pointer_type i8_t   (*needs work*)
       | VoidType     -> void_t
       | SliceType(x)    -> void_t
     in
@@ -80,22 +80,20 @@ let translate(functions) =
 (*usr function*)
 
   let function_decls = 
-    let function_delc m fdecl=    
-      let name = fdecl.sfname    
+    let function_delc m fdecl=
+      let name = fdecl.sfname
       and argument_types = 
-        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in          
-          (*let ftype = 
-            function_type (ltype_of_typ (List.hd fdecl.styp)) argument_types in *)                       (*assume only one return type, works latter*) 
-          let stype = 
-            struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
-          let ftype = 
-            function_type stype argument_types in 
-          StringMap.add name (define_function name ftype the_module,fdecl) m in
-        List.fold_left function_delc StringMap.empty functions in
+        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+      let stype = 
+        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
+      let ftype = function_type stype argument_types 
+      in 
+      StringMap.add name (define_function name ftype the_module,fdecl) m in
+    List.fold_left function_delc StringMap.empty functions in
 
   let build_function_body fdecl= 
-      let (the_function,_) = 
-        StringMap.find fdecl.sfname function_decls in
+      let (the_function,_) = StringMap.find fdecl.sfname function_decls
+      in
       let builder = 
         builder_at_end context (entry_block the_function) in
 
@@ -229,22 +227,20 @@ let translate(functions) =
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
             build_call printString [|current_ptr|] "" builder 
-        (*
-            | SFunctionCall("CreateString",[e])                                     ->
-            print_string "Helo! CreateString! \n"; 
-            let string_in_printString = show_string e in 
-            let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
-            build_call createString [|current_ptr|] "create_str" builder
-        | SFunctionCall("CreateEmptyString",_)                                     ->
-            print_string "CreateEmptyString called codegen \n";     
-            build_call createEmptyString [|  |] "empty_str" builder
-        *) 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
-          let (fdef,_) = StringMap.find f_name function_decls in
+          let (fdef,fd) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
-          build_call fdef (Array.of_list llargs) result builder
+          let build_func_call = match fd.sann with
+            FuncNormal -> build_call fdef (Array.of_list llargs) result builder
+            | _ -> 
+              let argument_types = 
+                Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+              let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
+              let new_fdef = declare_function ("digo_linker_async_call_"^f_name) new_ftyp_t the_module in
+              build_call new_fdef (Array.of_list llargs) result builder
+          in build_func_call
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  

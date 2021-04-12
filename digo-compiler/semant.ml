@@ -12,11 +12,7 @@ let check (functions) =
 
   (* Verify a list of bindings has no void types or duplicate names *)
 
-  (* Collect function declarations for built-in functions: no bodies.
-    The built-in fucntions in digo are: append, len, gather.
-    To do: change type of these built-in fucntion after defining them in ast
-    To fix: parser directly gives error: "Fatal error: exception Stdlib.Parsing.Parse_error"
-  *)
+  (* Collect function declarations for built-in functions: no bodies. *)
   let built_in_decls = 
     let builtins = 
       [
@@ -45,7 +41,7 @@ let check (functions) =
         ("CloneString", {ann = FuncNormal; fname = "CloneString"; typ = [StringType]; 
         formals = [(StringType,"string")] ; body=[]});
         (* Returns strcmp(strA, strB) *)
-        ("CompareString", {ann = FuncNormal; fname = "CompareString"; typ = [StringType]; 
+        ("CompareString", {ann = FuncNormal; fname = "CompareString"; typ = [IntegerType]; 
         formals = [(StringType,"string"); (StringType,"string")] ; body=[]});
         (* Returns strlen *)
         ("GetStringSize", {ann = FuncNormal; fname = "GetStringSize"; typ = [IntegerType]; 
@@ -53,8 +49,7 @@ let check (functions) =
         (* Get C-style string *)
         ("GetCStr", {ann = FuncNormal; fname = "GetCStr"; typ = [StringType]; 
         formals = [(StringType,"string")] ; body=[]});
-  
-  
+
       ]
     in
     let add_bind map (name, ty) = StringMap.add name ty map
@@ -73,6 +68,7 @@ let check (functions) =
     and dup_err = "duplicate function " ^ fd.fname
     and make_err er = raise (Failure er)
     and n = fd.fname (* Name of the function *)
+    
     in match fd with (* No duplicate functions or redefinitions of built-ins *)
           _ when StringMap.mem n built_in_decls -> make_err built_in_err
         | _ when StringMap.mem n map -> make_err dup_err  
@@ -191,13 +187,20 @@ let check (functions) =
         if List.length args != param_length then
           raise (Failure ("error: different number of aruguments passed expected " ^ string_of_int param_length ^ " aruguments but "
                           ^ string_of_int (List.length args) ^" aruguments provided"))
-        else let check_call (ft, _) e = 
-          let (ret_typl,e') = expr e in 
-          let err = "illegal argument found" (*^ "formal type " ^ ft ^ " real argument type " ^ stringify_statement ret_typ*) in
+        else 
+          let check_call (ft, _) e = 
+            let (ret_typl,e') = expr e in 
+            let err = "illegal argument found" in
           ([check_assign ft (List.hd ret_typl) err],e')
-        in 
-        let args' = List.map2 check_call fd.formals args in 
-        (fd.typ,SFunctionCall(fname,args'))
+          in 
+          let args' = List.map2 check_call fd.formals args in 
+          let tpy' = match fd.ann with
+          FuncNormal -> fd.typ
+          | _ ->
+          print_string "give future!\n"; 
+          [FutureType]
+          in
+          (tpy',SFunctionCall(fname,args'))
 
       | Len(e) ->
         (* only string and slice type*)
