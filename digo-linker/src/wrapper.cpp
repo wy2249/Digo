@@ -138,6 +138,7 @@ __attribute__((noinline)) void AwaitJob(void* future_obj, byte** result, int32* 
 
 __attribute__((noinline)) void ASYNC_AddFunction(int32 id, char* func_name) {
     try {
+        cout << "Async function " << id << ": " << func_name << " is added\n";
         ASYNC_FUNC_ID2NAME[id] = string(func_name);
         ASYNC_FUNC_NAME2ID[string(func_name)] = id;
     }

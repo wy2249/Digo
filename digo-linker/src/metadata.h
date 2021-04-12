@@ -43,14 +43,13 @@ private:
     string GenerateSerializerAggregated(const vector<digo_type> & types, const string & agg_name);
 
     string GenerateExtractor(const vector<digo_type> & types, const string& padding);
-    string GenerateArgumentsDef(const vector<digo_type> & types);
+    string GenerateArgumentsDef(const vector<digo_type> & types, const string &padding);
     string GenerateArgumentsType(const vector<digo_type> &types);
 
     string GenerateJumpLabel(int id, const FuncPrototype & proto);
     vector<FuncPrototype> functions_prototype_;
 
     std::tuple<string, string> GenerateFuncNameIdMap(int id, const FuncPrototype & proto);
-
 };
 
 #endif //DIGO_LINKER_METADATA_H

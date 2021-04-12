@@ -162,7 +162,7 @@ define i32 @linker_call_function(i32 %func_id, i8* %arg, i32 %arg_len, i8** %res
 )XXXXX";
 
     for (int i = 0 ; i < functions_prototype_.size(); i++) {
-        jump_template += "    i32 " + to_string(i) + ", label %if.func" + to_string(i);
+        jump_template += "    i32 " + to_string(i) + ", label %if.func" + to_string(i) + "\n";
     }
 
     jump_template += R"XXXXX(
@@ -219,8 +219,10 @@ if.func#<id>#:
     auto result = fmt::format(label_template, fmt::arg("id", id),
                               fmt::arg("func_name", proto.func_name),
                               fmt::arg("ret_type", ret_type),
-                              fmt::arg("arguments", GenerateArgumentsDef(proto.parameters)),
-                              fmt::arg("arg_extractor", GenerateExtractor(proto.parameters, "arg")),
+                              fmt::arg("arguments", GenerateArgumentsDef(proto.parameters,
+                                                                         "arg" + to_string(id) + "_")),
+                              fmt::arg("arg_extractor", GenerateExtractor(proto.parameters,
+                                                                          "arg" + to_string(id) + "_")),
                               fmt::arg("ret_serializer",
                                        GenerateSerializerAggregated(proto.return_type,
                                                                     "%aggResult" + to_string(id))));
@@ -263,7 +265,7 @@ string Metadata::GenerateSerializerAggregated(const vector<digo_type> & types, c
 
     for (int i = 0; i < types.size(); i++) {
         auto type = types[i];
-        string reg = "%tmp_" + to_string(auto_inc_reg++);
+        string reg = agg_name + "_tmp_" + to_string(auto_inc_reg++);
         if (type == TYPE_INT32) {
             result += fmt::format(extract_value_template,
                                   fmt::arg("to_reg", reg),
@@ -356,22 +358,22 @@ string Metadata::GenerateArgumentsType(const vector<digo_type> &types) {
     return result;
 }
 
-// each argument is named %arg0, %arg1, ...
-string Metadata::GenerateArgumentsDef(const vector<digo_type> &types) {
+// each argument is named %padding0, %padding1, ...
+string Metadata::GenerateArgumentsDef(const vector<digo_type> &types, const string & padding) {
     string result;
     if (types.empty()) return result;
     for (int i = 0; i < types.size(); i++) {
         auto type = types[i];
         if (type == TYPE_INT32) {
-            result += R"(i32 %arg)" + to_string(i) + ", ";
+            result += R"(i32 %)" + padding + to_string(i) + ", ";
         } else if (type == TYPE_INT64) {
-            result += R"(i64 %arg)" + to_string(i) + ", ";
+            result += R"(i64 %)" +padding + to_string(i) + ", ";
         } else if (type == TYPE_STR) {
-            result += R"(i8* %arg)" + to_string(i) + ", ";
+            result += R"(i8* %)" + padding + to_string(i) + ", ";
         } else if (type == TYPE_SLICE) {
-            result += R"(i8* %arg)" + to_string(i) + ", ";
+            result += R"(i8* %)" + padding + to_string(i) + ", ";
         } else if (type == TYPE_DOUBLE) {
-            result += R"(double %arg)" + to_string(i) + ", ";
+            result += R"(double %)" + padding + to_string(i) + ", ";
         }
     }
     result = result.substr(0, result.length() - 2);
@@ -399,7 +401,7 @@ entry:
   %result_in = load i8*, i8** %result, align 8
   %len_in = load i32, i32* %len, align 4
 
-  %future_obj = call i8* @#<job_call>#(i32 0, i8* %result_in, i32 %len_in)
+  %future_obj = call i8* @#<job_call>#(i32 #<id>#, i8* %result_in, i32 %len_in)
 
   ret i8* %future_obj
 }
@@ -467,7 +469,7 @@ define #<ret_type_list># @digo_linker_await_id_#<id>#(i8* %arg_future_obj) {
 
     auto result = fmt::format(async_template, fmt::arg("id", id),
     fmt::arg("arg_serialization", GenerateSerializer(proto.parameters, "arg")),
-    fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters)),
+    fmt::arg("arg_def", GenerateArgumentsDef(proto.parameters, "arg")),
     fmt::arg("ret_type_list", ret_type),
     fmt::arg("ret_extractor", GenerateExtractor(proto.return_type, "ret")),
     fmt::arg("func_name", proto.func_name),

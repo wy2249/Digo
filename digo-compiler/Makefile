@@ -1,10 +1,13 @@
-all : semant printer
+all : printer
 
 semant : parser.cmo scanner.cmo semant.cmo
 	ocamlc -o semant $^
 
 printer : parser.cmo scanner.cmo printer.cmo
 	ocamlc -o printer $^
+
+metadata-generator : parser.cmo scanner.cmo tmp_metadata_gen.cmo
+	ocamlc -o tmp_metadata_gen $^
 
 %.cmo : %.ml
 	ocamlc -c $<
@@ -19,24 +22,27 @@ parser.ml parser.mli : parser.mly
 	ocamlyacc $^
 
 # Depedencies from ocamldep
-semant.cmo : scanner.cmo parser.cmi ast.cmi
-semant.cmx : scanner.cmx parser.cmx ast.cmi
-printer.cmo : scanner.cmo parser.cmi ast.cmi
-printer.cmx : scanner.cmx parser.cmx ast.cmi
-parser.cmo : ast.cmi parser.cmi
-parser.cmx : ast.cmi parser.cmi
+semant.cmo : scanner.cmo parser.cmi ast.cmo
+semant.cmx : scanner.cmx parser.cmx ast.cmo
+
+printer.cmo : scanner.cmo parser.cmi ast.cmo
+printer.cmx : scanner.cmx parser.cmx ast.cmo
+
+parser.cmo : ast.cmo parser.cmi
+parser.cmx : ast.cmo parser.cmi
+
 scanner.cmo : parser.cmi
 scanner.cmx : parser.cmx
 
 .PHONY : remake
 
-remake: clean printer semant
+remake: clean printer
 
 .PHONY : clean
 clean :
 	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out printer semant.out semant
 	rm -rf _build
-	rm -rf semant.native
+	rm -rf semant.native tmp_metadata_gen
 
 generate-compiler: clean
 	ocamlbuild -use-ocamlfind semant.native -package llvm,llvm.analysis
