@@ -12,7 +12,8 @@ build:
 .PHONY: from-ll
 from-ll: clean generate-async-remote-lib generate-digo-linker
 	llvm-link -S -v -o dependency.ll async-remote-lib/allinone.ll digo-linker/allinone.ll
-	./digo-linker/digo-linker async $(ll) tmp.async.ll
+	./digo-linker/digo-linker async $(ll) tmp.async.nodecl.ll
+	cat tmp.async.nodecl.ll digo-linker/exported_api.ll > tmp.async.ll
 	clang++ -stdlib=libc++ -pthread dependency.ll tmp.async.ll -o $(out)
 
 .PHONY: generate-async-remote-lib
@@ -34,7 +35,7 @@ generate-dependency: generate-async-remote-lib generate-digo-compiler generate-d
 
 .PHONY: clean
 clean:
-	rm -f dependency.ll executable tmp.compiled.ll tmp.async.ll tmp.metadata.ll tmp.compiled.nometadata.ll
+	rm -f dependency.ll executable tmp.compiled.ll tmp.async.ll tmp.metadata.ll tmp.compiled.nometadata.ll tmp.async.nodecl.ll
 	$(MAKE) clean -C digo-linker
 	$(MAKE) clean -C async-remote-lib
 	$(MAKE) clean -C digo-compiler
