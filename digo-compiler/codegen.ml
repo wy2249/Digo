@@ -63,9 +63,14 @@ let translate(functions) =
       declare_function "AddString" (addString_t) the_module in
   
   let compareString_t= 
-        function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
+        function_type (i64_t) [|pointer_type i8_t; pointer_type i8_t|] in
   let compareString=
         declare_function "CompareString" (compareString_t) the_module in
+  
+  let cloneString_t= 
+        function_type (pointer_type i8_t) [|pointer_type i8_t|] in
+  let cloneString=
+        declare_function "CloneString" (cloneString_t) the_module in
   
   let lenString_t= 
       function_type (i64_t) [|pointer_type i8_t|] in
@@ -165,8 +170,23 @@ let translate(functions) =
               | LogicalAnd  ->  build_and
               | LogicalOr   ->  build_or
               | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) e1 e2 "tmp" builder              
-          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) e1 e2 "tmp" builder
+          | ([StringType],_)                                     ->
+              let cmpllvm = build_call compareString [|e1; e2|] "cmpstr" builder in 
+              (match op with
+                IsEqual  ->  
+                build_icmp Icmp.Eq 
+              | LessThan  ->  
+                build_icmp Icmp.Slt 
+              | LessEqual ->
+                build_icmp Icmp.Sle 
+              | GreaterThan  ->  
+                build_icmp Icmp.Sgt 
+              | GreaterEqual  -> 
+                build_icmp Icmp.Sge 
+              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder
+          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant!"))
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
           let e1 = expr builder ex1
@@ -185,8 +205,17 @@ let translate(functions) =
           ) e_ "tmp" builder
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           print_string "assign called codegen\n";
-          let e_ = expr builder ex1 in   
-          ignore(build_store e_ (lookup var) builder); e_
+          let e_ = expr builder ex1 in
+            let (typl, _) = ex1 in
+            let check_string = match List.hd typl with
+              StringType ->
+              (* need to call stringclone to bypass pointer reload *)
+                print_string "check point (string assignop)";
+                let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
+                ignore(build_store clonellvm (lookup var) builder); clonellvm
+              | _ -> 
+                ignore(build_store e_ (lookup var) builder); e_
+            in check_string
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 

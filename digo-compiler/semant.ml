@@ -177,7 +177,7 @@ let check (functions) =
           | Add | Sub | Mul | Div | Mod when same && ((List.hd ret_typl1) = FloatType) -> FloatType
           | IsEqual | IsNotEqual  when same -> BoolType
           | LessThan | LessEqual | GreaterThan | GreaterEqual
-            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType) -> BoolType
+            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd ret_typl1) = StringType) -> BoolType
           | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
           | Add when same && (List.hd ret_typl1) == StringType -> StringType
           | _ -> raise ( Failure ("illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
