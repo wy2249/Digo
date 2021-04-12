@@ -8,7 +8,7 @@ let translate(functions) =
   let context = global_context () in
   let the_module = create_module context "Digo" in
 
-  let i32_t      = i32_type    context 
+  let i64_t      = i64_type    context 
     and i8_t       = i8_type     context
     and i1_t       = i1_type     context
     and float_t    = double_type context
@@ -16,7 +16,7 @@ let translate(functions) =
     and void_t     = void_type   context in
     
     let ltype_of_typ = function
-        IntegerType  -> i32_t
+        IntegerType  -> i64_t
       | FloatType    -> float_t
       | BoolType     -> i1_t
       | StringType   -> pointer_type i8_t     
@@ -28,7 +28,7 @@ let translate(functions) =
 
 (* built-in function *)
   let printInt_t = 
-    function_type void_t [| i32_t |] in
+    function_type void_t [| i64_t |] in
   let printInt = 
     declare_function "printInt" printInt_t the_module in 
 
@@ -48,7 +48,7 @@ let translate(functions) =
 
     (* String related functions *)
   let createString_t= 
-      function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
+      function_type (pointer_type i8_t) [|pointer_type i8_t|] in
   let createString=
       declare_function "CreateString" (createString_t) the_module in
   
@@ -56,6 +56,26 @@ let translate(functions) =
         function_type (pointer_type i8_t) [|  |] in
   let createEmptyString=
         declare_function "CreateEmptyString" (createEmptyString_t) the_module in
+
+  let addString_t= 
+      function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
+  let addString=
+      declare_function "AddString" (addString_t) the_module in
+  
+  let compareString_t= 
+        function_type (i64_t) [|pointer_type i8_t; pointer_type i8_t|] in
+  let compareString=
+        declare_function "CompareString" (compareString_t) the_module in
+  
+  let cloneString_t= 
+        function_type (pointer_type i8_t) [|pointer_type i8_t|] in
+  let cloneString=
+        declare_function "CloneString" (cloneString_t) the_module in
+  
+  let lenString_t= 
+      function_type (i64_t) [|pointer_type i8_t|] in
+  let lenString=
+      declare_function "GetStringSize" (lenString_t) the_module in
   
 (*usr function*)
 
@@ -98,7 +118,7 @@ let translate(functions) =
 
       let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
-        | SAwait(s)                                                           ->  const_int i32_t 0      (*needs work*)
+        | SAwait(s)                                                           ->  const_int i64_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
@@ -150,14 +170,29 @@ let translate(functions) =
               | LogicalAnd  ->  build_and
               | LogicalOr   ->  build_or
               | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) e1 e2 "tmp" builder              
-          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) e1 e2 "tmp" builder
+          | ([StringType],_)                                     ->
+              let cmpllvm = build_call compareString [|e1; e2|] "cmpstr" builder in 
+              (match op with
+                IsEqual  ->  
+                build_icmp Icmp.Eq 
+              | LessThan  ->  
+                build_icmp Icmp.Slt 
+              | LessEqual ->
+                build_icmp Icmp.Sle 
+              | GreaterThan  ->  
+                build_icmp Icmp.Sgt 
+              | GreaterEqual  -> 
+                build_icmp Icmp.Sge 
+              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
+              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder
+          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant!"))
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
-          let e1_string = show_string ex1 
-          and e2_string = show_string ex2 in 
+          let e1 = expr builder ex1
+          and e2 = expr builder ex2 in 
           (match op with
-            Add ->  build_global_string (e1_string^e2_string) "var" builder     (*needs to modify symbol table structure to support indirect string concatenation*)
+            Add ->  build_call addString [|e1; e2|] "addstr" builder 
           | _   ->  raise(Failure("codegen error: semant should reject any operation between string except add"))
           )  
         | SUnaryOp(op,((ex1_typl,_) as ex1))                                                     ->
@@ -170,8 +205,21 @@ let translate(functions) =
           ) e_ "tmp" builder
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           print_string "assign called codegen\n";
-          let e_ = expr builder ex1 in   
-          ignore(build_store e_ (lookup var) builder); e_
+          let e_ = expr builder ex1 in
+            let (typl, _) = ex1 in
+            let check_string = match List.hd typl with
+              StringType ->
+              (* need to call stringclone to bypass pointer reload *)
+                print_string "check point (string assignop)";
+                let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
+                ignore(build_store clonellvm (lookup var) builder); clonellvm
+              | _ -> 
+                ignore(build_store e_ (lookup var) builder); e_
+            in check_string
+        | SLen (e) ->
+            print_string "GetStringSize called codegen \n";
+            let e_ = expr builder e in 
+            build_call lenString [| e_ |] "str_len" builder 
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
@@ -181,21 +229,23 @@ let translate(functions) =
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
             build_call printString [|current_ptr|] "" builder 
-        | SFunctionCall("CreateString",[e])                                     ->
+        (*
+            | SFunctionCall("CreateString",[e])                                     ->
             print_string "Helo! CreateString! \n"; 
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
-            build_call createString [|current_ptr|] "createstr" builder
+            build_call createString [|current_ptr|] "create_str" builder
         | SFunctionCall("CreateEmptyString",_)                                     ->
             print_string "CreateEmptyString called codegen \n";     
-            build_call createEmptyString [|  |] "emptystr" builder 
+            build_call createEmptyString [|  |] "empty_str" builder
+        *) 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
           let (fdef,_) = StringMap.find f_name function_decls in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
           build_call fdef (Array.of_list llargs) result builder
-        | SInteger(ex)                                                         ->  const_int i32_t ex
+        | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
         (* build_global_stringptr ex "str" builder *)
@@ -205,9 +255,9 @@ let translate(functions) =
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
 
-        | SSliceLiteral(built_typ,len,e1_l)                                    ->  const_int i32_t 0      (*needs work*)
-        | SSliceIndex(ex1,ex2)                                                 ->  const_int i32_t 0
-        | SSliceSlice(ex1,ex2,ex3)                                             ->  const_int i32_t 0
+        | SSliceLiteral(built_typ,len,e1_l)                                    ->  const_int i64_t 0      (*needs work*)
+        | SSliceIndex(ex1,ex2)                                                 ->  const_int i64_t 0
+        | SSliceSlice(ex1,ex2,ex3)                                             ->  const_int i64_t 0
       in
 
       let add_terminal builder instr  =
@@ -254,16 +304,8 @@ let translate(functions) =
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         let (t,_) = List.hd el in
         let ck = match t with
-          [VoidType] -> 
-            print_string ("   void do nothing\n");  
-            builder
-(*
-          | [StringType] -> 
-            print_string ("   string not imple\n");
-            builder
-*)
+          [VoidType] -> builder
           | _ ->
-            print_string ("   good types\n");
             let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
             builder
@@ -271,7 +313,7 @@ let translate(functions) =
 
       | SShortDecl(nl,el) ->
         (match el with 
-        | [(etl,SFunctionCall(_,_))] -> 
+        [(etl,SFunctionCall(_,_))] -> 
           let add_decl n et = 
           ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
           in List.iter2 add_decl nl etl 
@@ -312,7 +354,7 @@ let translate(functions) =
       in
 
         let builder = stmt builder (SBlock(fdecl.sbody)) in
-        let agg_ = [|const_int i32_t 0|] in 
+        let agg_ = [|const_int i64_t 0|] in 
         add_terminal builder (build_aggregate_ret agg_)  
 
       in

@@ -177,7 +177,7 @@ let check (functions) =
           | Add | Sub | Mul | Div | Mod when same && ((List.hd ret_typl1) = FloatType) -> FloatType
           | IsEqual | IsNotEqual  when same -> BoolType
           | LessThan | LessEqual | GreaterThan | GreaterEqual
-            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType) -> BoolType
+            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd ret_typl1) = StringType) -> BoolType
           | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
           | Add when same && (List.hd ret_typl1) == StringType -> StringType
           | _ -> raise ( Failure ("illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
@@ -198,6 +198,14 @@ let check (functions) =
         in 
         let args' = List.map2 check_call fd.formals args in 
         (fd.typ,SFunctionCall(fname,args'))
+
+      | Len(e) ->
+        (* only string and slice type*)
+        let (ret_typ,e') = expr e in
+        let ck = match (List.hd ret_typ) with
+          StringType -> ([IntegerType],SLen((ret_typ,e')))
+          |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
+        in ck
       
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
       | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)

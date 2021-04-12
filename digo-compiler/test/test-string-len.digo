@@ -1,0 +1,13 @@
+func main(a int, b float) void {
+
+    s1 := "plt"
+
+    y := len(s1) 
+
+    var x int
+    x = len(s1)
+
+    printInt(x)
+    printInt(y)
+
+}
