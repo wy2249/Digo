@@ -1,15 +1,27 @@
 func main(a int) void {
 
-    var b future 
+    var b,c future 
     
     b = try_return_one(1)
 
-}
+    c = try_return_one(1)
 
+    d := try_return_one(1)
+
+    e,f := try_return_one_n(1)
+
+
+}
 
 async func try_return_one(a int) int {
     
     a = 1
     return a+10
+}
+
+func try_return_one_n(a int) (int,int) {
+    
+    a = 1
+    return a+10, a
 }
 

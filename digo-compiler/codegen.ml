@@ -308,8 +308,16 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
-        (match el with 
-        [(etl,SFunctionCall(_,_))] -> 
+        let (p,_) = (List.hd el) in
+        print_string "****** check coddegen shortdecl\n";
+        print_string ("\n"^ (string_of_typ (List.hd p)) ^ "\n");
+        (match el with
+        [([FutureType],SFunctionCall(_,_))] ->
+          (* addd future boject to a table (aloca llvm, async func name)*)
+          let add_decl n = 
+            ignore(add_var_decl n (build_alloca (ltype_of_typ FutureType) n builder))
+            in List.iter add_decl nl
+        | [(etl,SFunctionCall(_,_))] -> 
           let add_decl n et = 
           ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
           in List.iter2 add_decl nl etl 
@@ -322,21 +330,21 @@ let translate(functions) =
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
 
         let check_func_call = 
+          let build_decll n e = 
+            let (et, _) = e in
+            expr builder (et,SAssignOp(n,e)) 
+          in
           match (List.hd el) with
-          (_,SFunctionCall(_,_))  -> 
+          ([FutureType],SFunctionCall(_,_))  -> List.map2 build_decll nl el; builder
+          | (_,SFunctionCall(_,_))  -> 
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()
               | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
                                 apply_extractvaluef (current_idx+1) tl  
-            in  ignore(apply_extractvaluef 0 nl); 
+            in  ignore(apply_extractvaluef 0 nl);  
             builder
-          | _ ->
-            let build_decll n e = 
-              let (et, _) = e in
-              expr builder (et,SAssignOp(n,e)) 
-            in List.map2 build_decll nl el;
-            builder
+          | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)

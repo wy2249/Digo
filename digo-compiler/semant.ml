@@ -195,10 +195,8 @@ let check (functions) =
           in 
           let args' = List.map2 check_call fd.formals args in 
           let tpy' = match fd.ann with
-          FuncNormal -> fd.typ
-          | _ ->
-          print_string "give future!\n"; 
-          [FutureType]
+            FuncNormal -> fd.typ
+          | _ -> [FutureType]
           in
           (tpy',SFunctionCall(fname,args'))
 
@@ -260,12 +258,18 @@ let check (functions) =
         let check_dup_var_function n rt =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
         in 
-        let _ = 
+        let typel = 
           match ret_list with
-            [(etl,SFunctionCall(_,_))]    -> List.map2 check_dup_var_function nl etl
-          | _                             -> List.map2 check_dup_var nl ret_list         
+            [(etl,SFunctionCall(_,_))]    -> 
+              List.map2 check_dup_var_function nl etl;
+              (* ret_list: [([FuturType], expr)]*)
+              (* etl: [FutureType]*)
+              ret_list
+          | _                             ->
+            List.map2 check_dup_var nl ret_list;
+            ret_list
         in
-        SShortDecl(nl, ret_list)
+        SShortDecl(nl, typel)
       | Expr(e)                           ->  SExpr(expr e)
       | Return(el)                        -> 
         let ret_list = List.map (fun e -> expr e) el in 
