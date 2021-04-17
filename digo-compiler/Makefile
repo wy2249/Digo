@@ -39,4 +39,4 @@ clean :
 	rm -rf semant.native
 
 generate-compiler: clean
-	ocamlbuild -use-ocamlfind semant.native -package llvm,llvm.analysis
+	ocamlbuild -use-ocamlfind digo.native -package llvm,llvm.analysis
