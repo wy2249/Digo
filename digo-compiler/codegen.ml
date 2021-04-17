@@ -91,14 +91,25 @@ let translate(functions) =
       StringMap.add name (define_function name ftype the_module,fdecl) m in
     List.fold_left function_delc StringMap.empty functions in
 
+  let find_func s = 
+      try StringMap.find s function_decls
+      with Not_found -> raise (Failure ("unrecognized function " ^ s))
+    in
+
   let build_function_body fdecl= 
-      let (the_function,_) = StringMap.find fdecl.sfname function_decls
+      let (the_function,_) = find_func fdecl.sfname (*StringMap.find fdecl.sfname function_decls*)
       in
       let builder = 
         builder_at_end context (entry_block the_function) in
 
       let str_format_str = build_global_stringptr "%s\n" "str" builder in
       
+      let futures = Hashtbl.create 5000 in
+      let func_of_future n = 
+        let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
+        else raise (Failure("Err: undeclared future object " ^ n)) in
+        find_func ("digo_linker_await_func_"^fname)
+      in
       let local_vars = Hashtbl.create 5000 in
       let add_formal (t, n) p =
         set_value_name n p;
@@ -210,6 +221,10 @@ let translate(functions) =
                 print_string "check point (string assignop)";
                 let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
                 ignore(build_store clonellvm (lookup var) builder); clonellvm
+              | FutureType ->
+                let (_,SFunctionCall(fname,_)) = ex1 in
+                Hashtbl.add futures var fname;
+                ignore(build_store e_ (lookup var) builder); e_
               | _ -> 
                 ignore(build_store e_ (lookup var) builder); e_
             in check_string
@@ -219,9 +234,17 @@ let translate(functions) =
             build_call lenString [| e_ |] "str_len" builder 
         | SAwait(s)                                                           -> 
         (* call {i64} @digo_linker_await_func_add_int_100(i8* %future_obj) *)
-            print_string "await called codegen \n";
+          print_string "\nawait called codegen\n";
+          print_string ("     "^s ^"\n");
+          let (await_llvm,fd) = func_of_future s in
+          print_string ("       "^ s ^" "^ fd.sfname ^ " " ^ string_of_typ (List.hd fd.styp) ^ "\n");
+          print_string ("       "^ string_of_bool(Hashtbl.mem local_vars s) ^"\n");
+          let future_arg = lookup s in 
+          let result = "await_"^fd.sfname^"_result" in
+          build_call await_llvm (Array.of_list [future_arg]) result builder
 
-        const_int i64_t 0      (*needs work*)
+        (* build_call new_fdef (Array.of_list llargs) result builder *)
+        (*const_int i64_t 0  *)    (*needs work*)
         
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
@@ -243,7 +266,8 @@ let translate(functions) =
               let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
               let stype = struct_type context argument_types in
               let await_ftyp_t = function_type stype [|(pointer_type i8_t)|] in
-              declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module;
+              let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
+              StringMap.add ("digo_linker_await_func_"^f_name) (await_llvm,fd) function_decls;
 
               let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
