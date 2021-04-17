@@ -12,11 +12,7 @@ let check (functions) =
 
   (* Verify a list of bindings has no void types or duplicate names *)
 
-  (* Collect function declarations for built-in functions: no bodies.
-    The built-in fucntions in digo are: append, len, gather.
-    To do: change type of these built-in fucntion after defining them in ast
-    To fix: parser directly gives error: "Fatal error: exception Stdlib.Parsing.Parse_error"
-  *)
+  (* Collect function declarations for built-in functions: no bodies. *)
   let built_in_decls = 
     let builtins = 
       [
@@ -45,7 +41,7 @@ let check (functions) =
         ("CloneString", {ann = FuncNormal; fname = "CloneString"; typ = [StringType]; 
         formals = [(StringType,"string")] ; body=[]});
         (* Returns strcmp(strA, strB) *)
-        ("CompareString", {ann = FuncNormal; fname = "CompareString"; typ = [StringType]; 
+        ("CompareString", {ann = FuncNormal; fname = "CompareString"; typ = [IntegerType]; 
         formals = [(StringType,"string"); (StringType,"string")] ; body=[]});
         (* Returns strlen *)
         ("GetStringSize", {ann = FuncNormal; fname = "GetStringSize"; typ = [IntegerType]; 
@@ -53,8 +49,7 @@ let check (functions) =
         (* Get C-style string *)
         ("GetCStr", {ann = FuncNormal; fname = "GetCStr"; typ = [StringType]; 
         formals = [(StringType,"string")] ; body=[]});
-  
-  
+
       ]
     in
     let add_bind map (name, ty) = StringMap.add name ty map
@@ -73,6 +68,7 @@ let check (functions) =
     and dup_err = "duplicate function " ^ fd.fname
     and make_err er = raise (Failure er)
     and n = fd.fname (* Name of the function *)
+    
     in match fd with (* No duplicate functions or redefinitions of built-ins *)
           _ when StringMap.mem n built_in_decls -> make_err built_in_err
         | _ when StringMap.mem n map -> make_err dup_err  
@@ -128,7 +124,8 @@ let check (functions) =
     ignore(check_binds "argument" func.formals);
 
     (* Type of each variable (global, formal, or local *)
-    let symbols = Hashtbl.create 500 in                                             
+    let symbols = Hashtbl.create 500 in
+    let futures = Hashtbl.create 500 in                                          
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
     let type_of_identifier n =
       if Hashtbl.mem symbols n then Hashtbl.find symbols n
@@ -136,7 +133,12 @@ let check (functions) =
     in
     let check_assign lvaluet rvaluet err =
       if lvaluet = rvaluet then lvaluet else raise (Failure err)
-    in   
+    in
+    let func_of_future n = 
+      let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
+      else raise (Failure("Err: undeclared future object " ^ n)) in
+      find_func fname
+    in
     (* Return a semantically-checked expression, i.e., with a type *)
     let rec expr e = match e with
         Integer(x)  -> ([IntegerType], SInteger(x))
@@ -157,6 +159,15 @@ let check (functions) =
         and (ret_typ,e') = expr e in
         let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
           ^ stringify_builtin_type ret_typ*) in
+        print_string ( var ^ "\n");
+        print_string (string_of_typ var_typ ^ "\n");
+        let _ = match var_typ with
+          FutureType -> 
+          (* to do: add to a table (var name, func name) *)
+          let SFunctionCall(fname,_) = e' in
+          Hashtbl.add futures var fname
+          | _ -> ignore()
+        in
           ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(var,(ret_typ, e')))     
       | UnaryOp(op, e)   -> 
         let (ret_typl,e') = expr e in
@@ -191,13 +202,19 @@ let check (functions) =
         if List.length args != param_length then
           raise (Failure ("error: different number of aruguments passed expected " ^ string_of_int param_length ^ " aruguments but "
                           ^ string_of_int (List.length args) ^" aruguments provided"))
-        else let check_call (ft, _) e = 
-          let (ret_typl,e') = expr e in 
-          let err = "illegal argument found" (*^ "formal type " ^ ft ^ " real argument type " ^ stringify_statement ret_typ*) in
+        else 
+          let check_call (ft, _) e = 
+            let (ret_typl,e') = expr e in 
+            let err = "illegal argument found" in
           ([check_assign ft (List.hd ret_typl) err],e')
-        in 
-        let args' = List.map2 check_call fd.formals args in 
-        (fd.typ,SFunctionCall(fname,args'))
+          in 
+          let args' = List.map2 check_call fd.formals args in 
+          let tpy' = match fd.ann with
+            FuncNormal -> fd.typ
+          | _ -> 
+            [FutureType]
+          in
+          (tpy',SFunctionCall(fname,args'))
 
       | Len(e) ->
         (* only string and slice type*)
@@ -207,11 +224,19 @@ let check (functions) =
           |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
         in ck
       
+      | Await(n) ->
+            (* await futureVar *)
+            (* return [list of returned aysn val types, SAwait(n)]*)
+          print_string ("       await called in semant!\n");
+          let fd = func_of_future n in
+          print_string ("       "^n ^" "^ fd.fname^ " " ^ string_of_typ (List.hd fd.typ) ^ "\n");
+
+          (fd.typ, SAwait(n))
+      
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
       | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)
       | SliceIndex(_,_) ->([VoidType],SEmptyExpr)
       | SliceSlice(_,_,_)->([VoidType],SEmptyExpr)
-      | Await _ -> ([VoidType],SEmptyExpr)
     in 
     
     let check_bool_expr e = 
@@ -245,24 +270,34 @@ let check (functions) =
         print_string "short declare called semant\n";
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
-            (tyl,SFunctionCall(_,_)) -> 
-            print_string "func call in short dec\n";
+            (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
+            print_string "func call or await in short dec\n";
             if List.length nl != List.length tyl then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
             if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
+          print_string (string_of_typ (List.hd rt) ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
         let check_dup_var_function n rt =
+          print_string (string_of_typ (rt) ^ " : ");
+          print_string (n ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
         in 
-        let _ = 
+        let typel = 
           match ret_list with
-            [(etl,SFunctionCall(_,_))]    -> List.map2 check_dup_var_function nl etl
-          | _                             -> List.map2 check_dup_var nl ret_list         
+          [(etl,SFunctionCall(_,_))] | [(etl, SAwait(_))]   -> 
+              List.map2 check_dup_var_function nl etl;
+              (* ret_list: [([FuturType], expr)]*)
+              (* etl: [FutureType]*)
+              print_string (string_of_typ (List.hd etl) ^ "\n");
+              ret_list
+          | _                             ->
+            List.map2 check_dup_var nl ret_list;
+            ret_list
         in
-        SShortDecl(nl, ret_list)
+        SShortDecl(nl, typel)
       | Expr(e)                           ->  SExpr(expr e)
       | Return(el)                        -> 
         let ret_list = List.map (fun e -> expr e) el in 
@@ -291,12 +326,3 @@ let check (functions) =
   in  List.map check_function functions
 ;;
 
-
-let _ =
-  let lexbuf = Lexing.from_channel stdin in
-  let ast = Parser.functions Scanner.tokenize lexbuf in
-
-  let sast = check ast in 
-  let m = Codegen.translate sast in
-  assert_valid_module m;
-  print_string(string_of_llmodule m)

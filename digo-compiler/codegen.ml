@@ -21,7 +21,7 @@ let translate(functions) =
       | BoolType     -> i1_t
       | StringType   -> pointer_type i8_t     
       (*| SliceType    -> void_t   needs work*)
-      | FutureType   -> void_t   (*needs work*)
+      | FutureType   -> pointer_type i8_t   (*needs work*)
       | VoidType     -> void_t
       | SliceType(x)    -> void_t
     in
@@ -79,28 +79,37 @@ let translate(functions) =
   
 (*usr function*)
 
-  let function_decls = 
-    let function_delc m fdecl=    
-      let name = fdecl.sfname    
+  let function_decls = Hashtbl.create 5000 in
+  let function_delc fdecl=
+      let name = fdecl.sfname
       and argument_types = 
-        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in          
-          (*let ftype = 
-            function_type (ltype_of_typ (List.hd fdecl.styp)) argument_types in *)                       (*assume only one return type, works latter*) 
-          let stype = 
-            struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
-          let ftype = 
-            function_type stype argument_types in 
-          StringMap.add name (define_function name ftype the_module,fdecl) m in
-        List.fold_left function_delc StringMap.empty functions in
+        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+      let stype = 
+        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
+      let ftype = function_type stype argument_types 
+      in
+      Hashtbl.replace function_decls name (define_function name ftype the_module,fdecl) in
+  let _ = List.iter function_delc functions in
+
+  let find_func s = 
+      if Hashtbl.mem function_decls s then Hashtbl.find function_decls s
+      else raise (Failure ("unrecognized function " ^ s))
+    in
 
   let build_function_body fdecl= 
-      let (the_function,_) = 
-        StringMap.find fdecl.sfname function_decls in
+      let (the_function,_) = find_func fdecl.sfname (*StringMap.find fdecl.sfname function_decls*)
+      in
       let builder = 
         builder_at_end context (entry_block the_function) in
 
       let str_format_str = build_global_stringptr "%s\n" "str" builder in
       
+      let futures = Hashtbl.create 5000 in
+      let func_of_future n = 
+        let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
+        else raise (Failure("Err: undeclared future object " ^ n)) in
+        find_func ("digo_linker_await_func_"^fname)
+      in
       let local_vars = Hashtbl.create 5000 in
       let add_formal (t, n) p =
         set_value_name n p;
@@ -118,7 +127,6 @@ let translate(functions) =
 
       let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
-        | SAwait(s)                                                           ->  const_int i64_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
@@ -213,6 +221,10 @@ let translate(functions) =
                 print_string "check point (string assignop)";
                 let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
                 ignore(build_store clonellvm (lookup var) builder); clonellvm
+              | FutureType ->
+                let (_,SFunctionCall(fname,_)) = ex1 in
+                Hashtbl.add futures var fname;
+                ignore(build_store e_ (lookup var) builder); e_
               | _ -> 
                 ignore(build_store e_ (lookup var) builder); e_
             in check_string
@@ -220,6 +232,20 @@ let translate(functions) =
             print_string "GetStringSize called codegen \n";
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
+        | SAwait(s)                                                           -> 
+        (* call {i64} @digo_linker_await_func_add_int_100(i8* %future_obj) *)
+          print_string "\nawait called codegen\n";
+          print_string ("     "^s ^"\n");
+          let (await_llvm,fd) = func_of_future s in
+          print_string ("       "^ s ^" "^ fd.sfname ^ " " ^ string_of_typ (List.hd fd.styp) ^ "\n");
+          print_string ("       "^ string_of_bool(Hashtbl.mem local_vars s) ^"\n");
+          let future_arg = build_load (lookup s) s builder  in 
+          let result = "await_"^fd.sfname^"_result" in
+          build_call await_llvm (Array.of_list [future_arg]) result builder
+
+        (* build_call new_fdef (Array.of_list llargs) result builder *)
+        (*const_int i64_t 0 *)     (*needs work*)
+        
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
@@ -229,22 +255,25 @@ let translate(functions) =
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
             build_call printString [|current_ptr|] "" builder 
-        (*
-            | SFunctionCall("CreateString",[e])                                     ->
-            print_string "Helo! CreateString! \n"; 
-            let string_in_printString = show_string e in 
-            let current_ptr = build_global_stringptr string_in_printString "createstr_ptr" builder in
-            build_call createString [|current_ptr|] "create_str" builder
-        | SFunctionCall("CreateEmptyString",_)                                     ->
-            print_string "CreateEmptyString called codegen \n";     
-            build_call createEmptyString [|  |] "empty_str" builder
-        *) 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
-          let (fdef,_) = StringMap.find f_name function_decls in
+          let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
-          build_call fdef (Array.of_list llargs) result builder
+          let build_func_call = match fd.sann with
+            FuncNormal -> build_call fdef (Array.of_list llargs) result builder
+            | _ ->
+              let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
+              let stype = struct_type context return_types in
+              let await_ftyp_t = function_type stype [|(pointer_type i8_t)|] in
+              let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
+              Hashtbl.add function_decls ("digo_linker_await_func_"^f_name) (await_llvm,fd);
+
+              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+              let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
+              let new_fdef = declare_function ("digo_linker_async_call_"^f_name) new_ftyp_t the_module in
+                build_call new_fdef (Array.of_list llargs) result builder
+          in build_func_call
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
@@ -302,9 +331,8 @@ let translate(functions) =
         in List.iter add_decl nl;
         print_string ("declare called codegen\n");
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
-        let (t,_) = List.hd el in
-        let ck = match t with
-          [VoidType] -> builder
+        let ck = match (List.hd el) with
+          ([VoidType],_) -> builder
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
@@ -312,8 +340,15 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
-        (match el with 
-        [(etl,SFunctionCall(_,_))] -> 
+        let (p,_) = (List.hd el) in
+        print_string "****** check coddegen shortdecl\n";
+        print_string ("\n"^ (string_of_typ (List.hd p)) ^ "\n");
+        (match el with
+        [([FutureType],SFunctionCall(_,_))] ->
+          let add_decl n = 
+            ignore(add_var_decl n (build_alloca (ltype_of_typ FutureType) n builder))
+            in List.iter add_decl nl
+        | [(etl,SFunctionCall(_,_))] | [(etl,SAwait(_))] -> 
           let add_decl n et = 
           ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
           in List.iter2 add_decl nl etl 
@@ -326,21 +361,21 @@ let translate(functions) =
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
 
         let check_func_call = 
+          let build_decll n e = 
+            let (et, _) = e in
+            expr builder (et,SAssignOp(n,e)) 
+          in
           match (List.hd el) with
-          (_,SFunctionCall(_,_))  -> 
+          ([FutureType],SFunctionCall(_,_))  -> List.map2 build_decll nl el; builder
+          | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()
               | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
                                 apply_extractvaluef (current_idx+1) tl  
-            in  ignore(apply_extractvaluef 0 nl); 
+            in  ignore(apply_extractvaluef 0 nl);  
             builder
-          | _ ->
-            let build_decll n e = 
-              let (et, _) = e in
-              expr builder (et,SAssignOp(n,e)) 
-            in List.map2 build_decll nl el;
-            builder
+          | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)
