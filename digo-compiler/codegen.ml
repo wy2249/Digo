@@ -331,9 +331,8 @@ let translate(functions) =
         in List.iter add_decl nl;
         print_string ("declare called codegen\n");
         print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
-        let (t,_) = List.hd el in
-        let ck = match t with
-          [VoidType] -> builder
+        let ck = match (List.hd el) with
+          ([VoidType],_) -> builder
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(n,e))
             in List.map2 build_decll nl el;
@@ -346,7 +345,6 @@ let translate(functions) =
         print_string ("\n"^ (string_of_typ (List.hd p)) ^ "\n");
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
-          (* addd future boject to a table (aloca llvm, async func name)*)
           let add_decl n = 
             ignore(add_var_decl n (build_alloca (ltype_of_typ FutureType) n builder))
             in List.iter add_decl nl
@@ -369,7 +367,7 @@ let translate(functions) =
           in
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  -> List.map2 build_decll nl el; builder
-          | (_,SFunctionCall(_,_))  -> 
+          | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()

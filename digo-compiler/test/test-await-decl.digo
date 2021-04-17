@@ -4,7 +4,7 @@ func main(a int) void {
     
     b = try_return_one(1)
 
-    await b
+    res := await b
 
 }
 
@@ -47,8 +47,11 @@ entry:
   %b = alloca i8*
   %try_return_one_result = call i8* @digo_linker_async_call_try_return_one(i64 1)
   store i8* %try_return_one_result, i8** %b
+  %res = alloca i64
   %b2 = load i8*, i8** %b
   %await_try_return_one_result = call { i64 } @digo_linker_await_func_try_return_one(i8* %b2)
+  %extracted_value = extractvalue { i64 } %await_try_return_one_result, 0
+  store i64 %extracted_value, i64* %res
   ret { void } zeroinitializer
 }
 
