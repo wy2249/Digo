@@ -263,8 +263,8 @@ let translate(functions) =
           let build_func_call = match fd.sann with
             FuncNormal -> build_call fdef (Array.of_list llargs) result builder
             | _ ->
-              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
-              let stype = struct_type context argument_types in
+              let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
+              let stype = struct_type context return_types in
               let await_ftyp_t = function_type stype [|(pointer_type i8_t)|] in
               let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
               Hashtbl.add function_decls ("digo_linker_await_func_"^f_name) (await_llvm,fd);
@@ -348,7 +348,7 @@ let translate(functions) =
           let add_decl n = 
             ignore(add_var_decl n (build_alloca (ltype_of_typ FutureType) n builder))
             in List.iter add_decl nl
-        | [(etl,SFunctionCall(_,_))] -> 
+        | [(etl,SFunctionCall(_,_))] | [(etl,SAwait(_))] -> 
           let add_decl n et = 
           ignore(add_var_decl n (build_alloca (ltype_of_typ et) n builder))
           in List.iter2 add_decl nl etl 

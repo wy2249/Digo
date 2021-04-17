@@ -270,9 +270,8 @@ let check (functions) =
         print_string "short declare called semant\n";
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
-            (tyl,SFunctionCall(_,_)) -> 
-            print_string "func call in short dec\n";
-            print_string (string_of_typ (List.hd tyl) ^ "\n");
+            (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
+            print_string "func call or await in short dec\n";
             if List.length nl != List.length tyl then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
             if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
@@ -288,7 +287,7 @@ let check (functions) =
         in 
         let typel = 
           match ret_list with
-          [(etl,SFunctionCall(_,_))]    -> 
+          [(etl,SFunctionCall(_,_))] | [(etl, SAwait(_))]   -> 
               List.map2 check_dup_var_function nl etl;
               (* ret_list: [([FuturType], expr)]*)
               (* etl: [FutureType]*)
