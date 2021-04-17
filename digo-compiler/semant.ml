@@ -221,6 +221,13 @@ let check (functions) =
             (* return [list of returned aysn val types, SAwait(n)]*)
           let fd = func_of_future n in
           (fd.typ, SAwait(n))
+      | Read(e) ->
+          (* only string type*)
+        let (ret_typ,e') = expr e in
+        let ck = match (List.hd ret_typ) with
+          StringType -> ([StringType],SRead((ret_typ,e')))
+          |_ -> raise (Failure ("error: read is not supported for "^ string_of_typ (List.hd ret_typ)))
+        in ck
       
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
       | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)
