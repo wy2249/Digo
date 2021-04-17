@@ -1,0 +1,49 @@
+func digo_main(a int) void {
+    var s string
+    s = "/tmp/test.txt"
+
+    read(s)
+}
+
+/*
+
+; ModuleID = 'Digo'
+source_filename = "Digo"
+
+@str = private unnamed_addr constant [4 x i8] c"%s\0A\00"
+@createstr_ptr = private unnamed_addr constant [14 x i8] c"/tmp/test.txt\00"
+
+declare void @printInt(i64)
+
+declare void @printFloat(double)
+
+declare void @printString(i8*)
+
+declare i8* @CreateString(i8*)
+
+declare i8* @CreateEmptyString()
+
+declare i8* @AddString(i8*, i8*)
+
+declare i64 @CompareString(i8*, i8*)
+
+declare i8* @CloneString(i8*)
+
+declare i64 @GetStringSize(i8*)
+
+declare i8* @ReadFile(i8*)
+
+define void @digo_main(i64 %a) {
+entry:
+  %a1 = alloca i64
+  store i64 %a, i64* %a1
+  %s = alloca i8*
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @createstr_ptr, i32 0, i32 0))
+  %clonestr = call i8* @CloneString(i8* %createstr)
+  store i8* %clonestr, i8** %s
+  %s2 = load i8*, i8** %s
+  %read_file = call i8* @ReadFile(i8* %s2)
+  ret void
+}
+
+*/

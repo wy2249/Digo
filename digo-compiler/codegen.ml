@@ -76,6 +76,11 @@ let translate(functions) =
       function_type (i64_t) [|pointer_type i8_t|] in
   let lenString=
       declare_function "GetStringSize" (lenString_t) the_module in
+
+  let readFile_t= 
+        function_type (pointer_type i8_t) [|pointer_type i8_t|] in
+  let readFile=
+        declare_function "ReadFile" (readFile_t) the_module in
   
 (*usr function*)
 
@@ -237,10 +242,9 @@ let translate(functions) =
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
-
-        (* build_call new_fdef (Array.of_list llargs) result builder *)
-        (*const_int i64_t 0 *)     (*needs work*)
-        
+        | SRead(e) ->
+          let e_ = expr builder e in 
+          build_call readFile [| e_ |] "read_file" builder 
         | SFunctionCall("printInt",[e])                                        -> 
             build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
