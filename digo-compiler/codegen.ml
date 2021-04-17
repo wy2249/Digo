@@ -116,7 +116,6 @@ let translate(functions) =
 
       let rec expr builder (e_typl,e) = match e with
           SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
-        | SAwait(s)                                                           ->  const_int i64_t 0      (*needs work*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
@@ -218,6 +217,12 @@ let translate(functions) =
             print_string "GetStringSize called codegen \n";
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
+        | SAwait(s)                                                           -> 
+        (* call {i64} @digo_linker_await_func_add_int_100(i8* %future_obj) *)
+            print_string "await called codegen \n";
+
+        const_int i64_t 0      (*needs work*)
+        
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
@@ -234,12 +239,16 @@ let translate(functions) =
           let result = f_name^"_result" in 
           let build_func_call = match fd.sann with
             FuncNormal -> build_call fdef (Array.of_list llargs) result builder
-            | _ -> 
-              let argument_types = 
-                Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+            | _ ->
+              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+              let stype = struct_type context argument_types in
+              let await_ftyp_t = function_type stype [|(pointer_type i8_t)|] in
+              declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module;
+
+              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_"^f_name) new_ftyp_t the_module in
-              build_call new_fdef (Array.of_list llargs) result builder
+                build_call new_fdef (Array.of_list llargs) result builder
           in build_func_call
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
