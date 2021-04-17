@@ -1,4 +1,4 @@
-func main(a int) void {
+func digo_main(a int) void {
 
     var b future 
     
@@ -8,10 +8,14 @@ func main(a int) void {
 
 }
 
-async func try_return_one(a int) (int, int) {
+async func try_return_one(a int) (int, bool) {
     
     a = 1
-    return a+10,a
+    return a+10,true
+}
+
+func test() void {
+  a := "hello"
 }
 
 /*
@@ -21,6 +25,8 @@ source_filename = "Digo"
 
 @str = private unnamed_addr constant [4 x i8] c"%s\0A\00"
 @str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00"
+@str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00"
+@createstr_ptr = private unnamed_addr constant [6 x i8] c"hello\00"
 
 declare void @printInt(i64)
 
@@ -40,7 +46,7 @@ declare i8* @CloneString(i8*)
 
 declare i64 @GetStringSize(i8*)
 
-define { void } @main(i64 %a) {
+define void @digo_main(i64 %a) {
 entry:
   %a1 = alloca i64
   store i64 %a, i64* %a1
@@ -48,30 +54,38 @@ entry:
   %try_return_one_result = call i8* @digo_linker_async_call_try_return_one(i64 1)
   store i8* %try_return_one_result, i8** %b
   %res1 = alloca i64
-  %res2 = alloca i64
+  %res2 = alloca i1
   %b2 = load i8*, i8** %b
-  %await_try_return_one_result = call { i64, i64 } @digo_linker_await_func_try_return_one(i8* %b2)
-  %extracted_value = extractvalue { i64, i64 } %await_try_return_one_result, 0
+  %await_try_return_one_result = call { i64, i1 } @digo_linker_await_func_try_return_one(i8* %b2)
+  %extracted_value = extractvalue { i64, i1 } %await_try_return_one_result, 0
   store i64 %extracted_value, i64* %res1
-  %extracted_value3 = extractvalue { i64, i64 } %await_try_return_one_result, 1
-  store i64 %extracted_value3, i64* %res2
-  ret { void } zeroinitializer
+  %extracted_value3 = extractvalue { i64, i1 } %await_try_return_one_result, 1
+  store i1 %extracted_value3, i1* %res2
+  ret void
 }
 
-define { i64, i64 } @try_return_one(i64 %a) {
+define { i64, i1 } @try_return_one(i64 %a) {
 entry:
   %a1 = alloca i64
   store i64 %a, i64* %a1
   store i64 1, i64* %a1
   %a2 = load i64, i64* %a1
   %tmp = add i64 %a2, 10
-  %a3 = load i64, i64* %a1
-  %mrv = insertvalue { i64, i64 } undef, i64 %tmp, 0
-  %mrv4 = insertvalue { i64, i64 } %mrv, i64 %a3, 1
-  ret { i64, i64 } %mrv4
+  %mrv = insertvalue { i64, i1 } undef, i64 %tmp, 0
+  %mrv3 = insertvalue { i64, i1 } %mrv, i1 true, 1
+  ret { i64, i1 } %mrv3
 }
 
-declare { i64, i64 } @digo_linker_await_func_try_return_one(i8*)
+define void @test() {
+entry:
+  %a = alloca i8*
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @createstr_ptr, i32 0, i32 0))
+  %clonestr = call i8* @CloneString(i8* %createstr)
+  store i8* %clonestr, i8** %a
+  ret void
+}
+
+declare { i64, i1 } @digo_linker_await_func_try_return_one(i8*)
 
 declare i8* @digo_linker_async_call_try_return_one(i64)
 

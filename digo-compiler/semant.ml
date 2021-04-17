@@ -92,7 +92,7 @@ let check (functions) =
   in
   
   (* Ensure "main" is defined *)
-  let _ = find_func "main" in 
+  let _ = find_func "digo_main" in 
   
   (* Check semantic in function *)
   let check_function func =
@@ -145,22 +145,15 @@ let check (functions) =
       | Float(x) -> ([FloatType], SFloat(x))
       | Bool(x)  -> ([BoolType], SBool(x))
       | String (x)   -> 
-        print_string("string lit here\n");
         ([StringType],SString(x))
       | EmptyExpr -> ([VoidType],SEmptyExpr) 
       | NamedVariable s  -> 
-        print_string "namedvariable called semant\n";
-        print_string (" name: " ^ s ^ "\n");
-        print_string (" check " ^ s ^ " " ^ string_of_bool (Hashtbl.mem symbols s) ^ "\n");
         ([type_of_identifier s], SNamedVariable(s))
       | AssignOp(var, e) -> 
-        print_string "assignment called semant\n";
         let var_typ = type_of_identifier var
         and (ret_typ,e') = expr e in
         let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
           ^ stringify_builtin_type ret_typ*) in
-        print_string ( var ^ "\n");
-        print_string (string_of_typ var_typ ^ "\n");
         let _ = match var_typ with
           FutureType -> 
           (* to do: add to a table (var name, func name) *)
@@ -196,7 +189,6 @@ let check (functions) =
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
 
       | FunctionCall(fname, args) ->
-        print_string "functioncall called semant\n";
         let fd = find_func fname in 
         let param_length = List.length fd.formals in
         if List.length args != param_length then
@@ -227,10 +219,7 @@ let check (functions) =
       | Await(n) ->
             (* await futureVar *)
             (* return [list of returned aysn val types, SAwait(n)]*)
-          print_string ("       await called in semant!\n");
           let fd = func_of_future n in
-          print_string ("       "^n ^" "^ fd.fname^ " " ^ string_of_typ (List.hd fd.typ) ^ "\n");
-
           (fd.typ, SAwait(n))
       
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
@@ -253,11 +242,9 @@ let check (functions) =
       | Break                             ->  SBreak                                (*more on sbreak*)
       | Continue                          ->  SContinue                            (*more on scontinune*)
       | Declare(nl,t,el) ->
-        print_string "declare called semant\n";
         let check_dup_var n =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n t)
         in List.iter check_dup_var nl;
-        print_string (" declare check " ^ (List.hd nl) ^ " " ^ string_of_typ (Hashtbl.find symbols (List.hd nl)) ^"\n");
         let ck = match el with
           [] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
           | _ ->
@@ -267,22 +254,17 @@ let check (functions) =
             in SDeclare(nl, t, ret_list)
         in ck
       | ShortDecl(nl,el) -> 
-        print_string "short declare called semant\n";
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
-            print_string "func call or await in short dec\n";
             if List.length nl != List.length tyl then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
             if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
-          print_string (string_of_typ (List.hd rt) ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
         let check_dup_var_function n rt =
-          print_string (string_of_typ (rt) ^ " : ");
-          print_string (n ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
         in 
         let typel = 
@@ -291,7 +273,6 @@ let check (functions) =
               List.map2 check_dup_var_function nl etl;
               (* ret_list: [([FuturType], expr)]*)
               (* etl: [FutureType]*)
-              print_string (string_of_typ (List.hd etl) ^ "\n");
               ret_list
           | _                             ->
             List.map2 check_dup_var nl ret_list;

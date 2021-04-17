@@ -84,8 +84,12 @@ let translate(functions) =
       let name = fdecl.sfname
       and argument_types = 
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
-      let stype = 
-        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
+      let stype =
+        match fdecl.styp with
+        [VoidType] -> void_t
+        | _ -> 
+        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) 
+      in
       let ftype = function_type stype argument_types 
       in
       Hashtbl.replace function_decls name (define_function name ftype the_module,fdecl) in
@@ -212,13 +216,10 @@ let translate(functions) =
           | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
           ) e_ "tmp" builder
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
-          print_string "assign called codegen\n";
           let e_ = expr builder ex1 in
             let (typl, _) = ex1 in
             let check_string = match List.hd typl with
               StringType ->
-              (* need to call stringclone to bypass pointer reload *)
-                print_string "check point (string assignop)";
                 let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
                 ignore(build_store clonellvm (lookup var) builder); clonellvm
               | FutureType ->
@@ -229,16 +230,10 @@ let translate(functions) =
                 ignore(build_store e_ (lookup var) builder); e_
             in check_string
         | SLen (e) ->
-            print_string "GetStringSize called codegen \n";
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
         | SAwait(s)                                                           -> 
-        (* call {i64} @digo_linker_await_func_add_int_100(i8* %future_obj) *)
-          print_string "\nawait called codegen\n";
-          print_string ("     "^s ^"\n");
           let (await_llvm,fd) = func_of_future s in
-          print_string ("       "^ s ^" "^ fd.sfname ^ " " ^ string_of_typ (List.hd fd.styp) ^ "\n");
-          print_string ("       "^ string_of_bool(Hashtbl.mem local_vars s) ^"\n");
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
@@ -247,7 +242,6 @@ let translate(functions) =
         (*const_int i64_t 0 *)     (*needs work*)
         
         | SFunctionCall("printInt",[e])                                        -> 
-            print_string "printInt called codegen\n";
             build_call printInt [|(expr builder e)|] "" builder 
         | SFunctionCall("printFloat",[e])                                      ->
             build_call printFloat [|(expr builder e) |] "" builder
@@ -255,8 +249,7 @@ let translate(functions) =
             let string_in_printString = show_string e in 
             let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
             build_call printString [|current_ptr|] "" builder 
-        | SFunctionCall(f_name,args)                                           -> 
-          print_string "Helo!\n";            
+        | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
@@ -278,7 +271,6 @@ let translate(functions) =
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
         (* build_global_stringptr ex "str" builder *)
-          print_string "Helo! CreateString should be called for string literal! \n"; 
           let current_ptr = build_global_stringptr ex "createstr_ptr" builder in
           build_call createString [|current_ptr|] "createstr" builder
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
@@ -329,8 +321,6 @@ let translate(functions) =
       | SDeclare(nl,ty,el) ->
         let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
         in List.iter add_decl nl;
-        print_string ("declare called codegen\n");
-        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
         let ck = match (List.hd el) with
           ([VoidType],_) -> builder
           | _ ->
@@ -341,8 +331,6 @@ let translate(functions) =
 
       | SShortDecl(nl,el) ->
         let (p,_) = (List.hd el) in
-        print_string "****** check coddegen shortdecl\n";
-        print_string ("\n"^ (string_of_typ (List.hd p)) ^ "\n");
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
           let add_decl n = 
@@ -357,9 +345,6 @@ let translate(functions) =
           let (et, _) = e in
           ignore(add_var_decl n (build_alloca (ltype_of_typ (List.hd et)) n builder))
           in List.iter2 add_decl nl el);
-        print_string ("short declare called codegen\n");
-        print_string (" check " ^ (List.hd nl) ^ " " ^ string_of_bool (Hashtbl.mem local_vars (List.hd nl)) ^"\n");
-
         let check_func_call = 
           let build_decll n e = 
             let (et, _) = e in
@@ -389,8 +374,10 @@ let translate(functions) =
       in
 
         let builder = stmt builder (SBlock(fdecl.sbody)) in
-        let agg_ = [|const_int i64_t 0|] in 
-        add_terminal builder (build_aggregate_ret agg_)  
+        let agg_ = [|const_int i64_t 0|] in
+        match fdecl.styp with
+        [VoidType] -> ignore(build_ret_void builder)
+        | _ -> add_terminal builder (build_aggregate_ret agg_)  
 
       in
 

@@ -45,4 +45,4 @@ clean :
 	rm -rf semant.native tmp_metadata_gen
 
 generate-compiler: clean
-	ocamlbuild -use-ocamlfind semant.native -package llvm,llvm.analysis
+	ocamlbuild -use-ocamlfind digo.native -package llvm,llvm.analysis
