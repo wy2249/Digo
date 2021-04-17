@@ -124,7 +124,8 @@ let check (functions) =
     ignore(check_binds "argument" func.formals);
 
     (* Type of each variable (global, formal, or local *)
-    let symbols = Hashtbl.create 500 in                                             
+    let symbols = Hashtbl.create 500 in
+    let futures = Hashtbl.create 500 in                                          
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
     let type_of_identifier n =
       if Hashtbl.mem symbols n then Hashtbl.find symbols n
@@ -132,7 +133,12 @@ let check (functions) =
     in
     let check_assign lvaluet rvaluet err =
       if lvaluet = rvaluet then lvaluet else raise (Failure err)
-    in   
+    in
+    let func_of_future n = 
+      let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
+      else raise (Failure("Err: undeclared future object " ^ n)) in
+      find_func fname
+    in
     (* Return a semantically-checked expression, i.e., with a type *)
     let rec expr e = match e with
         Integer(x)  -> ([IntegerType], SInteger(x))
@@ -153,6 +159,15 @@ let check (functions) =
         and (ret_typ,e') = expr e in
         let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
           ^ stringify_builtin_type ret_typ*) in
+        print_string ( var ^ "\n");
+        print_string (string_of_typ var_typ ^ "\n");
+        let _ = match var_typ with
+          FutureType -> 
+          (* to do: add to a table (var name, func name) *)
+          let SFunctionCall(fname,_) = e' in
+          Hashtbl.add futures var fname
+          | _ -> ignore()
+        in
           ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(var,(ret_typ, e')))     
       | UnaryOp(op, e)   -> 
         let (ret_typl,e') = expr e in
@@ -196,7 +211,8 @@ let check (functions) =
           let args' = List.map2 check_call fd.formals args in 
           let tpy' = match fd.ann with
             FuncNormal -> fd.typ
-          | _ -> [FutureType]
+          | _ -> 
+            [FutureType]
           in
           (tpy',SFunctionCall(fname,args'))
 
@@ -208,11 +224,19 @@ let check (functions) =
           |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
         in ck
       
+      | Await(n) ->
+            (* await futureVar *)
+            (* return [list of returned aysn val types, SAwait(n)]*)
+          print_string ("       await called in semant!\n");
+          let fd = func_of_future n in
+          print_string ("       "^n ^" "^ fd.fname^ " " ^ string_of_typ (List.hd fd.typ) ^ "\n");
+
+          (fd.typ, SAwait(n))
+      
       | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
       | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)
       | SliceIndex(_,_) ->([VoidType],SEmptyExpr)
       | SliceSlice(_,_,_)->([VoidType],SEmptyExpr)
-      | Await _ -> ([VoidType],SEmptyExpr)
     in 
     
     let check_bool_expr e = 
@@ -248,22 +272,27 @@ let check (functions) =
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) -> 
             print_string "func call in short dec\n";
+            print_string (string_of_typ (List.hd tyl) ^ "\n");
             if List.length nl != List.length tyl then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
             if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
+          print_string (string_of_typ (List.hd rt) ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
         let check_dup_var_function n rt =
+          print_string (string_of_typ (rt) ^ " : ");
+          print_string (n ^ "\n");
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
         in 
         let typel = 
           match ret_list with
-            [(etl,SFunctionCall(_,_))]    -> 
+          [(etl,SFunctionCall(_,_))]    -> 
               List.map2 check_dup_var_function nl etl;
               (* ret_list: [([FuturType], expr)]*)
               (* etl: [FutureType]*)
+              print_string (string_of_typ (List.hd etl) ^ "\n");
               ret_list
           | _                             ->
             List.map2 check_dup_var nl ret_list;

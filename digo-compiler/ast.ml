@@ -35,8 +35,9 @@ type expr =
 | SliceIndex of expr * expr
 | SliceSlice of expr * expr * expr
 | Len of expr
-| BuiltinFunctionCall of builtin_function * expr list
 | Await of string
+| BuiltinFunctionCall of builtin_function * expr list
+
 
 type statement = 
   EmptyStatement
