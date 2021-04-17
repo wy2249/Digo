@@ -92,7 +92,7 @@ let check (functions) =
   in
   
   (* Ensure "main" is defined *)
-  let _ = find_func "main" in 
+  let _ = find_func "digo_main" in 
   
   (* Check semantic in function *)
   let check_function func =

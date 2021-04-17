@@ -84,8 +84,12 @@ let translate(functions) =
       let name = fdecl.sfname
       and argument_types = 
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
-      let stype = 
-        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
+      let stype =
+        match name with
+        "digo_main" -> void_t
+        | _ -> 
+        struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) 
+      in
       let ftype = function_type stype argument_types 
       in
       Hashtbl.replace function_decls name (define_function name ftype the_module,fdecl) in
@@ -389,8 +393,10 @@ let translate(functions) =
       in
 
         let builder = stmt builder (SBlock(fdecl.sbody)) in
-        let agg_ = [|const_int i64_t 0|] in 
-        add_terminal builder (build_aggregate_ret agg_)  
+        let agg_ = [|const_int i64_t 0|] in
+        match fdecl.sfname with
+        "digo_main" -> ignore(build_ret_void builder)
+        | _ -> add_terminal builder (build_aggregate_ret agg_)  
 
       in
 
