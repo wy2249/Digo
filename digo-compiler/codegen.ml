@@ -79,21 +79,21 @@ let translate(functions) =
   
 (*usr function*)
 
-  let function_decls = 
-    let function_delc m fdecl=
+  let function_decls = Hashtbl.create 5000 in
+  let function_delc fdecl=
       let name = fdecl.sfname
       and argument_types = 
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
       let stype = 
         struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) in
       let ftype = function_type stype argument_types 
-      in 
-      StringMap.add name (define_function name ftype the_module,fdecl) m in
-    List.fold_left function_delc StringMap.empty functions in
+      in
+      Hashtbl.replace function_decls name (define_function name ftype the_module,fdecl) in
+  let _ = List.iter function_delc functions in
 
   let find_func s = 
-      try StringMap.find s function_decls
-      with Not_found -> raise (Failure ("unrecognized function " ^ s))
+      if Hashtbl.mem function_decls s then Hashtbl.find function_decls s
+      else raise (Failure ("unrecognized function " ^ s))
     in
 
   let build_function_body fdecl= 
@@ -239,12 +239,12 @@ let translate(functions) =
           let (await_llvm,fd) = func_of_future s in
           print_string ("       "^ s ^" "^ fd.sfname ^ " " ^ string_of_typ (List.hd fd.styp) ^ "\n");
           print_string ("       "^ string_of_bool(Hashtbl.mem local_vars s) ^"\n");
-          let future_arg = lookup s in 
+          let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
 
         (* build_call new_fdef (Array.of_list llargs) result builder *)
-        (*const_int i64_t 0  *)    (*needs work*)
+        (*const_int i64_t 0 *)     (*needs work*)
         
         | SFunctionCall("printInt",[e])                                        -> 
             print_string "printInt called codegen\n";
@@ -257,7 +257,7 @@ let translate(functions) =
             build_call printString [|current_ptr|] "" builder 
         | SFunctionCall(f_name,args)                                           -> 
           print_string "Helo!\n";            
-          let (fdef,fd) = StringMap.find f_name function_decls in
+          let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
           let build_func_call = match fd.sann with
@@ -267,7 +267,7 @@ let translate(functions) =
               let stype = struct_type context argument_types in
               let await_ftyp_t = function_type stype [|(pointer_type i8_t)|] in
               let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
-              StringMap.add ("digo_linker_await_func_"^f_name) (await_llvm,fd) function_decls;
+              Hashtbl.add function_decls ("digo_linker_await_func_"^f_name) (await_llvm,fd);
 
               let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in

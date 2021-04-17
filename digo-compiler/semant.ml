@@ -327,12 +327,3 @@ let check (functions) =
   in  List.map check_function functions
 ;;
 
-
-let _ =
-  let lexbuf = Lexing.from_channel stdin in
-  let ast = Parser.functions Scanner.tokenize lexbuf in
-
-  let sast = check ast in 
-  let m = Codegen.translate sast in
-  assert_valid_module m;
-  print_string(string_of_llmodule m)
