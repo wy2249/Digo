@@ -1,7 +1,7 @@
 (* Top-level of the MicroC compiler: scan & parse the input,
    check the resulting AST and generate an SAST from it, generate LLVM IR,
    and dump the module *)
-(*
+
    type action = Ast | Sast | LLVM_IR | Compile
 
    let () =
@@ -21,16 +21,16 @@
      let lexbuf = Lexing.from_channel !channel in
      let ast = Parser.functions Scanner.tokenize lexbuf in
      match !action with
-       Ast -> print_string (Ast.string_of_program ast)
+       Ast -> ()
      | _ -> let sast = Semant.check ast in
        match !action with
-         Ast     -> ()
+         Ast     -> () (*print_string (Ast.string_of_program ast) *)
        | Sast    -> () (*print_string (Sast.string_of_sprogram sast) *)
        | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate sast))
        | Compile -> let m = Codegen.translate sast in
      Llvm_analysis.assert_valid_module m;
      print_string (Llvm.string_of_llmodule m)
-  *)
+  (*
 
   let _ =
     let lexbuf = Lexing.from_channel stdin in
@@ -40,3 +40,4 @@
     let m = Codegen.translate sast in
     Llvm_analysis.assert_valid_module m;
     print_string(Llvm.string_of_llmodule m)
+*)
