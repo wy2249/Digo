@@ -18,6 +18,7 @@ and sx =
   | SSliceSlice of sexpr * sexpr * sexpr
   | SBuiltinFunctionCall of builtin_function * sexpr list
   | SAwait of string
+  | SRead of sexpr
 
 
 type sstatement = 

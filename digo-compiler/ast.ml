@@ -36,6 +36,7 @@ type expr =
 | SliceSlice of expr * expr * expr
 | Len of expr
 | Await of string
+| Read of expr
 | BuiltinFunctionCall of builtin_function * expr list
 
 
