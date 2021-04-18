@@ -68,7 +68,7 @@ RunTest() {
     errorlevel=$?
 
     if [ $errorlevel -eq 0 ] ; then
-        make -C $MAKE_DIR build-link-pass digo="$test_src" out=executable &>/dev/null
+        make -C $MAKE_DIR build-link-pass digo="$test_src" out=executable &>"$test_name.linker.output"
         errorlevel=$?
     fi
 
