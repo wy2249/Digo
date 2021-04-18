@@ -1,4 +1,4 @@
-all: clean generate-dependency build
+all: clean generate-dependency generate-digo-compiler build
 
 .PHONY: build
 build:
@@ -23,7 +23,7 @@ generate-digo-compiler:
 	$(MAKE) metadata-generator -C digo-compiler
 
 .PHONY: generate-dependency
-generate-dependency: generate-async-remote-lib generate-digo-compiler generate-digo-linker
+generate-dependency: generate-async-remote-lib generate-digo-linker
 	llvm-link -S -v -o dependency.ll async-remote-lib/allinone.ll digo-linker/allinone.ll
 
 .PHONY: clean
