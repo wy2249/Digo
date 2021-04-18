@@ -256,6 +256,7 @@ let translate(functions) =
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = f_name^"_result" in 
+          print_string(string_of_ann fd.sann);
           let build_func_call = match fd.sann with
             FuncNormal -> build_call fdef (Array.of_list llargs) result builder
             | _ ->
