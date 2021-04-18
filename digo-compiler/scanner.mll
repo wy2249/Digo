@@ -54,9 +54,9 @@ rule tokenize = parse
 | "continue"{ KEYWORD_CONTINUE}
 | "break"   { KEYWORD_BREAK   }
 
-| "gather"  { KEYWORD_GATHER  }
 | "len"     { KEYWORD_LEN     }
 | "append"  { KEYWORD_APPEND  }
+| "read"    { KEYWORD_READ    }
 
 | "future"  { KEYWORD_FUTURE  }
 | "void"	{ KEYWORD_VOID    }
