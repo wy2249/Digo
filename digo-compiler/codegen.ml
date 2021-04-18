@@ -7,6 +7,8 @@ module StringMap = Map.Make(String)
 let translate(functions) =
   let context = global_context () in
   let the_module = create_module context "Digo" in
+  let _ = set_data_layout "e-m:e-i64:64-f80:128-n8:16:32:64-S128" the_module in
+  let _ = set_target_triple "x86_64-pc-linux-gnu" the_module in 
 
   let i64_t      = i64_type    context 
     and i8_t       = i8_type     context
