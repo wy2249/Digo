@@ -354,19 +354,19 @@ let translate(functions) =
             | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
           )
         | SLen (e) ->
-            let e_ = expr builder e in 
-            build_call lenString [| e_ |] "str_len" builder 
+            let (typl, _) = e in
+            let e_ = expr builder e in
+            (match typl with
+            [FloatType] -> build_call getSliceSize [|e_|] "slicelen" builder
+            | _ -> build_call lenString [| e_ |] "str_len" builder 
+            )
         | SAwait(s)                                                  -> 
           let (await_llvm,fd) = func_of_future s in
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
-
-        (* build_call new_fdef (Array.of_list llargs) result builder *)
-        (*const_int i64_t 0 *)     (*needs work*)
         
         | SFunctionCall("print",[sfr;e])                                        -> 
-            print_string "print called codegen\n";
             (match e with
               ([IntegerType],_)   -> build_call printf [|int_format_str;(expr builder e)|] "" builder
             | ([FloatType],_)     -> build_call printf [|double_format_str;(expr builder e)|] "" builder
@@ -375,10 +375,7 @@ let translate(functions) =
             | ([StringType],_)    -> build_call printf [|str_format_str;(expr builder e)|] "" builder
             | _                   -> raise(Failure("SFunctionCall error"))
             )
-          | SBuiltinFunctionCall(Len,args)                                       ->
-            let e = expr builder (List.hd args) in 
-            build_call getSliceSize [|e|] "slicelen" builder
-          | SBuiltinFunctionCall(Append,args)                                    ->
+          | SAppend(args)                                    ->
             let e1 = expr builder (List.hd args) in 
             let e2 = expr builder (List.nth args 1) in 
             let rt = List.hd e_typl in 

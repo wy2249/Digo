@@ -6,7 +6,6 @@ type binary_operator =
 
 type unary_operator = LogicalNot | Negative
 
-(* do we need a void type for no return func?*)
 type builtin_type = 
 IntegerType
 | FloatType
@@ -15,10 +14,6 @@ IntegerType
 | BoolType
 | FutureType
 | VoidType
-
-type builtin_function = 
-  Len
-| Append
 
 type expr =
   EmptyExpr
@@ -35,8 +30,8 @@ type expr =
 | SliceIndex of expr * expr
 | SliceSlice of expr * expr * expr
 | Len of expr
+| Append of expr list
 | Await of string
-| BuiltinFunctionCall of builtin_function * expr list
 
 
 type statement = 
