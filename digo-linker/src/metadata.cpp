@@ -1,6 +1,10 @@
-//
-// Created by VM on 2021/3/21.
-//
+/* The IR pass in Digo Linker.
+ * It parses the function metadata, generates serialization code for each async (local/remote)
+ * function, and provides simple APIs for the Digo Compiler and Digo Async Remote Library.
+ *
+ * Author:
+ * Date: 2021/3/21
+ */
 
 #include "metadata.h"
 #include <regex>
@@ -19,7 +23,7 @@ const regex version_regex("; VERSION = (\\d+)");
 
 const regex func_decl_regex("; FUNC DECLARE BEGIN\n; FUNC_NAME = '(.+)'\n"
                             "; FUNC_ANNOT = '(.+)'\n"
-                            "; PARAMETERS = '(.+)'\n; RETURN_TYPE = '(.+)'\n"
+                            "; PARAMETERS = '(.*)'\n; RETURN_TYPE = '(.*)'\n"
                             "; FUNC DECLARE END\n");
 
 
@@ -387,6 +391,8 @@ define i8* @digo_linker_async_call_func_#<func_name>#(#<arg_def>#) {
   ret i8* %call
 }
 
+declare dso_local #<ret_type_list># @#<func_name>#(#<arg_def>#)
+
 define i8* @digo_linker_async_call_id_#<id>#(#<arg_def>#) {
 entry:
   %wrapper = call i8* @SW_CreateWrapper()
@@ -492,6 +498,7 @@ string Metadata::GenerateAsyncCalls() {
 string Metadata::GenerateDeclare() {
     string declare_template = R"XXXXX(
 
+declare dso_local void @digo_main()
 declare dso_local void @AwaitJob(i8*, i8**, i32*)
 declare dso_local void @JobDecRef(i8*)
 declare dso_local i8* @CreateAsyncJob(i32, i8*, i32)

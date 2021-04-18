@@ -172,11 +172,9 @@ void Server::Start() {
 
   while (true) {
     if (fcntl(this->socket_, F_GETFD) == -1 && errno == EBADF) {
-      cout << "listening stopped. Bye" << endl;
       return;
     }
 
-    cout << " accepting..." << endl;
     accept_fd = accept(this->socket_,
                        (struct sockaddr *) &addr_in, (socklen_t *) &addr_len);
     if (accept_fd < 0) {

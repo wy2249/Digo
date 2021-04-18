@@ -103,5 +103,10 @@ IntegerType -> "int"
 | FutureType -> "future"
 | VoidType -> "void"
 
+let rec string_of_ann = function
+FuncNormal -> "normal"
+| FuncAsync -> "async"
+| FuncAsyncRemote -> "async remote"
+
 
 
