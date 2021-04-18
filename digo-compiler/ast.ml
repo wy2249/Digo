@@ -6,7 +6,6 @@ type binary_operator =
 
 type unary_operator = LogicalNot | Negative
 
-(* do we need a void type for no return func?*)
 type builtin_type = 
 IntegerType
 | FloatType
@@ -17,7 +16,7 @@ IntegerType
 | VoidType
 
 type builtin_function = 
-  Gather
+  Len
 | Append
 
 type expr =
@@ -28,16 +27,14 @@ type expr =
 | Bool of bool
 | BinaryOp of expr * binary_operator * expr
 | UnaryOp  of unary_operator * expr
-| AssignOp of string * expr
+| AssignOp of expr * expr
 | FunctionCall of string * expr list
 | NamedVariable of string
 | SliceLiteral of builtin_type * int * expr list
 | SliceIndex of expr * expr
 | SliceSlice of expr * expr * expr
-| Len of expr
-| Await of string
 | BuiltinFunctionCall of builtin_function * expr list
-
+| Await of string
 
 type statement = 
   EmptyStatement
@@ -103,5 +100,8 @@ IntegerType -> "int"
 | FutureType -> "future"
 | VoidType -> "void"
 
+let rec stringify_builtin_function = function
+  Len          ->    "Builtin_Len"
+| Append       ->    "Builtin_Append"
 
 

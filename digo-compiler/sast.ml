@@ -9,10 +9,9 @@ and sx =
   | SBool of bool
   | SBinaryOp of sexpr * binary_operator * sexpr
   | SUnaryOp  of unary_operator * sexpr
-  | SAssignOp of string * sexpr 
+  | SAssignOp of sexpr * sexpr 
   | SFunctionCall of string * sexpr list
-  | SNamedVariable of string
-  | SLen of sexpr
+  | SNamedVariable of string 
   | SSliceLiteral of builtin_type * int * sexpr list
   | SSliceIndex of sexpr * sexpr
   | SSliceSlice of sexpr * sexpr * sexpr
