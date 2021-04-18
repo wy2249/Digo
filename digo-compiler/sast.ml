@@ -13,10 +13,10 @@ and sx =
   | SFunctionCall of string * sexpr list
   | SNamedVariable of string
   | SLen of sexpr
+  | SAppend of sexpr list
   | SSliceLiteral of builtin_type * int * sexpr list
   | SSliceIndex of sexpr * sexpr
   | SSliceSlice of sexpr * sexpr * sexpr
-  | SBuiltinFunctionCall of builtin_function * sexpr list
   | SAwait of string
 
 
