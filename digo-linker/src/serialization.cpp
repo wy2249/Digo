@@ -1,6 +1,8 @@
-//
-// Created by VM on 2021/3/21.
-//
+/* The Digo Serialization Library.
+ * It provides serialization interface for each Digo type.
+ * Author:
+ * Date: 2021/3/21
+ */
 
 #include "serialization.h"
 

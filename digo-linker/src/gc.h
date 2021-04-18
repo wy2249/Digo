@@ -26,6 +26,12 @@ const bool GC_DEBUG = false;
 /*  A Digo object with ref count GC support  */
 template <typename T>
 class DObject {
+private:
+    /*  the layout is fixed , so we can do IncRef/DecRef regardless
+     *  of the actual object type. */
+    std::mutex ref_lock;
+    int ref_cnt = 0;
+
 public:
     DObject() = default;
     virtual ~DObject() = default;
@@ -85,8 +91,6 @@ public:
 
 private:
     std::shared_ptr<T> obj_;
-    std::mutex ref_lock;
-    int ref_cnt = 0;
 };
 
 
