@@ -365,12 +365,8 @@ let translate(functions) =
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
-
-        (* build_call new_fdef (Array.of_list llargs) result builder *)
-        (*const_int i64_t 0 *)     (*needs work*)
         
         | SFunctionCall("print",[sfr;e])                                        -> 
-            print_string "print called codegen\n";
             (match e with
               ([IntegerType],_)   -> build_call printf [|int_format_str;(expr builder e)|] "" builder
             | ([FloatType],_)     -> build_call printf [|double_format_str;(expr builder e)|] "" builder
