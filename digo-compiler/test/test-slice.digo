@@ -6,6 +6,9 @@ func digo_main() void {
     
     []float {1.0,2.0,3.0,4.0}
 
+    var s []int
+    s[1]= 5
+
     a := []int {1,2,3,4}
 
     b := a[0:1]

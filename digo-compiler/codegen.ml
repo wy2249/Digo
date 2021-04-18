@@ -157,6 +157,11 @@ let translate(functions) =
         function_type i64_t [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexInt = 
         declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
+
+    let readFile_t= 
+          function_type (pointer_type i8_t) [|pointer_type i8_t|] in
+    let readFile=
+          declare_function "ReadFile" (readFile_t) the_module in
   
   
 (*usr function*)
@@ -375,7 +380,7 @@ let translate(functions) =
             | ([StringType],_)    -> build_call printf [|str_format_str;(expr builder e)|] "" builder
             | _                   -> raise(Failure("SFunctionCall error"))
             )
-          | SAppend(args)                                    ->
+        | SAppend(args)                                    ->
             let e1 = expr builder (List.hd args) in 
             let e2 = expr builder (List.nth args 1) in 
             let rt = List.hd e_typl in 
@@ -386,6 +391,9 @@ let translate(functions) =
             | SliceType(FutureType)  -> build_call sliceAppendF [|e1;e2|] "initsliceF" builder
             |  _     ->  raise(Failure("built_in function Append: should be rejected in semant"))
             )
+        | SRead(e) ->
+            let e_ = expr builder e in 
+            build_call readFile [| e_ |] "read_file" builder
         | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 

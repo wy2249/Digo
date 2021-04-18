@@ -301,7 +301,7 @@ let check (functions) =
             (* only string type*)
           let (ret_typ,e') = expr e in
           let ck = match (List.hd ret_typ) with
-            StringType -> ([StringType],SRead((ret_typ,e')))
+            StringType -> ([SliceType(StringType)],SRead((ret_typ,e')))
             |_ -> raise (Failure ("error: read is not supported for "^ string_of_typ (List.hd ret_typ)))
           in ck
     | SliceLiteral(btyp, slice_len , expl)  ->
