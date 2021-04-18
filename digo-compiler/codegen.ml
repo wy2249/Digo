@@ -264,7 +264,7 @@ let translate(functions) =
 
               let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
-              let new_fdef = declare_function ("digo_linker_async_call_"^f_name) new_ftyp_t the_module in
+              let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
                 build_call new_fdef (Array.of_list llargs) result builder
           in build_func_call
         | SInteger(ex)                                                         ->  const_int i64_t ex

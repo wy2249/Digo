@@ -42,7 +42,7 @@ remake: clean printer
 clean :
 	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out printer semant.out semant
 	rm -rf _build
-	rm -rf semant.native tmp_metadata_gen
+	rm -rf digo.native tmp_metadata_gen
 
 generate-compiler: clean
 	ocamlbuild -use-ocamlfind digo.native -package llvm,llvm.analysis

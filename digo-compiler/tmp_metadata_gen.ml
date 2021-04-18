@@ -34,6 +34,9 @@ let rec stringify_parameters = function
 
 let rec stringify_parameter_list l = 
   let s = stringify_parameters l in
+    if String.length s == 0 then
+      ""
+    else
     String.sub s 0 (String.length s-2)
 ;;
 
