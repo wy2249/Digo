@@ -64,8 +64,8 @@ let check (functions) =
     2. Check for duplciate function naming and naming same with built-in functions. 
   *)
   let add_func map fd = 
-    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
-    and dup_err = "duplicate function " ^ fd.fname
+    let built_in_err = "Semant Err: function " ^ fd.fname ^ " may not be defined"
+    and dup_err = "Semant Err: duplicate function " ^ fd.fname
     and make_err er = raise (Failure er)
     and n = fd.fname (* Name of the function *)
     
@@ -129,14 +129,14 @@ let check (functions) =
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
     let type_of_identifier n =
       if Hashtbl.mem symbols n then Hashtbl.find symbols n
-      else raise (Failure("Err: undeclared identifier " ^ n))
+      else raise (Failure("Sement Err: undeclared identifier " ^ n))
     in
     let check_assign lvaluet rvaluet err =
       if lvaluet = rvaluet then lvaluet else raise (Failure err)
     in
     let func_of_future n = 
       let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
-      else raise (Failure("Err: undeclared future object " ^ n)) in
+      else raise (Failure("Semant Err: undeclared future object " ^ n)) in
       find_func fname
     in
     (* Return a semantically-checked expression, i.e., with a type *)
@@ -152,7 +152,7 @@ let check (functions) =
       | AssignOp(var, e) -> 
         let var_typ = type_of_identifier var
         and (ret_typ,e') = expr e in
-        let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
+        let err = "Semant Err: illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
           ^ stringify_builtin_type ret_typ*) in
         let _ = match var_typ with
           FutureType -> 
@@ -167,7 +167,7 @@ let check (functions) =
         let op_typ = match op with
               Negative when (List.hd ret_typl) = IntegerType || (List.hd ret_typl) = FloatType -> ret_typl
             | LogicalNot when (List.hd ret_typl) = BoolType -> ret_typl
-            | _ -> raise (Failure ("illegal unary operator " (*^ stringify_unary_operator op e ^ 
+            | _ -> raise (Failure ("Semant Err: illegal unary operator " (*^ stringify_unary_operator op e ^ 
               " expression type "^stringify_builtin_type ret_typ*)  )) in
         (op_typ,SUnaryOp(op,(ret_typl,e')))
             
@@ -184,7 +184,7 @@ let check (functions) =
             when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd ret_typl1) = StringType) -> BoolType
           | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
           | Add when same && (List.hd ret_typl1) == StringType -> StringType
-          | _ -> raise ( Failure ("illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
+          | _ -> raise ( Failure ("Semant Err: illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
             stringify_builtin_type ret_typ1^ " e2 type "^stringify_builtin_type ret_typ2*)  )) in 
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
 
@@ -192,21 +192,19 @@ let check (functions) =
         let fd = find_func fname in 
         let param_length = List.length fd.formals in
         if List.length args != param_length then
-          raise (Failure ("error: different number of aruguments passed expected " ^ string_of_int param_length ^ " aruguments but "
-                          ^ string_of_int (List.length args) ^" aruguments provided"))
+          raise (Failure ("Semant Err: different number of aruguments passed. Expected " ^ string_of_int param_length ^ " aruguments but "
+                          ^ string_of_int (List.length args) ^" aruguments provided in function " ^ fname))
         else 
           let check_call (ft, _) e = 
             let (ret_typl,e') = expr e in 
-            let err = "illegal argument found" in
+            let err = "Semant Err: illegal argument found" in
           ([check_assign ft (List.hd ret_typl) err],e')
           in 
           let args' = List.map2 check_call fd.formals args in 
-          let tpy' = match fd.ann with
-            FuncNormal -> fd.typ
-          | _ -> 
-            [FutureType]
-          in
-          (tpy',SFunctionCall(fname,args'))
+          let tpy' = match fd.ann with 
+          FuncNormal -> fd.typ
+          | _ -> [FutureType]
+          in (tpy',SFunctionCall(fname,args'))
 
       | Len(e) ->
         (* only string and slice type*)
@@ -243,7 +241,7 @@ let check (functions) =
       | Continue                          ->  SContinue                            (*more on scontinune*)
       | Declare(nl,t,el) ->
         let check_dup_var n =
-          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n t)
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n t)
         in List.iter check_dup_var nl;
         let ck = match el with
           [] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
@@ -262,23 +260,22 @@ let check (functions) =
             if List.length nl != List.length el then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
-          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
         let check_dup_var_function n rt =
-          if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n rt)
-        in 
-        let typel = 
-          match ret_list with
-          [(etl,SFunctionCall(_,_))] | [(etl, SAwait(_))]   -> 
-              List.map2 check_dup_var_function nl etl;
-              (* ret_list: [([FuturType], expr)]*)
-              (* etl: [FutureType]*)
-              ret_list
-          | _                             ->
-            List.map2 check_dup_var nl ret_list;
-            ret_list
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n rt)
         in
-        SShortDecl(nl, typel)
+        let _ = match (List.hd ret_list) with
+          ([FutureType],SFunctionCall(fname,_)) ->
+            List.iter (fun n -> if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )"))
+            else ignore(Hashtbl.add symbols n FutureType)) nl;
+            List.iter (fun n -> if Hashtbl.mem futures n then raise (Failure ("Semant Err: duplicate future variable declarations ( " ^ n ^ " )"))
+            else  ignore(Hashtbl.add futures n fname)) nl;
+          | (etl,SFunctionCall(_,_)) | (etl, SAwait(_))   -> 
+              List.iter2 check_dup_var_function nl etl
+          | _ -> List.iter2 check_dup_var nl ret_list
+        in
+        SShortDecl(nl, ret_list)
       | Expr(e)                           ->  SExpr(expr e)
       | Return(el)                        -> 
         let ret_list = List.map (fun e -> expr e) el in 

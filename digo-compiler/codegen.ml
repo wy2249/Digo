@@ -218,6 +218,7 @@ let translate(functions) =
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           let e_ = expr builder ex1 in
             let (typl, _) = ex1 in
+            print_string (string_of_typ (List.hd typl) ^ "\n");
             let check_string = match List.hd typl with
               StringType ->
                 let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
@@ -225,6 +226,7 @@ let translate(functions) =
               | FutureType ->
                 let (_,SFunctionCall(fname,_)) = ex1 in
                 Hashtbl.add futures var fname;
+                print_string ( "add "^ var ^ " " ^ fname ^ " " ^ (string_of_bool (Hashtbl.mem futures var)) ^ "\n");
                 ignore(build_store e_ (lookup var) builder); e_
               | _ -> 
                 ignore(build_store e_ (lookup var) builder); e_
@@ -232,7 +234,8 @@ let translate(functions) =
         | SLen (e) ->
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
-        | SAwait(s)                                                           -> 
+        | SAwait(s)                                                  -> 
+          print_string (string_of_bool (Hashtbl.mem futures "bb"));
           let (await_llvm,fd) = func_of_future s in
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
@@ -351,7 +354,7 @@ let translate(functions) =
             expr builder (et,SAssignOp(n,e)) 
           in
           match (List.hd el) with
-          ([FutureType],SFunctionCall(_,_))  -> List.map2 build_decll nl el; builder
+          ([FutureType],SFunctionCall(_,_))  -> print_string "short decl future\n"; List.map2 build_decll nl el; builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
