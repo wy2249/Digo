@@ -63,12 +63,12 @@ RunTest() {
 
     echo -n "$test_name..."
 
-    ../digo-compiler/digo.native "$test_src" > ../tmp.compiled.nometadata.ll &>"$test_name.build.output"
+    ../digo-compiler/digo.native "$test_src" > ../tmp.compiled.nometadata.ll 2>"$test_name.build.output"
 
     errorlevel=$?
 
     if [ $errorlevel -eq 0 ] ; then
-        make -s -C $MAKE_DIR build-link-pass digo="$test_src" out=executable
+        make -C $MAKE_DIR build-link-pass digo="$test_src" out=executable &>/dev/null
         errorlevel=$?
     fi
 
@@ -79,14 +79,14 @@ RunTest() {
 
     if [ $errorlevel -eq 0 ] ; then
         # success expected, so try to run the executable
-        ./executable --master 127.0.0.1:20001 > "$test_name.exec.output"
+        ../executable --master 127.0.0.1:20001 > "$test_name.exec.output" 2>/dev/null
         expected_file="$test_src.pass.expected"
         exec_output="$test_name.exec.output"
         if [ ! -f $expected_file ]; then
             echo "Compilation passed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
-            Compare "$build_output" "$expected_file" "$diff_output_file"
+            Compare "$exec_output" "$expected_file" "$diff_output_file"
         fi
     else
         # fail expected, so try to diff the fail file
@@ -137,7 +137,7 @@ done
 
 shift `expr $OPTIND - 1`
 
-BuildCompiler
+# BuildCompiler
 
 if [ $# -ge 1 ]
 then
