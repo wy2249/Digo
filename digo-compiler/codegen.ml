@@ -232,7 +232,7 @@ let translate(functions) =
         | SLen (e) ->
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
-        | SAwait(s)                                                           -> 
+        | SAwait(s)                                                  -> 
           let (await_llvm,fd) = func_of_future s in
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
@@ -262,7 +262,7 @@ let translate(functions) =
               let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
               Hashtbl.add function_decls ("digo_linker_await_func_"^f_name) (await_llvm,fd);
 
-              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fd.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
                 build_call new_fdef (Array.of_list llargs) result builder
@@ -351,7 +351,7 @@ let translate(functions) =
             expr builder (et,SAssignOp(n,e)) 
           in
           match (List.hd el) with
-          ([FutureType],SFunctionCall(_,_))  -> List.map2 build_decll nl el; builder
+          ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
