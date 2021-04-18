@@ -1,0 +1,39 @@
+func digo_main() void {
+
+[]string {"this","is","a","test"}
+[]int {1,2,3,4}
+[]float {1.0,2.0,3.0,4.0}
+
+a := []int {1,2,3,4}
+b := a[0:1]
+c := a[0:]
+d := a[:3]
+
+e := len(b)
+f := append(a,5)
+
+g := a[1]
+
+a[2] = 10
+var h, i future
+
+bb := try_return_one(1,"b")
+cc := try_return_two(1, "c")
+
+k := []future {cc}
+l := append(k,bb)
+j := len(l)
+
+print("%d , %f ", 10, 10.0)
+println("%s , % x, % l","test", h ,a)
+}
+
+async func try_return_one(b int, s string) (int,string) {
+    
+    return b+10, s+" world"
+}
+
+async remote func try_return_two(b int, s string) (int,string) {
+    
+    return b+10, s+" world"
+}

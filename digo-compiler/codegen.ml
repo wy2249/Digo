@@ -28,24 +28,24 @@ let translate(functions) =
     in
 
 (* built-in function *)
-  let printInt_t = 
-    function_type void_t [| i64_t |] in
-  let printInt = 
-    declare_function "printInt" printInt_t the_module in 
+  let printf_t = 
+      var_arg_function_type void_t [|(pointer_type i8_t)|]  in 
+  let printf =
+      declare_function "print" printf_t the_module in 
 
-  let printFloat_t =
-    function_type void_t [| float_t |] in
-  let printFloat = 
-    declare_function "printFloat" printFloat_t the_module in
+  let printfln_t = 
+      var_arg_function_type void_t [|(pointer_type i8_t)|]  in
+  let printfln =
+      declare_function "println" printfln_t the_module in
 
   let show_string (_,ex)= match ex with
     SString(ex)  -> ex
   | _           -> ""                    in    
 
-  let printString_t= 
+  (*let printString_t= 
     function_type void_t [|(pointer_type i8_t)|] in
   let printString=
-    declare_function "printString" (printString_t) the_module in  
+    declare_function "printString" (printString_t) the_module in  *)
 
     (* String related functions *)
   let createString_t= 
@@ -78,36 +78,16 @@ let translate(functions) =
   let lenString=
       declare_function "GetStringSize" (lenString_t) the_module in
   
-  let printf_t = 
-      var_arg_function_type void_t [|(pointer_type i8_t)|]  in 
-  let printf =
-      declare_function "print" printf_t the_module in 
-  
-      let createSlice_t = 
+    let createSlice_t = 
         function_type (pointer_type i8_t) [|i64_t|] in
     let createSlice = 
         declare_function "CreateSlice" (createSlice_t) the_module in
-  
-    let sliceAppends_t =
-        function_type (pointer_type i8_t) [|(pointer_type i8_t);(pointer_type i8_t)|] in
-    let sliceAppends = 
-        declare_function "SliceAppends" (sliceAppends_t) the_module in
-  
-    let sliceAppendn_t =
-        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
-    let sliceAppendn = 
-        declare_function "SliceAppendn" (sliceAppendn_t) the_module in
-  
-    let sliceAppendf_t =
-        function_type (pointer_type i8_t) [|(pointer_type i8_t);float_t|] in
-    let sliceAppendf = 
-        declare_function "SliceAppendf" (sliceAppendf_t) the_module in
-  
-    let sliceAppendF_t =
-        function_type (pointer_type i8_t) [|(pointer_type i8_t);(pointer_type i8_t)|] in
-    let sliceAppendF = 
-        declare_function "SliceAppendF" (sliceAppendF_t) the_module in  
-  
+
+    let sliceAppend_t =
+        var_arg_function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
+    let sliceAppend = 
+        declare_function "SliceAppend" sliceAppend_t the_module in 
+
     let sliceSlice_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;i64_t|] in
     let sliceSlice = 
@@ -187,12 +167,6 @@ let translate(functions) =
       in
       let builder = 
         builder_at_end context (entry_block the_function) in
-
-        let str_format_str = build_global_stringptr "%s" "str" builder in
-        let int_format_str = build_global_stringptr "%d" "int" builder in
-        let future_format_str = build_global_stringptr "%x" "future" builder in
-        let double_format_str = build_global_stringptr "%f" "double" builder in
-        let slice_format_str = build_global_stringptr "%l" "slice" builder in
         
       let futures = Hashtbl.create 5000 in
       let func_of_future n = 
@@ -366,26 +340,16 @@ let translate(functions) =
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
         
-        | SFunctionCall("print",[sfr;e])                                        -> 
-            (match e with
-              ([IntegerType],_)   -> build_call printf [|int_format_str;(expr builder e)|] "" builder
-            | ([FloatType],_)     -> build_call printf [|double_format_str;(expr builder e)|] "" builder
-            | ([SliceType(x)],_)  -> build_call printf [|slice_format_str;(expr builder e)|] "" builder
-            | ([FutureType],_)    -> build_call printf [|future_format_str;(expr builder e)|] "" builder
-            | ([StringType],_)    -> build_call printf [|str_format_str;(expr builder e)|] "" builder
-            | _                   -> raise(Failure("SFunctionCall error"))
-            )
-          | SAppend(args)                                    ->
+        | SFunctionCall("print",el)                                        -> 
+            let exarr= Array.of_list (List.map (fun x -> expr builder x) el) in 
+            build_call printf exarr "" builder
+        | SFunctionCall("println",el)                                        -> 
+            let exarr= Array.of_list (List.map (fun x -> expr builder x) el) in 
+            build_call printfln exarr "" builder 
+        | SAppend(args)                                    ->
             let e1 = expr builder (List.hd args) in 
             let e2 = expr builder (List.nth args 1) in 
-            let rt = List.hd e_typl in 
-            (match rt with
-            | SliceType(StringType)  -> build_call sliceAppends [|e1;e2|] "initslices" builder
-            | SliceType(IntegerType) -> build_call sliceAppendn [|e1;e2|] "initslicen" builder
-            | SliceType(FloatType)   -> build_call sliceAppendf [|e1;e2|] "initslicef" builder
-            | SliceType(FutureType)  -> build_call sliceAppendF [|e1;e2|] "initsliceF" builder
-            |  _     ->  raise(Failure("built_in function Append: should be rejected in semant"))
-            )
+            build_call sliceAppend [|e1;e2|] "initslice" builder
         | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
@@ -421,25 +385,25 @@ let translate(functions) =
           StringType  -> 
             let append_string slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppends [|slc;e|] "initslices" builder 
+            build_call sliceAppend [|slc;e|] "initslices" builder 
             in
             List.fold_left append_string empty_slice e1_l 
         | IntegerType -> 
             let append_integer slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppendn [|slc;e|] "initslicen" builder 
+            build_call sliceAppend [|slc;e|] "initslicen" builder 
             in
             List.fold_left append_integer empty_slice e1_l 
         | FloatType   -> 
             let append_float slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppendf [|slc;e|] "initslicen" builder 
+            build_call sliceAppend [|slc;e|] "initslicef" builder 
             in
             List.fold_left append_float empty_slice e1_l 
         | FutureType  -> 
             let append_future slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppendF [|slc;e|] "initslicen" builder 
+            build_call sliceAppend [|slc;e|] "initslicenF" builder 
             in
             List.fold_left append_future empty_slice e1_l           
         | _           -> raise(Failure("invalide slice type"))   
