@@ -59,8 +59,6 @@ TEST(ClientTest, Normal) {
   int r = c->Call("127.0.0.1:9999",
                   "foo", params, resp);
 
-  cout << "resp:" << string(resp.begin(), resp.end()) << endl;
-
   ASSERT_EQ(r, 0);
   for (int i = 0; i < params.size(); ++i)
     ASSERT_EQ(params[i], resp[i]);
