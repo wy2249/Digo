@@ -253,7 +253,6 @@ let check (functions) =
           | _ -> raise ( Failure ("Semant Err: illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
             stringify_builtin_type ret_typ1^ " e2 type "^stringify_builtin_type ret_typ2*)  )) in 
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
-
       | FunctionCall(fname, args) ->
       (match fname with
       | "print" -> ([VoidType],SFunctionCall(fname,(List.map expr args)))
@@ -277,37 +276,27 @@ let check (functions) =
           in
           (tpy',SFunctionCall(fname,args'))
       )
-      | BuiltinFunctionCall(nfunc,exl)              ->  
-      (
-        match nfunc with
-        Len              ->
-          let exlen = List.length exl in 
-          if exlen = 1 
-          then 
-            let (ret_typl,e') = expr (List.hd exl)in
+      | Append(exl) ->
+        let exlen = List.length exl in 
+        if exlen = 2 
+        then 
+          let (ret_typl1,e1') = expr (List.hd exl) in
+          let (ret_typl2,e2') = expr (List.nth exl 1) in
+          ( match ret_typl1 with
+          | [SliceType(x)] -> 
+            if x = (List.hd ret_typl2)
+            then (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
+            else raise(Failure("Built-in Append object and element are not compatible due to different type"))
+          | _  -> raise(Failure("Built-in Append being called on non-slice object"))  
+          )
+        else raise(Failure("Append needs two objects"))
+      | Len(ex)              ->  
+            let (ret_typl,e') = expr ex in
             ( match ret_typl with
-            | [SliceType(_)] -> ([IntegerType],SBuiltinFunctionCall(Len,[(ret_typl,e')]))
+            | [SliceType(_)] -> ([IntegerType],SLen((ret_typl,e')))
             | [StringType] -> ([IntegerType],SLen((ret_typl,e')))
             | _  -> raise(Failure("Built-in Len being called on non-slice object"))  
             )
-          else 
-            raise(Failure("Built-in Len being called with too many aruguments, expected 1 argument"))
-       |Append           ->
-          let exlen = List.length exl in 
-          if exlen = 2 
-          then 
-            let (ret_typl1,e1') = expr (List.hd exl) in
-            let (ret_typl2,e2') = expr (List.nth exl 1) in
-            ( match ret_typl1 with
-            | [SliceType(x)] -> 
-              if x = (List.hd ret_typl2)
-              then (ret_typl1,SBuiltinFunctionCall(Append,[(ret_typl1,e1');(ret_typl2,e2')]))
-              else raise(Failure("Built-in Append object and element are not compatible due to different type"))
-            | _  -> raise(Failure("Built-in Append being called on non-slice object"))  
-            )
-          else 
-            raise(Failure("Built-in Append being called with too many or too few aruguments, expected 2 argument"))         
-      ) 
     | SliceLiteral(btyp, slice_len , expl)  ->
       let rt_typ = get_type_in_slicetype btyp in
       let check_type e_ =
