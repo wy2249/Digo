@@ -22,6 +22,11 @@ int generate_async_call_entry(const string& input_file, const string& output_fil
     fstream output;
     output.open(output_file, ios::out);
 
+    output << R"XXXXX(
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+    )XXXXX";
+
     output << metadata.GenerateDeclare();
     output << metadata.GenerateAsyncCalls();
     output << metadata.GenerateJumpTable();

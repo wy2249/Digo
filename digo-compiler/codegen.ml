@@ -366,7 +366,6 @@ let translate(functions) =
         (*const_int i64_t 0 *)     (*needs work*)
         
         | SFunctionCall("print",[sfr;e])                                        -> 
-            print_string "print called codegen\n";
             (match e with
               ([IntegerType],_)   -> build_call printf [|int_format_str;(expr builder e)|] "" builder
             | ([FloatType],_)     -> build_call printf [|double_format_str;(expr builder e)|] "" builder

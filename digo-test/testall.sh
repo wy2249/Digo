@@ -14,7 +14,7 @@
 #       the result produced by the executable and the $source_code.pass.expected
 
 Usage() {
-    echo "Usage: run_tests.sh [options] [.mc files]"
+    echo "Usage: testall.sh [options] [.mc files]"
     echo "-k    Keep intermediate files"
     echo "-h    Print this help"
     exit 1
@@ -24,24 +24,29 @@ MAKE_DIR='../'
 # Generate depenencies and Digo Compiler
 BuildCompiler() {
     echo "------------------ Generating Compiler ------------------------"
-    echo "Please wait......."
-    make -C $MAKE_DIR clean &>nul
-    make -C $MAKE_DIR generate-dependency &>nul
-    make -C $MAKE_DIR generate-digo-compiler &>nul
+    echo "Please wait....... It may take 1-5 minutes to generate compiler"
+    make -C $MAKE_DIR clean &>/dev/null
+    make -C $MAKE_DIR generate-dependency &>/dev/null
+    echo "Library compilation succeeds, now generating OCaml compiler..."
+    make -C $MAKE_DIR generate-digo-compiler &>/dev/null
     echo "------------------ Compiler Generated ------------------------"
 }
 
 global_test_error=0
 global_test_error_any=0
 
+global_log="testall.log"
+rm -f $global_log
+
+
 # Compare <outfile> <reffile> <difffile>
 # Compares the outfile with reffile. Differences, if any, written to difffile
 Compare() {
     generatedfiles="$generatedfiles $3"
-    echo diff -b $1 $2 ">" $3 1>&2
+    echo diff -b $1 $2 ">" $3 &>>"$global_log"
     diff -b "$1" "$2" > "$3" 2>&1 || {
         global_test_error=1
-        echo "FAILED $1 differs from $2" 1>&2
+        echo "FAILED $1 differs from $2" >> "$global_log"
     }
 }
 
@@ -52,38 +57,43 @@ Compare() {
 #    If the compilation succeeds, it will diff
 #       the result produced by the executable and the $source_code.pass.expected
 RunTest() {
-    test_name="$1"
+    test_name=`echo $1 | sed 's/.*\\///
+                             s/.digo//'`
     test_src="$1"
 
-    echo "---------- Running test: $test_name"
+    echo -n "$test_name..."
 
-    make -C $MAKE_DIR build digo="$test_src" out=executable &>"$test_name.build.output"
+    ../digo-compiler/digo.native "$test_src" > ../tmp.compiled.nometadata.ll &>"$test_name.build.output"
 
     errorlevel=$?
+
+    if [ $errorlevel -eq 0 ] ; then
+        make -s -C $MAKE_DIR build-link-pass digo="$test_src" out=executable
+        errorlevel=$?
+    fi
+
+    echo "" >> "$global_log"
+    echo "##### Testing $test_name" >> "$global_log"
 
     diff_output_file="$test_name.diff.output"
 
     if [ $errorlevel -eq 0 ] ; then
         # success expected, so try to run the executable
-        echo "------------- Build success, trying to run the executable"
-        echo "$test_name.output"
         ./executable --master 127.0.0.1:20001 > "$test_name.exec.output"
-        expected_file="$test_name.pass.expected"
+        expected_file="$test_src.pass.expected"
         exec_output="$test_name.exec.output"
-        echo "--- Execution finished, trying to find the $expected_file"
         if [ ! -f $expected_file ]; then
-            echo "$expected_file not found! The build should fail!"
+            echo "Compilation passed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
             Compare "$build_output" "$expected_file" "$diff_output_file"
         fi
     else
         # fail expected, so try to diff the fail file
-        expected_file="$test_name.fail.expected"
+        expected_file="$test_src.fail.expected"
         build_output="$test_name.build.output"
-        echo "------------- Build failed, trying to find the $expected_file"
         if [ ! -f $expected_file ]; then
-            echo "$expected_file not found! The build should pass!"
+            echo "Compilation failed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
             Compare "$build_output" "$expected_file" "$diff_output_file"
@@ -95,24 +105,26 @@ RunTest() {
     fi
 
     if [ $global_test_error -eq 1 ] ; then
-        echo "! Test $1 Failed"
+        echo "##### Test $test_name: Failed" >> "$global_log"
+        echo "FAIL"
     else
-        echo "Test $1 Passed"
+        echo "##### Test $test_name: Passed" >> "$global_log"
+        echo "OK"
     fi
 }
 
 Clean() {
-    make -C $MAKE_DIR clean >nul 2>nul
-    rm -f "*.build.output"
-    rm -f "*.exec.output"
-    rm -f "*.diff.output"
+    make -C $MAKE_DIR clean &>/dev/null
+    rm -f *.build.output
+    rm -f *.exec.output
+    rm -f *.diff.output
 }
 
 # Set time limit for all operations
 ulimit -t 30
 keep=0
 
-while getopts kh c; do
+while getopts kdpsh c; do
     case $c in
 	k) # Keep intermediate files
 	    keep=1
@@ -123,14 +135,34 @@ while getopts kh c; do
     esac
 done
 
+shift `expr $OPTIND - 1`
+
 BuildCompiler
 
-for filename in ./tests/*.digo; do
+if [ $# -ge 1 ]
+then
+    files=$@
+else
+    files="tests/*.digo"
+fi
+
+for filename in $files; do
     RunTest "$(pwd)/$filename"
 done
 
 
 if [ $keep -eq 0 ] ; then
+    pwd
+    echo "Cleaning..."
     Clean
 fi
 
+echo "---------"
+
+if [ $global_test_error_any -eq 1 ] ; then
+    echo "Some tests failed, see $global_log for details"
+else
+    echo "All tests passed"
+fi
+
+exit $global_test_error_any

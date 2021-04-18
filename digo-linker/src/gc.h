@@ -45,7 +45,7 @@ public:
         ret->obj_ = ptr;
         ret->ref_cnt = 1;
         if (GC_DEBUG) {
-            printf("GC Debug: %s, %p is created\n", typeid(T).name(), ret);
+            fprintf(stderr, "GC Debug: %s, %p is created\n", typeid(T).name(), ret);
         }
         return ret;
     }
@@ -54,7 +54,7 @@ public:
         this->ref_lock.lock();
         this->ref_cnt++;
         if (GC_DEBUG) {
-            printf("GC Debug: ref cnt of %s, %p is incremented to %d\n", typeid(T).name(), this, this->ref_cnt);
+            fprintf(stderr, "GC Debug: ref cnt of %s, %p is incremented to %d\n", typeid(T).name(), this, this->ref_cnt);
         }
         this->ref_lock.unlock();
     }
@@ -63,10 +63,10 @@ public:
         this->ref_lock.lock();
         this->ref_cnt--;
         if (GC_DEBUG) {
-            printf("GC Debug: ref cnt of %s, %p is decremented to %d\n", typeid(T).name(), this, this->ref_cnt);
+            fprintf(stderr, "GC Debug: ref cnt of %s, %p is decremented to %d\n", typeid(T).name(), this, this->ref_cnt);
         }
         if (this->ref_cnt < 0) {
-            printf("using an already released object\n");
+            fprintf(stderr, "using an already released object\n");
             exit(1);
         }
         if (this->ref_cnt == 0) {

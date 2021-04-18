@@ -1,8 +1,14 @@
 all: clean generate-dependency generate-digo-compiler build
 
-.PHONY: build
-build:
+.PHONY: build-compiler-pass
+build-compiler-pass:
 	./digo-compiler/digo.native $(digo) > tmp.compiled.nometadata.ll
+
+.PHONY: build
+build: build-compiler-pass build-link-pass
+
+.PHONY: build-link-pass
+build-link-pass:
 	./digo-compiler/tmp_metadata_gen < $(digo) > tmp.metadata.ll
 	cat tmp.compiled.nometadata.ll tmp.metadata.ll > tmp.compiled.ll
 	./digo-linker/digo-linker async tmp.compiled.ll tmp.async.linker.ll

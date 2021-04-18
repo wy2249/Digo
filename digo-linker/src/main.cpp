@@ -42,8 +42,6 @@ int generate_async_call_entry(const string& input_file, const string& output_fil
     fstream output;
     output.open(output_file, ios::out);
 
-    output << ir;
-
     output << metadata.GenerateDeclare();
     output << metadata.GenerateAsyncCalls();
     output << metadata.GenerateJumpTable();

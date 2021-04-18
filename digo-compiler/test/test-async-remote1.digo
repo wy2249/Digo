@@ -2,10 +2,13 @@ func digo_main() void {
     a := 10
     b := 1.0
     c := try_return_one(a)
-    e,f := try_return_two(a,b)
+    e := try_return_two(a,b)
+    f, g := await e
+
+    print("%d %f\n", f, g)
 }
 
-async remote func try_return_one(a int) int {
+async func try_return_one(a int) int {
     return a+10
 }
 
