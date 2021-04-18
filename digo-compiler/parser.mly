@@ -141,7 +141,7 @@ p_expr:
 
 /* p_expr_list_required will cause reduce/reduce conflict   */
 /*  FIXME or do not support a, b = b, a */
-| VARIABLE ASSIGNMENT p_expr { AssignOp($1, $3) }
+| p_expr ASSIGNMENT p_expr { AssignOp($1, $3) }
 
 /* literals */
 | INT_LITERAL     { Integer($1) }
@@ -157,7 +157,6 @@ p_expr:
 
 /* built-in functions */
 | KEYWORD_AWAIT  VARIABLE {  Await($2)  }
-| KEYWORD_GATHER LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Gather, $3)  }
 | KEYWORD_LEN    LEFT_PARENTHE p_expr RIGHT_PARENTHE { Len($3)  }
 | KEYWORD_APPEND LEFT_PARENTHE p_expr_list RIGHT_PARENTHE { BuiltinFunctionCall(Append, $3)  }
 

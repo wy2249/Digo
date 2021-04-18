@@ -9,7 +9,7 @@ and sx =
   | SBool of bool
   | SBinaryOp of sexpr * binary_operator * sexpr
   | SUnaryOp  of unary_operator * sexpr
-  | SAssignOp of string * sexpr 
+  | SAssignOp of sexpr * sexpr 
   | SFunctionCall of string * sexpr list
   | SNamedVariable of string
   | SLen of sexpr
@@ -23,19 +23,13 @@ and sx =
 type sstatement = 
     SEmptyStatement
   | SIfStatement of sexpr * sstatement * sstatement 
-     (* condition expression; statements if true; statements if false  *)
   | SForStatement of sexpr * sexpr * sexpr * sstatement 
-      (*  for ssmt1; expr2; ssmt3 {  statements   }  *)
   | SBreak
   | SContinue
   | SDeclare of string list * builtin_type * sexpr list
   | SShortDecl of string list * sexpr list
   | SReturn of sexpr list
   | SExpr of sexpr
-  (*| SEmptySimpleStatement
-  | SSimpleDeclare of builtin_type list * string list * sexpr list
-  | SSimpleShortDecl of string list * sexpr list
-  | SSimpleExpr of sexpr*)
   | SBlock of sstatement list 
 
 type sfunc_decl = {

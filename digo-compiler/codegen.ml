@@ -22,10 +22,9 @@ let translate(functions) =
       | FloatType    -> float_t
       | BoolType     -> i1_t
       | StringType   -> pointer_type i8_t     
-      (*| SliceType    -> void_t   needs work*)
+      | SliceType(x)    -> pointer_type i8_t
       | FutureType   -> pointer_type i8_t   (*needs work*)
       | VoidType     -> void_t
-      | SliceType(x)    -> void_t
     in
 
 (* built-in function *)
@@ -79,6 +78,87 @@ let translate(functions) =
   let lenString=
       declare_function "GetStringSize" (lenString_t) the_module in
   
+  let printf_t = 
+      var_arg_function_type void_t [|(pointer_type i8_t)|]  in 
+  let printf =
+      declare_function "print" printf_t the_module in 
+  
+      let createSlice_t = 
+        function_type (pointer_type i8_t) [|i64_t|] in
+    let createSlice = 
+        declare_function "CreateSlice" (createSlice_t) the_module in
+  
+    let sliceAppends_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);(pointer_type i8_t)|] in
+    let sliceAppends = 
+        declare_function "SliceAppends" (sliceAppends_t) the_module in
+  
+    let sliceAppendn_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
+    let sliceAppendn = 
+        declare_function "SliceAppendn" (sliceAppendn_t) the_module in
+  
+    let sliceAppendf_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);float_t|] in
+    let sliceAppendf = 
+        declare_function "SliceAppendf" (sliceAppendf_t) the_module in
+  
+    let sliceAppendF_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);(pointer_type i8_t)|] in
+    let sliceAppendF = 
+        declare_function "SliceAppendF" (sliceAppendF_t) the_module in  
+  
+    let sliceSlice_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;i64_t|] in
+    let sliceSlice = 
+        declare_function "SliceSlice" (sliceSlice_t) the_module in
+  
+    let getSliceSize_t =
+        function_type i64_t [|(pointer_type i8_t)|] in
+    let getSliceSize = 
+        declare_function "GetSliceSize" (getSliceSize_t) the_module in      
+  
+    let setSliceIndexDouble_t =
+        function_type float_t [|(pointer_type i8_t);i64_t;float_t|] in
+    let setSliceIndexDouble = 
+        declare_function "SetSliceIndexDouble" (setSliceIndexDouble_t) the_module in
+  
+    let setSliceIndexFuture_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;(pointer_type i8_t)|] in
+    let setSliceIndexFuture = 
+        declare_function "SetSliceIndexFuture" (setSliceIndexFuture_t) the_module in
+  
+    let setSliceIndexString_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;(pointer_type i8_t)|] in
+    let setSliceIndexString = 
+        declare_function "SetSliceIndexString" (setSliceIndexString_t) the_module in
+  
+    let setSliceIndexInt_t =
+        function_type i64_t [|(pointer_type i8_t);i64_t;i64_t|] in
+    let setSliceIndexInt = 
+        declare_function "SetSliceIndexInt" (setSliceIndexInt_t) the_module in
+  
+    let getSliceIndexDouble_t =
+        function_type float_t [|(pointer_type i8_t);i64_t|] in
+    let getSliceIndexDouble = 
+        declare_function "GetSliceIndexDouble" (getSliceIndexDouble_t) the_module in
+  
+    let getSliceIndexFuture_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
+    let getSliceIndexFuture = 
+        declare_function "GetSliceIndexFuture" (getSliceIndexFuture_t) the_module in
+  
+    let getSliceIndexString_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
+    let getSliceIndexString = 
+        declare_function "GetSliceIndexString" (getSliceIndexString_t) the_module in
+  
+    let getSliceIndexInt_t =
+        function_type i64_t [|(pointer_type i8_t);i64_t|] in
+    let getSliceIndexInt = 
+        declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
+  
+  
 (*usr function*)
 
   let function_decls = Hashtbl.create 5000 in
@@ -108,8 +188,12 @@ let translate(functions) =
       let builder = 
         builder_at_end context (entry_block the_function) in
 
-      let str_format_str = build_global_stringptr "%s\n" "str" builder in
-      
+        let str_format_str = build_global_stringptr "%s" "str" builder in
+        let int_format_str = build_global_stringptr "%d" "int" builder in
+        let future_format_str = build_global_stringptr "%x" "future" builder in
+        let double_format_str = build_global_stringptr "%f" "double" builder in
+        let slice_format_str = build_global_stringptr "%l" "slice" builder in
+        
       let futures = Hashtbl.create 5000 in
       let func_of_future n = 
         let fname = if Hashtbl.mem futures n then Hashtbl.find futures n
@@ -129,6 +213,20 @@ let translate(functions) =
 
       let lookup n = if Hashtbl.mem local_vars n then Hashtbl.find local_vars n
         else raise (Failure("cannot find symbol in local_vars"))
+      in
+      let get_type_in_slicetype = function
+            SliceType(StringType)      ->  StringType
+          | SliceType(IntegerType)     ->  IntegerType
+          | SliceType(FloatType)       ->  FloatType
+          | SliceType(FutureType)      ->  FutureType
+          | _                          ->  raise(Failure("invalide slice type"))
+      in
+      let get_slice_argument_number = function
+        StringType  -> const_int i64_t 1
+      | IntegerType -> const_int i64_t 3
+      | FloatType   -> const_int i64_t 4
+      | FutureType  -> const_int i64_t 6
+      | _           -> raise(Failure("invalide slice type"))
       in
 
       let rec expr builder (e_typl,e) = match e with
@@ -219,18 +317,42 @@ let translate(functions) =
           ) e_ "tmp" builder
         | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
           let e_ = expr builder ex1 in
-            let (typl, _) = ex1 in
-            let check_string = match List.hd typl with
-              StringType ->
-                let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
-                ignore(build_store clonellvm (lookup var) builder); clonellvm
-              | FutureType ->
-                let (_,SFunctionCall(fname,_)) = ex1 in
-                Hashtbl.add futures var fname;
-                ignore(build_store e_ (lookup var) builder); e_
-              | _ -> 
-                ignore(build_store e_ (lookup var) builder); e_
-            in check_string
+          (match var with
+              ([IntegerType],SSliceIndex(e1,e2))  -> 
+              (match e1 with
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexInt [|(expr builder e1);(expr builder e2);e_|] "setsliceidxn" builder
+              | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
+              )
+            | ([FloatType],SSliceIndex(e1,e2))    -> 
+              (match e1 with
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexDouble [|(expr builder e1);(expr builder e2);e_|] "setsliceidxf" builder
+              | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
+              )
+            | ([FutureType],SSliceIndex(e1,e2))   -> 
+              (match e1 with
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexFuture [|(expr builder e1);(expr builder e2);e_|] "setsliceidxF" builder
+              | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
+              )            
+            | ([StringType],SSliceIndex(e1,e2))    -> 
+              (match e1 with
+              | (_,SNamedVariable(s)) ->  build_call setSliceIndexString [|(expr builder e1);(expr builder e2);e_|] "setsliceidxs" builder
+              | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
+              )            
+            | (_,SNamedVariable(s)) -> 
+              let (typl, _) = ex1 in
+              ( match List.hd typl with
+                StringType ->
+                  let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
+                  ignore(build_store clonellvm (lookup s) builder); clonellvm
+                | FutureType ->
+                  let (_,SFunctionCall(fname,_)) = ex1 in
+                  Hashtbl.add futures s fname;
+                  ignore(build_store e_ (lookup s) builder); e_
+                | _ -> 
+                  ignore(build_store e_ (lookup s) builder); e_
+              )
+            | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
+          )
         | SLen (e) ->
             let e_ = expr builder e in 
             build_call lenString [| e_ |] "str_len" builder 
@@ -243,14 +365,30 @@ let translate(functions) =
         (* build_call new_fdef (Array.of_list llargs) result builder *)
         (*const_int i64_t 0 *)     (*needs work*)
         
-        | SFunctionCall("printInt",[e])                                        -> 
-            build_call printInt [|(expr builder e)|] "" builder 
-        | SFunctionCall("printFloat",[e])                                      ->
-            build_call printFloat [|(expr builder e) |] "" builder
-        | SFunctionCall("printString",[e])                                     ->
-            let string_in_printString = show_string e in 
-            let current_ptr = build_global_stringptr string_in_printString "printstr_ptr" builder in
-            build_call printString [|current_ptr|] "" builder 
+        | SFunctionCall("print",[sfr;e])                                        -> 
+            print_string "print called codegen\n";
+            (match e with
+              ([IntegerType],_)   -> build_call printf [|int_format_str;(expr builder e)|] "" builder
+            | ([FloatType],_)     -> build_call printf [|double_format_str;(expr builder e)|] "" builder
+            | ([SliceType(x)],_)  -> build_call printf [|slice_format_str;(expr builder e)|] "" builder
+            | ([FutureType],_)    -> build_call printf [|future_format_str;(expr builder e)|] "" builder
+            | ([StringType],_)    -> build_call printf [|str_format_str;(expr builder e)|] "" builder
+            | _                   -> raise(Failure("SFunctionCall error"))
+            )
+          | SBuiltinFunctionCall(Len,args)                                       ->
+            let e = expr builder (List.hd args) in 
+            build_call getSliceSize [|e|] "slicelen" builder
+          | SBuiltinFunctionCall(Append,args)                                    ->
+            let e1 = expr builder (List.hd args) in 
+            let e2 = expr builder (List.nth args 1) in 
+            let rt = List.hd e_typl in 
+            (match rt with
+            | SliceType(StringType)  -> build_call sliceAppends [|e1;e2|] "initslices" builder
+            | SliceType(IntegerType) -> build_call sliceAppendn [|e1;e2|] "initslicen" builder
+            | SliceType(FloatType)   -> build_call sliceAppendf [|e1;e2|] "initslicef" builder
+            | SliceType(FutureType)  -> build_call sliceAppendF [|e1;e2|] "initsliceF" builder
+            |  _     ->  raise(Failure("built_in function Append: should be rejected in semant"))
+            )
         | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
@@ -277,11 +415,65 @@ let translate(functions) =
           build_call createString [|current_ptr|] "createstr" builder
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
-
-        | SSliceLiteral(built_typ,len,e1_l)                                    ->  const_int i64_t 0      (*needs work*)
-        | SSliceIndex(ex1,ex2)                                                 ->  const_int i64_t 0
-        | SSliceSlice(ex1,ex2,ex3)                                             ->  const_int i64_t 0
-      in
+        | SSliceLiteral(built_typ,len,e1_l)                                    ->  
+        let tp = get_type_in_slicetype built_typ in 
+        let arg_sn = get_slice_argument_number tp in 
+        let empty_slice = build_call createSlice [|arg_sn|] "createslice" builder in
+        (
+        match tp  with 
+          StringType  -> 
+            let append_string slc e1 = 
+            let e = expr builder e1 in
+            build_call sliceAppends [|slc;e|] "initslices" builder 
+            in
+            List.fold_left append_string empty_slice e1_l 
+        | IntegerType -> 
+            let append_integer slc e1 = 
+            let e = expr builder e1 in
+            build_call sliceAppendn [|slc;e|] "initslicen" builder 
+            in
+            List.fold_left append_integer empty_slice e1_l 
+        | FloatType   -> 
+            let append_float slc e1 = 
+            let e = expr builder e1 in
+            build_call sliceAppendf [|slc;e|] "initslicen" builder 
+            in
+            List.fold_left append_float empty_slice e1_l 
+        | FutureType  -> 
+            let append_future slc e1 = 
+            let e = expr builder e1 in
+            build_call sliceAppendF [|slc;e|] "initslicen" builder 
+            in
+            List.fold_left append_future empty_slice e1_l           
+        | _           -> raise(Failure("invalide slice type"))   
+        )      
+      | SSliceIndex(ex1,ex2)                                                 ->  
+        let rt = List.hd e_typl in
+        let ex1' = expr builder ex1 in 
+        let ex2' = expr builder ex2 in 
+        (match rt with
+          StringType        ->  build_call getSliceIndexString [|ex1';ex2'|] "findsliceindexs" builder
+        | IntegerType       ->  build_call getSliceIndexInt [|ex1';ex2'|] "findsliceindexn" builder
+        | FloatType         ->  build_call getSliceIndexDouble [|ex1';ex2'|] "findsliceindexf" builder
+        | FutureType        ->  build_call getSliceIndexFuture [|ex1';ex2'|] "findsliceindexF" builder
+        | _                 ->  raise(Failure("sliceindex error: should be rejected in semant"))
+        )
+      | SSliceSlice(ex1,ex2,ex3)                                             ->  
+        let ex1' = expr builder ex1 in
+        let start_idx = match ex2 with
+        | ([IntegerType],_)  -> expr builder ex2  
+        | ([VoidType],_)     -> const_int i64_t 0
+        | _ -> raise(Failure("sliceslice error: should be rejected in semant"))
+        in
+        let end_idx = match ex3 with
+        | ([IntegerType],_)  -> expr builder ex3  
+        | ([VoidType],_)     -> 
+           let slen = build_call getSliceSize [|ex1'|] "totallen" builder in 
+           build_sub slen (const_int i64_t 1) "getlastindex" builder
+        | _ -> raise(Failure("sliceslice error: should be rejected in semant"))
+        in          
+        build_call sliceSlice [|ex1';start_idx;end_idx|] "SliceSlice"builder
+    in
 
       let add_terminal builder instr  =
         match block_terminator (insertion_block builder) with 
@@ -326,7 +518,7 @@ let translate(functions) =
         let ck = match (List.hd el) with
           ([VoidType],_) -> builder
           | _ ->
-            let build_decll n e = expr builder ([ty],SAssignOp(n,e))
+            let build_decll n e = expr builder ([ty],SAssignOp(([ty],SNamedVariable(n)),e))
             in List.map2 build_decll nl el;
             builder
         in ck
@@ -350,7 +542,7 @@ let translate(functions) =
         let check_func_call = 
           let build_decll n e = 
             let (et, _) = e in
-            expr builder (et,SAssignOp(n,e)) 
+            expr builder (et,SAssignOp((et,SNamedVariable(n)),e)) 
           in
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
