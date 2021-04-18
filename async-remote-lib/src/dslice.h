@@ -47,11 +47,19 @@ int64_t GetSliceSize(void* obj);
 
 void* GetSliceIndexString(void* obj, int64_t idx);
 
-int64_t* GetSliceIndexInt(void* obj, int64_t idx);
+int64_t GetSliceIndexInt(void* obj, int64_t idx);
 
-double* GetSliceIndexDouble(void* obj, int64_t idx);
+double GetSliceIndexDouble(void* obj, int64_t idx);
 
 void* GetSliceIndexFuture(void* obj, int64_t idx);
+
+void* SetSliceIndexString(void* obj, int64_t idx, void* val);
+
+int64_t SetSliceIndexInt(void* obj, int64_t idx, int64_t val);
+
+double SetSliceIndexDouble(void* obj, int64_t idx, double val);
+
+void* SetSliceIndexFuture(void* obj, int64_t idx, void* val);
 }
 
 

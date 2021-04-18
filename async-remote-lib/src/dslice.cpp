@@ -102,14 +102,46 @@ void* GetSliceIndexString(void* obj, int64_t idx) {
   return ((DSliObject*)obj)->GetPtr()->Index(idx).str_obj;
 }
 
-int64_t* GetSliceIndexInt(void* obj, int64_t idx) {
-  return &((DSliObject*)obj)->GetPtr()->Index(idx).num64;
+int64_t GetSliceIndexInt(void* obj, int64_t idx) {
+  return ((DSliObject*)obj)->GetPtr()->Index(idx).num64;
 }
 
-double* GetSliceIndexDouble(void* obj, int64_t idx) {
-  return &((DSliObject*)obj)->GetPtr()->Index(idx).num_double;
+double GetSliceIndexDouble(void* obj, int64_t idx) {
+  return ((DSliObject*)obj)->GetPtr()->Index(idx).num_double;
 }
 
 void* GetSliceIndexFuture(void* obj, int64_t idx) {
   return ((DSliObject*)obj)->GetPtr()->Index(idx).future_obj;
+}
+
+void* SetSliceIndexString(void* obj, int64_t idx, void* val) {
+  TypeCell tv;
+  tv.type = TYPE_STR;
+  tv.str_obj = val;
+  ((DSliObject*)obj)->GetPtr()->Index(idx) = tv;
+  return val;
+}
+
+int64_t SetSliceIndexInt(void* obj, int64_t idx, int64_t val) {
+  TypeCell tv;
+  tv.type = TYPE_INT64;
+  tv.num64 = val;
+  ((DSliObject*)obj)->GetPtr()->Index(idx) = tv;
+  return val;
+}
+
+double SetSliceIndexDouble(void* obj, int64_t idx, double val) {
+  TypeCell tv;
+  tv.type = TYPE_DOUBLE;
+  tv.num_double = val;
+  ((DSliObject*)obj)->GetPtr()->Index(idx) = tv;
+  return val;
+}
+
+void* SetSliceIndexFuture(void* obj, int64_t idx, void* val) {
+  TypeCell tv;
+  tv.type = TYPE_FUTURE_OBJ;
+  tv.future_obj = val;
+  ((DSliObject*)obj)->GetPtr()->Index(idx) = tv;
+  return val;
 }
