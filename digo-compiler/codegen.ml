@@ -262,7 +262,7 @@ let translate(functions) =
               let await_llvm = declare_function ("digo_linker_await_func_"^f_name) await_ftyp_t the_module in
               Hashtbl.add function_decls ("digo_linker_await_func_"^f_name) (await_llvm,fd);
 
-              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals) in
+              let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fd.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_"^f_name) new_ftyp_t the_module in
                 build_call new_fdef (Array.of_list llargs) result builder

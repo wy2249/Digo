@@ -257,9 +257,9 @@ let check (functions) =
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
-            if List.length nl != List.length tyl then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
+            if List.length nl != List.length tyl then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
-            if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
+            if List.length nl != List.length el then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
           if Hashtbl.mem symbols n then raise (Failure "duplicate local variable declarations") else  ignore(Hashtbl.add symbols n (List.hd rt))
