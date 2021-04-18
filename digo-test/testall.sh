@@ -14,7 +14,7 @@
 #       the result produced by the executable and the $source_code.pass.expected
 
 Usage() {
-    echo "Usage: testall.sh [options] [.mc files]"
+    echo "Usage: testall.sh [options] [.digo files]"
     echo "-k    Keep intermediate files"
     echo "-h    Print this help"
     exit 1
@@ -57,6 +57,7 @@ Compare() {
 #    If the compilation succeeds, it will diff
 #       the result produced by the executable and the $source_code.pass.expected
 RunTest() {
+    global_test_error=0
     test_name=`echo $1 | sed 's/.*\\///
                              s/.digo//'`
     test_src="$1"
@@ -114,10 +115,11 @@ RunTest() {
 }
 
 Clean() {
-    make -C $MAKE_DIR clean &>/dev/null
+    #make -C $MAKE_DIR clean &>/dev/null
     rm -f *.build.output
     rm -f *.exec.output
     rm -f *.diff.output
+    rm -f *.linker.output
 }
 
 # Set time limit for all operations

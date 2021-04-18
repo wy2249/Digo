@@ -1,0 +1,122 @@
+
+##### Testing test-add1
+diff -b test-add1.exec.output /home/microc/digo-test/tests/test-add1.digo.pass.expected > test-add1.diff.output
+##### Test test-add1: Passed
+
+##### Testing test-arith1
+diff -b test-arith1.exec.output /home/microc/digo-test/tests/test-arith1.digo.pass.expected > test-arith1.diff.output
+##### Test test-arith1: Passed
+
+##### Testing test-arith2
+diff -b test-arith2.exec.output /home/microc/digo-test/tests/test-arith2.digo.pass.expected > test-arith2.diff.output
+##### Test test-arith2: Passed
+
+##### Testing test-arith3
+diff -b test-arith3.exec.output /home/microc/digo-test/tests/test-arith3.digo.pass.expected > test-arith3.diff.output
+##### Test test-arith3: Passed
+
+##### Testing test-fib
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-fib.digo.fail.expected
+##### Test test-fib: Failed
+
+##### Testing test-float1
+diff -b test-float1.exec.output /home/microc/digo-test/tests/test-float1.digo.pass.expected > test-float1.diff.output
+##### Test test-float1: Passed
+
+##### Testing test-float2
+diff -b test-float2.exec.output /home/microc/digo-test/tests/test-float2.digo.pass.expected > test-float2.diff.output
+FAILED test-float2.exec.output differs from /home/microc/digo-test/tests/test-float2.digo.pass.expected
+##### Test test-float2: Failed
+
+##### Testing test-float3
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-float3.digo.fail.expected
+##### Test test-float3: Failed
+
+##### Testing test-for1
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-for1.digo.fail.expected
+##### Test test-for1: Failed
+
+##### Testing test-for2
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-for2.digo.fail.expected
+##### Test test-for2: Failed
+
+##### Testing test-func1
+diff -b test-func1.exec.output /home/microc/digo-test/tests/test-func1.digo.pass.expected > test-func1.diff.output
+##### Test test-func1: Passed
+
+##### Testing test-func2
+diff -b test-func2.exec.output /home/microc/digo-test/tests/test-func2.digo.pass.expected > test-func2.diff.output
+FAILED test-func2.exec.output differs from /home/microc/digo-test/tests/test-func2.digo.pass.expected
+##### Test test-func2: Failed
+
+##### Testing test-func3
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func3.digo.fail.expected
+##### Test test-func3: Failed
+
+##### Testing test-func4
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func4.digo.fail.expected
+##### Test test-func4: Failed
+
+##### Testing test-func5
+diff -b test-func5.exec.output /home/microc/digo-test/tests/test-func5.digo.pass.expected > test-func5.diff.output
+##### Test test-func5: Passed
+
+##### Testing test-func6
+diff -b test-func6.exec.output /home/microc/digo-test/tests/test-func6.digo.pass.expected > test-func6.diff.output
+##### Test test-func6: Passed
+
+##### Testing test-func8
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func8.digo.fail.expected
+##### Test test-func8: Failed
+
+##### Testing test-func9
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func9.digo.fail.expected
+##### Test test-func9: Failed
+
+##### Testing test-gcd
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-gcd.digo.fail.expected
+##### Test test-gcd: Failed
+
+##### Testing test-gcd2
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-gcd2.digo.fail.expected
+##### Test test-gcd2: Failed
+
+##### Testing test-hello
+diff -b test-hello.exec.output /home/microc/digo-test/tests/test-hello.digo.pass.expected > test-hello.diff.output
+##### Test test-hello: Passed
+
+##### Testing test-if1
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if1.digo.fail.expected
+##### Test test-if1: Failed
+
+##### Testing test-if2
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if2.digo.fail.expected
+##### Test test-if2: Failed
+
+##### Testing test-if3
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if3.digo.fail.expected
+##### Test test-if3: Failed
+
+##### Testing test-if4
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if4.digo.fail.expected
+##### Test test-if4: Failed
+
+##### Testing test-if5
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if5.digo.fail.expected
+##### Test test-if5: Failed
+
+##### Testing test-if6
+Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if6.digo.fail.expected
+##### Test test-if6: Failed
+
+##### Testing test-local1
+diff -b test-local1.exec.output /home/microc/digo-test/tests/test-local1.digo.pass.expected > test-local1.diff.output
+##### Test test-local1: Passed
+
+##### Testing test-ops1
+diff -b test-ops1.exec.output /home/microc/digo-test/tests/test-ops1.digo.pass.expected > test-ops1.diff.output
+##### Test test-ops1: Passed
+
+##### Testing test-ops2
+diff -b test-ops2.exec.output /home/microc/digo-test/tests/test-ops2.digo.pass.expected > test-ops2.diff.output
+##### Test test-ops2: Passed

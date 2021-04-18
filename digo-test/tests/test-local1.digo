@@ -1,0 +1,8 @@
+func foo(a int, b bool) int {
+  c := a
+  return c + 10
+}
+
+func digo_main() void {
+ println("%d", foo(37, false))
+}

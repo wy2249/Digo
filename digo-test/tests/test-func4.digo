@@ -1,0 +1,10 @@
+func add(a int, b int) int {
+  c := a + b
+  return c
+}
+
+func digo_main() void {
+  var d int
+  d = add(52, 10)
+  println("%d", d)
+}

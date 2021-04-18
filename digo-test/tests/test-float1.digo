@@ -1,0 +1,4 @@
+func digo_main() void {
+  a := 3.14159267
+  println("%f", a)
+}

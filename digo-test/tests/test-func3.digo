@@ -1,0 +1,7 @@
+func printem(a int, b int, c int, d int) void {
+  println("%d %d %d %d", a, b, c, d)
+}
+
+func digo_main() void {
+  printem(42,17,192,8)
+}

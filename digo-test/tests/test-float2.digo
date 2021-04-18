@@ -1,0 +1,7 @@
+func digo_main() void {
+  var a, b, c float
+  a = 3.14159267
+  b = -2.71828
+  c = a + b
+  println("%f", c)
+}

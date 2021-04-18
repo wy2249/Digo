@@ -1,0 +1,15 @@
+func fib(x int) int {
+  if x < 2 {
+   return 1
+  }
+  return fib(x-1) + fib(x-2)
+}
+
+func difo_main() void {
+  println("%d", fib(0))
+  println("%d", fib(1))
+  println("%d", fib(2))
+  println("%d", fib(3))
+  println("%d", fib(4))
+  println("%d", fib(5))
+}

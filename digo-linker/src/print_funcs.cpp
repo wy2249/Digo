@@ -108,22 +108,24 @@ namespace Print {
 
 extern "C" {
     /*  we only have two exported functions: print & println   */
-    void print(const char * format, ...);
-    void println(const char * format, ...);
+    void print(void * format, ...);
+    void println(void * format, ...);
 }
 
-void print(const char * format, ...) {
+void print(void * format, ...) {
+    auto raw_format = GetCStr(format);
     va_list va;
-    va_start(va, format);
-    string str = Print::ToStringV(format, va);
+    va_start(va, raw_format);
+    string str = Print::ToStringV(raw_format, va);
     va_end(va);
     cout << str;
 }
 
-void println(const char * format, ...) {
+void println(void * format, ...) {
+    auto raw_format = GetCStr(format);
     va_list va;
-    va_start(va, format);
-    string str = Print::ToStringV(format, va) + "\n";
+    va_start(va, raw_format);
+    string str = Print::ToStringV(raw_format, va) + "\n";
     va_end(va);
     cout << str;
 }
