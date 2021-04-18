@@ -17,7 +17,7 @@ IntegerType
 | VoidType
 
 type builtin_function = 
-  Gather
+  Len
 | Append
 
 type expr =
@@ -28,7 +28,7 @@ type expr =
 | Bool of bool
 | BinaryOp of expr * binary_operator * expr
 | UnaryOp  of unary_operator * expr
-| AssignOp of string * expr
+| AssignOp of expr * expr
 | FunctionCall of string * expr list
 | NamedVariable of string
 | SliceLiteral of builtin_type * int * expr list

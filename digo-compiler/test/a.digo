@@ -1,5 +1,6 @@
-func main(a int, b float) void {
-    b = 10.0
+func digo_main() void {
+    a := 1
+    b := 10.0
     c := try_return_one(a)
     e,f := try_return_two(a,b)
 }

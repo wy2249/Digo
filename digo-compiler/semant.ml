@@ -50,6 +50,41 @@ let check (functions) =
         ("GetCStr", {ann = FuncNormal; fname = "GetCStr"; typ = [StringType]; 
         formals = [(StringType,"string")] ; body=[]});
 
+        (*could be any type at this point*)
+        ("CreateSlice",{ann = FuncNormal; fname = "CreateSlice"; typ = [];
+        formals = [] ; body = [] });  
+        ("SliceSlice",{ann = FuncNormal; fname = "SliceSlice"; typ = [];
+        formals = [] ; body = [] });  
+        ("SliceAppends",{ann = FuncNormal; fname = "SliceAppend"; typ = [];
+        formals = [] ; body = [] });  
+        ("SliceAppendn",{ann = FuncNormal; fname = "SliceAppend"; typ = [];
+        formals = [] ; body = [] });
+        ("SliceAppendf",{ann = FuncNormal; fname = "SliceAppend"; typ = [];
+        formals = [] ; body = [] });
+        ("SliceAppendF",{ann = FuncNormal; fname = "SliceAppend"; typ = [];
+        formals = [] ; body = [] });      
+        ("CloneSlice",{ann = FuncNormal; fname = "CloneSlice"; typ = [];
+        formals = [] ; body = [] });         
+        ("GetSliceSize",{ann = FuncNormal; fname = "CreateSliceSize"; typ = [];
+        formals = [] ; body = [] });
+
+        ("SetSliceIndexDouble",{ann = FuncNormal; fname = "SetSliceIndexDouble"; typ = [];
+        formals = [] ; body = [] });   
+        ("SetSliceIndexFuture",{ann = FuncNormal; fname = "SetSliceIndexFuture"; typ = [];
+        formals = [] ; body = [] });    
+        ("SetSliceIndexString",{ann = FuncNormal; fname = "SetSliceIndexString"; typ = [];
+        formals = [] ; body = [] });
+        ("SetSliceIndexInt",{ann = FuncNormal; fname = "SetSliceIndexInt"; typ = [];
+        formals = [] ; body = [] });
+        ("GetSliceIndexString",{ann = FuncNormal; fname = "GetSliceIndexString"; typ = [];
+        formals = [] ; body = [] }); 
+        ("GetSliceIndexInt",{ann = FuncNormal; fname = "GetSliceIndexInt"; typ = [];
+        formals = [] ; body = [] });
+        ("GetSliceIndexDouble",{ann = FuncNormal; fname = "GetSliceIndexDouble"; typ = [];
+        formals = [] ; body = [] });
+        ("GetSliceIndexFuture",{ann = FuncNormal; fname = "GetSliceIndexFuture"; typ = [];
+        formals = [] ; body = [] })
+
       ]
     in
     let add_bind map (name, ty) = StringMap.add name ty map
@@ -139,6 +174,13 @@ let check (functions) =
       else raise (Failure("Err: undeclared future object " ^ n)) in
       find_func fname
     in
+    let get_type_in_slicetype stp = match stp with
+          SliceType(StringType)      ->  StringType
+        | SliceType(IntegerType)     ->  IntegerType
+        | SliceType(FloatType)       ->  FloatType
+        | SliceType(FutureType)      ->  FutureType
+        | _                          ->  raise(Failure("invalide slice type"))
+    in
     (* Return a semantically-checked expression, i.e., with a type *)
     let rec expr e = match e with
         Integer(x)  -> ([IntegerType], SInteger(x))
@@ -149,19 +191,35 @@ let check (functions) =
       | EmptyExpr -> ([VoidType],SEmptyExpr) 
       | NamedVariable s  -> 
         ([type_of_identifier s], SNamedVariable(s))
-      | AssignOp(var, e) -> 
-        let var_typ = type_of_identifier var
-        and (ret_typ,e') = expr e in
-        let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
-          ^ stringify_builtin_type ret_typ*) in
-        let _ = match var_typ with
-          FutureType -> 
-          (* to do: add to a table (var name, func name) *)
-          let SFunctionCall(fname,_) = e' in
-          Hashtbl.add futures var fname
-          | _ -> ignore()
-        in
-          ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(var,(ret_typ, e')))     
+      | AssignOp(var, e) ->
+        (* this part check left side is valid: only accept nameddvariable/slice index *)
+        (match var with
+        | SliceIndex(e1,e2)  -> 
+          (match e1 with
+          | NamedVariable(s) -> 
+            let (var_typ,_) = expr var 
+            and (ret_typ,e') = expr e in
+            let err = "illegal assignment" in
+            ([check_assign (List.hd var_typ) (List.hd ret_typ) err], SAssignOp((expr var),(ret_typ, e')))   
+          | _  -> raise(Failure("AssignOp error: left hand side is invalide"))
+          )
+        | NamedVariable(x)   -> 
+          (* check named variable type macth with expression type *)
+          let var_typ = type_of_identifier x
+          and (ret_typ,e') = expr e in
+          let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
+            ^ stringify_builtin_type ret_typ*) in
+          let _ = match var_typ with
+            FutureType -> 
+            let SFunctionCall(fname,_) = e' in
+            Hashtbl.add futures x fname
+            | _ -> ignore()
+          in
+            ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(expr var,(ret_typ, e')))  
+        | _ ->
+          raise(Failure("AssignOp error: left hand side is invalide")) 
+        )  
+  
       | UnaryOp(op, e)   -> 
         let (ret_typl,e') = expr e in
         let op_typ = match op with
@@ -189,6 +247,9 @@ let check (functions) =
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
 
       | FunctionCall(fname, args) ->
+      (match fname with
+      | "print" -> ([VoidType],SFunctionCall(fname,(List.map expr args)))
+      | _ -> 
         let fd = find_func fname in 
         let param_length = List.length fd.formals in
         if List.length args != param_length then
@@ -207,25 +268,90 @@ let check (functions) =
             [FutureType]
           in
           (tpy',SFunctionCall(fname,args'))
-
-      | Len(e) ->
+      )
+      | BuiltinFunctionCall(nfunc,exl)              ->  
+      (
+        match nfunc with
+        Len              ->
+          let exlen = List.length exl in 
+          if exlen = 1 
+          then 
+            let (ret_typl,e') = expr (List.hd exl)in
+            ( match ret_typl with
+            | [SliceType(_)] -> ([IntegerType],SBuiltinFunctionCall(Len,[(ret_typl,e')]))
+            | [StringType] -> ([IntegerType],SLen((ret_typl,e')))
+            | _  -> raise(Failure("Built-in Len being called on non-slice object"))  
+            )
+          else 
+            raise(Failure("Built-in Len being called with too many aruguments, expected 1 argument"))
+       |Append           ->
+          let exlen = List.length exl in 
+          if exlen = 2 
+          then 
+            let (ret_typl1,e1') = expr (List.hd exl) in
+            let (ret_typl2,e2') = expr (List.nth exl 1) in
+            ( match ret_typl1 with
+            | [SliceType(x)] -> 
+              if x = (List.hd ret_typl2)
+              then (ret_typl1,SBuiltinFunctionCall(Append,[(ret_typl1,e1');(ret_typl2,e2')]))
+              else raise(Failure("Built-in Append object and element are not compatible due to different type"))
+            | _  -> raise(Failure("Built-in Append being called on non-slice object"))  
+            )
+          else 
+            raise(Failure("Built-in Append being called with too many or too few aruguments, expected 2 argument"))         
+      ) 
+    | SliceLiteral(btyp, slice_len , expl)  ->
+      let rt_typ = get_type_in_slicetype btyp in
+      let check_type e_ =
+      let (ret_typl,e') = expr e_ in
+      let err = "illegal slice type found" in
+      ([check_assign rt_typ (List.hd ret_typl) err],e')
+      in
+      let sexpl = List.map check_type expl in 
+      ([btyp],SSliceLiteral(btyp, slice_len , sexpl))
+    | SliceIndex(e1,e2)                     -> 
+      let (ret_typl1,e1') = expr e1 and (ret_typl2,e2') = expr e2 in
+      let check_e1typ = match ret_typl1 with
+        [SliceType(_)]  -> ()
+      | _             -> raise(Failure("illgal slice indexing on non-slice object"))
+      in 
+      let check_e2typ = match ret_typl2 with
+      | [IntegerType] -> ()
+      | _ -> raise(Failure("illgal slice index: non-integer index"))
+      in 
+      let rt_typ = get_type_in_slicetype (List.hd ret_typl1) in 
+      ([rt_typ],SSliceIndex((ret_typl1,e1'),(ret_typl2,e2')))
+    | SliceSlice(e1,e2,e3)                  ->
+      let (ret_typl1,e1') = expr e1 and (ret_typl2,e2') = expr e2 and (ret_typl3,e3') = expr e3 in
+      let check_e1typ = match ret_typl1 with
+        [SliceType(_)]  -> ()
+      | _             -> raise(Failure("illgal slice slicing on non-slice object"))
+      in 
+      let check_e2typ = match ret_typl2 with
+      | [IntegerType] -> ()
+      | [VoidType]    -> ()
+      | _ -> raise(Failure("illgal slice slice: non-integer index"))
+      in  
+      let check_e3typ = match ret_typl3 with
+      | [IntegerType] -> ()
+      | [VoidType]    -> ()
+      | _ -> raise(Failure("illgal slice slice: non-integer index"))
+      in                
+      (ret_typl1,SSliceSlice((ret_typl1,e1'),(ret_typl2,e2'),(ret_typl3,e3')))
+      (*| Len(e) ->
         (* only string and slice type*)
         let (ret_typ,e') = expr e in
         let ck = match (List.hd ret_typ) with
           StringType -> ([IntegerType],SLen((ret_typ,e')))
           |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
         in ck
-      
+      *)
       | Await(n) ->
             (* await futureVar *)
             (* return [list of returned aysn val types, SAwait(n)]*)
           let fd = func_of_future n in
           (fd.typ, SAwait(n))
-      
-      | BuiltinFunctionCall(_,_) -> ([VoidType],SEmptyExpr)
-      | SliceLiteral(_,_,_)->([VoidType],SEmptyExpr)
-      | SliceIndex(_,_) ->([VoidType],SEmptyExpr)
-      | SliceSlice(_,_,_)->([VoidType],SEmptyExpr)
+
     in 
     
     let check_bool_expr e = 
