@@ -108,6 +108,15 @@ let check (functions) =
     (* check duplicate in parameters with check_duplicate*)
     in check_duplicate (fun n -> "duplicate formal " ^ n ^ " in function " ^ func.fname)
     (List.map fst func.formals);*)
+    let _ =
+      match func.fname with 
+      "digo_main" -> if (List.length func.formals) > 0 then raise(Failure "Semant Err: digo_main should be no-arugment.");
+        (match func.typ with
+        [VoidType] -> ignore()
+        | _ -> raise(Failure "Semant Err: digo_main should be void type."))
+      | _ -> ignore()
+    in
+
     let check_binds kind binds =              
       List.iter(function
         (VoidType, b) -> raise(Failure("illegal VoidType in " ^ kind ^" : "^b))
