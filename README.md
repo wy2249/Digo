@@ -1,6 +1,10 @@
 # Digo
 
-A temporary function metadata generator is provided in digo-compiler/tmp_metadata_gen.ml. Merge it into compiler/codegen/semant if possible.
+```
+  docker run --rm -it -v `pwd`:/home/microc -w=/home/microc columbiasedwards/plt
+  apt update
+  apt install -y libc++-dev libc++abi-dev clang llvm
+ ```
 
 Now you can compile a digo file to executable by:
 
@@ -45,11 +49,4 @@ This generates the Digo compiler. Re-generate it if compiler implementation chan
   make build digo=./digo-compiler/test/test-future-decl.digo out=executable
 ```
 
-Compiling from LLVM IR is longer supported.
-
-Dependencies:
-```
-  docker run --rm -it -v `pwd`:/home/microc -w=/home/microc columbiasedwards/plt
-  apt update
-  apt install -y libc++-dev libc++abi-dev clang llvm
- ```
+Compiling from LLVM IR is no longer supported.
