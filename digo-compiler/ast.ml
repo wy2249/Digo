@@ -32,6 +32,7 @@ type expr =
 | Len of expr
 | Append of expr list
 | Await of string
+| Read of expr
 
 
 type statement = 
@@ -46,10 +47,6 @@ type statement =
 | Expr of expr
 | Declare of string list * builtin_type * expr list
 | ShortDecl of string list * expr list
-(*| EmptySimpleStatement
-| SimpleDeclare of builtin_type list * string list * expr list
-| SimpleShortDecl of string list * expr list
-| SimpleExpr of expr*)
 | Block of statement list
 
 type bind = builtin_type * string 

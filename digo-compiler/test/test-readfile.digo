@@ -1,0 +1,9 @@
+func digo_main() void {
+    
+    s := "/tmp/test.txt"
+
+    var res []string
+    res = read(s)
+
+    res2 := read(s)
+}
