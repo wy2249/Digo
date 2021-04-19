@@ -6,4 +6,91 @@ func digo_main() void {
     res = read(s)
 
     res2 := read(s)
+
+    test(s)
 }
+
+func test(s string) void {
+    read(s)
+}
+
+/*
+
+; ModuleID = 'Digo'
+source_filename = "Digo"
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+@createstr_ptr = private unnamed_addr constant [14 x i8] c"/tmp/test.txt\00"
+
+declare void @print(i8*, ...)
+
+declare void @println(i8*, ...)
+
+declare i8* @CreateString(i8*)
+
+declare i8* @CreateEmptyString()
+
+declare i8* @AddString(i8*, i8*)
+
+declare i64 @CompareString(i8*, i8*)
+
+declare i8* @CloneString(i8*)
+
+declare i64 @GetStringSize(i8*)
+
+declare i8* @CreateSlice(i64)
+
+declare i8* @SliceAppend(i8*, ...)
+
+declare i8* @SliceSlice(i8*, i64, i64)
+
+declare i64 @GetSliceSize(i8*)
+
+declare double @SetSliceIndexDouble(i8*, i64, double)
+
+declare i8* @SetSliceIndexFuture(i8*, i64, i8*)
+
+declare i8* @SetSliceIndexString(i8*, i64, i8*)
+
+declare i64 @SetSliceIndexInt(i8*, i64, i64)
+
+declare double @GetSliceIndexDouble(i8*, i64)
+
+declare i8* @GetSliceIndexFuture(i8*, i64)
+
+declare i8* @GetSliceIndexString(i8*, i64)
+
+declare i64 @GetSliceIndexInt(i8*, i64)
+
+declare i8* @ReadFile(i8*)
+
+define void @digo_main() {
+entry:
+  %s = alloca i8*
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @createstr_ptr, i32 0, i32 0))
+  %clonestr = call i8* @CloneString(i8* %createstr)
+  store i8* %clonestr, i8** %s
+  %res = alloca i8*
+  %s1 = load i8*, i8** %s
+  %read_file = call i8* @ReadFile(i8* %s1)
+  store i8* %read_file, i8** %res
+  %res2 = alloca i8*
+  %s2 = load i8*, i8** %s
+  %read_file3 = call i8* @ReadFile(i8* %s2)
+  store i8* %read_file3, i8** %res2
+  %s4 = load i8*, i8** %s
+  call void @test(i8* %s4)
+  ret void
+}
+
+define void @test(i8* %s) {
+entry:
+  %s1 = alloca i8*
+  store i8* %s, i8** %s1
+  %s2 = load i8*, i8** %s1
+  %read_file = call i8* @ReadFile(i8* %s2)
+  ret void
+}
+
+*/
