@@ -1,0 +1,22 @@
+func testfloat(a float, b float) void {
+  println("%f", a + b)
+  println("%f", a - b)
+  println("%f", a * b)
+  println("%f", a / b)
+  println("%f", a == b)
+  println("%f", a == a)
+  println("%f", a != b)
+  println("%f", a != a)
+  println("%f", a > b)
+  println("%f", a >= b)
+  println("%f", a < b)
+  println("%f", a <= b)
+}
+
+func digo_main() void {
+  c := 42.0
+  d := 3.14159
+
+  testfloat(c, d)
+  testfloat(d, d)
+}

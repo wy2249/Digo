@@ -1,0 +1,9 @@
+func foo(a int) int {
+  return a
+}
+
+func digo_main() void {
+  a := 42
+  a = a + 5
+  println("%d", a)
+}

@@ -1,0 +1,10 @@
+func foo() void {
+}
+
+func bar(a int, b bool, c int) int {
+    return a + c
+}
+
+func digo_main() void {
+  println("%d", bar(17, false, 25))
+}

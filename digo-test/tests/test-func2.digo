@@ -1,0 +1,11 @@
+func fun(x int, y int) int {
+  return 0
+}
+
+func digo_main() void {
+  var i int
+  i = 1
+  fun(i = 2, i = i+1)
+  println("%d", i)
+}
+

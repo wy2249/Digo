@@ -1,0 +1,7 @@
+func add(x int, y int) int {
+  return x + y
+}
+
+func digo_main() void {
+  println("%d", add(17, 25))
+}

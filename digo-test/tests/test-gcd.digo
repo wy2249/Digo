@@ -1,0 +1,16 @@
+func gcd(a int, b int) int {
+  for a != b {
+    if a > b {
+        a = a - b
+    } else {
+        b = b - a
+    }
+  }
+  return a
+}
+
+func digo_main() void {
+  println("%d", gcd(2,14))
+  println("%d", gcd(3,15))
+  println("%d", gcd(99,121))
+}

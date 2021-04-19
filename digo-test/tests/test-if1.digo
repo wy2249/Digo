@@ -1,0 +1,6 @@
+func digo_main() void {
+  if true {
+   println("%d", 42)
+  }
+  println("%d", 17)
+}

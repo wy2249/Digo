@@ -1,0 +1,16 @@
+func digo_main() void {
+  println("%d", true)
+  println("%d", false)
+  println("%d", true && true)
+  println("%d", true && false)
+  println("%d", false && true)
+  println("%d", false && false)
+  println("%d", true || true)
+  println("%d", true || false)
+  println("%d", false || true)
+  println("%d", false || false)
+  println("%d", !false)
+  println("%d", !true)
+  println("%d", -10)
+  println("%d", 42)
+}

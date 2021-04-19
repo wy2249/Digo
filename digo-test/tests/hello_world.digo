@@ -1,5 +1,0 @@
-func main() int {
-    printInt(3)
-    printFloat(4.0)
-    printString("Hello Word!")
-}

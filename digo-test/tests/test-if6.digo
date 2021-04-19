@@ -1,0 +1,17 @@
+func cond(b bool) int {
+  var x int
+  x = 10
+  if b {
+    if x == 10 {
+      x = 42
+    }
+  } else {
+    x = 17
+  }
+  return x
+}
+
+func digo_main() int {
+ println("%d", cond(true))
+ println("%d", cond(false))
+}

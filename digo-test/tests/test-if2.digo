@@ -1,0 +1,8 @@
+func main() void {
+  if true {
+   println("%d", 42)
+  } else {
+    println("%d", 8)
+  }
+  print(17)
+}

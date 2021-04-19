@@ -1,0 +1,9 @@
+func digo_main() void {
+  println("%d %d %d %d", 1 + 2, 1 - 2, 1 * 2, 100 /2)
+  println("%d", 99)
+  println("%d", 1 == 2)
+  println("%d", 1 == 1)
+  println("%d", 99)
+  println("%d %d", 1 != 2, 1 != 1)
+  println("%d %d %d %d", 1 < 2, 2 < 1, 1 <= 2, 1 <= 1, 2 <= 1)
+}
