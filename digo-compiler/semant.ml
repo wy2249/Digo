@@ -17,12 +17,8 @@ let check (functions) =
     let builtins = 
       [
         (* print functions*)
-        ("printInt", { ann = FuncNormal; fname = "printInt"; typ=[VoidType];
-        formals = [(IntegerType,"int")] ; body=[] });
-        ("printFloat", {ann = FuncNormal; fname = "printFloat"; typ = [VoidType]; 
-        formals = [(FloatType,"float")] ; body=[]});
-        ("printString", {ann = FuncNormal; fname = "printString"; typ = [VoidType]; 
-        formals = [(StringType,"string")] ; body=[]});
+        (*("printString", {ann = FuncNormal; fname = "printString"; typ = [VoidType]; 
+        formals = [(StringType,"string")] ; body=[]});*)
   
         (* string related*)
         (* Accepts a C-layout string and returns a wrapped Digo String object *)
@@ -256,6 +252,7 @@ let check (functions) =
       | FunctionCall(fname, args) ->
       (match fname with
       | "print" -> ([VoidType],SFunctionCall(fname,(List.map expr args)))
+      | "println" -> ([VoidType],SFunctionCall(fname,(List.map expr args)))
       | _ -> 
         let fd = find_func fname in 
         let param_length = List.length fd.formals in
