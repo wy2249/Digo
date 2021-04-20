@@ -18,6 +18,7 @@ and sx =
   | SSliceIndex of sexpr * sexpr
   | SSliceSlice of sexpr * sexpr * sexpr
   | SAwait of string
+  | SRead of sexpr
 
 
 type sstatement = 

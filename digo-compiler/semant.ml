@@ -294,6 +294,13 @@ let check (functions) =
             | [StringType] -> ([IntegerType],SLen((ret_typl,e')))
             | _  -> raise(Failure("Built-in Len being called on non-slice object"))  
             )
+    | Read(e) ->
+            (* only string type*)
+          let (ret_typ,e') = expr e in
+          let ck = match (List.hd ret_typ) with
+            StringType -> ([SliceType(StringType)],SRead((ret_typ,e')))
+            |_ -> raise (Failure ("error: read is not supported for "^ string_of_typ (List.hd ret_typ)))
+          in ck
     | SliceLiteral(btyp, slice_len , expl)  ->
       let rt_typ = get_type_in_slicetype btyp in
       let check_type e_ =

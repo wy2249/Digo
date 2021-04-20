@@ -137,6 +137,11 @@ let translate(functions) =
         function_type i64_t [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexInt = 
         declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
+
+    let readFile_t= 
+          function_type (pointer_type i8_t) [|pointer_type i8_t|] in
+    let readFile=
+          declare_function "ReadFile" (readFile_t) the_module in
   
   
 (*usr function*)
@@ -339,7 +344,10 @@ let translate(functions) =
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
-        
+     
+        | SRead(e) ->
+            let e_ = expr builder e in 
+            build_call readFile [| e_ |] "read_file" builder
         | SFunctionCall("print",el)                                        -> 
             let exarr= Array.of_list (List.map (fun x -> expr builder x) el) in 
             build_call printf exarr "" builder
@@ -353,7 +361,7 @@ let translate(functions) =
         | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
-          let result = f_name^"_result" in 
+          let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
           let build_func_call = match fd.sann with
             FuncNormal -> build_call fdef (Array.of_list llargs) result builder
             | _ ->
