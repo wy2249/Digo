@@ -2,5 +2,5 @@ func digo_main() void {
   if (false) {
    println("%d", 42)
   }
-  print(17)
+  println("%d", 17)
 }

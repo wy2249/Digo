@@ -145,12 +145,20 @@ diff -b test-for1.exec.output /home/microc/digo-test/tests/test-for1.digo.pass.e
 ##### Test test-for1: Passed
 
 ##### Testing test-for2
- ## Build output: 
-Call parameter type does not match function signature!
-i64 42
- i8*  call void (i8*, ...) @print(i64 42)
-LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-for2.digo.fail.expected
+ ## Executable output: 
+1
+2
+3
+4
+5
+42
+diff -b test-for2.exec.output /home/microc/digo-test/tests/test-for2.digo.pass.expected > test-for2.diff.output
+FAILED test-for2.exec.output differs from /home/microc/digo-test/tests/test-for2.digo.pass.expected
+ ## Diff output: 
+0a1
+> 0
+5d5
+< 5
 ##### Test test-for2: Failed
 
 ##### Testing test-func1
@@ -162,10 +170,12 @@ diff -b test-func1.exec.output /home/microc/digo-test/tests/test-func1.digo.pass
 
 ##### Testing test-func2
  ## Executable output: 
-3
 diff -b test-func2.exec.output /home/microc/digo-test/tests/test-func2.digo.pass.expected > test-func2.diff.output
+FAILED test-func2.exec.output differs from /home/microc/digo-test/tests/test-func2.digo.pass.expected
  ## Diff output: 
-##### Test test-func2: Passed
+0a1
+> 3
+##### Test test-func2: Failed
 
 ##### Testing test-func3
  ## Executable output: 
@@ -245,13 +255,11 @@ Fatal error: exception Parsing.Parse_error
 ##### Test test-if2: Failed
 
 ##### Testing test-if3
- ## Build output: 
-Call parameter type does not match function signature!
-i64 17
- i8*  call void (i8*, ...) @print(i64 17)
-LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if3.digo.fail.expected
-##### Test test-if3: Failed
+ ## Executable output: 
+17
+diff -b test-if3.exec.output /home/microc/digo-test/tests/test-if3.digo.pass.expected > test-if3.diff.output
+ ## Diff output: 
+##### Test test-if3: Passed
 
 ##### Testing test-if4
  ## Build output: 
@@ -260,9 +268,16 @@ Fatal error: exception Parsing.Parse_error
 ##### Test test-if4: Failed
 
 ##### Testing test-if5
- ## Build output: 
-Fatal error: exception Parsing.Parse_error
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-if5.digo.fail.expected
+ ## Executable output: 
+42
+35841648
+diff -b test-if5.exec.output /home/microc/digo-test/tests/test-if5.digo.pass.expected > test-if5.diff.output
+FAILED test-if5.exec.output differs from /home/microc/digo-test/tests/test-if5.digo.pass.expected
+ ## Diff output: 
+2c2
+< 35841648
+---
+> 17
 ##### Test test-if5: Failed
 
 ##### Testing test-if6

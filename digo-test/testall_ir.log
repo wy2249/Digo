@@ -608,6 +608,81 @@ merge:                                            ; preds = %for
 }
 
 ##### Testing test-for2
+; ModuleID = 'Digo'
+source_filename = "Digo"
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+@createstr_ptr = private unnamed_addr constant [3 x i8] c"%d\00"
+@createstr_ptr.1 = private unnamed_addr constant [3 x i8] c"%d\00"
+
+declare void @print(i8*, ...)
+
+declare void @println(i8*, ...)
+
+declare i8* @CreateString(i8*)
+
+declare i8* @CreateEmptyString()
+
+declare i8* @AddString(i8*, i8*)
+
+declare i64 @CompareString(i8*, i8*)
+
+declare i8* @CloneString(i8*)
+
+declare i64 @GetStringSize(i8*)
+
+declare i8* @CreateSlice(i64)
+
+declare i8* @SliceAppend(i8*, ...)
+
+declare i8* @SliceSlice(i8*, i64, i64)
+
+declare i64 @GetSliceSize(i8*)
+
+declare double @SetSliceIndexDouble(i8*, i64, double)
+
+declare i8* @SetSliceIndexFuture(i8*, i64, i8*)
+
+declare i8* @SetSliceIndexString(i8*, i64, i8*)
+
+declare i64 @SetSliceIndexInt(i8*, i64, i64)
+
+declare double @GetSliceIndexDouble(i8*, i64)
+
+declare i8* @GetSliceIndexFuture(i8*, i64)
+
+declare i8* @GetSliceIndexString(i8*, i64)
+
+declare i64 @GetSliceIndexInt(i8*, i64)
+
+declare i8* @ReadFile(i8*)
+
+define void @digo_main() {
+entry:
+  %i = alloca i64
+  store i64 0, i64* %i
+  br label %for
+
+for:                                              ; preds = %for_body, %entry
+  %i3 = load i64, i64* %i
+  %tmp4 = icmp slt i64 %i3, 5
+  br i1 %tmp4, label %for_body, label %merge
+
+for_body:                                         ; preds = %for
+  %i1 = load i64, i64* %i
+  %tmp = add i64 %i1, 1
+  store i64 %tmp, i64* %i
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr, i32 0, i32 0))
+  %i2 = load i64, i64* %i
+  call void (i8*, ...) @println(i8* %createstr, i64 %i2)
+  br label %for
+
+merge:                                            ; preds = %for
+  %createstr5 = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr.1, i32 0, i32 0))
+  call void (i8*, ...) @println(i8* %createstr5, i64 42)
+  ret void
+}
 
 ##### Testing test-func1
 ; ModuleID = 'Digo'
@@ -1248,10 +1323,158 @@ else:                                             ; preds = %entry
 ##### Testing test-if2
 
 ##### Testing test-if3
+; ModuleID = 'Digo'
+source_filename = "Digo"
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+@createstr_ptr = private unnamed_addr constant [3 x i8] c"%d\00"
+@createstr_ptr.1 = private unnamed_addr constant [3 x i8] c"%d\00"
+
+declare void @print(i8*, ...)
+
+declare void @println(i8*, ...)
+
+declare i8* @CreateString(i8*)
+
+declare i8* @CreateEmptyString()
+
+declare i8* @AddString(i8*, i8*)
+
+declare i64 @CompareString(i8*, i8*)
+
+declare i8* @CloneString(i8*)
+
+declare i64 @GetStringSize(i8*)
+
+declare i8* @CreateSlice(i64)
+
+declare i8* @SliceAppend(i8*, ...)
+
+declare i8* @SliceSlice(i8*, i64, i64)
+
+declare i64 @GetSliceSize(i8*)
+
+declare double @SetSliceIndexDouble(i8*, i64, double)
+
+declare i8* @SetSliceIndexFuture(i8*, i64, i8*)
+
+declare i8* @SetSliceIndexString(i8*, i64, i8*)
+
+declare i64 @SetSliceIndexInt(i8*, i64, i64)
+
+declare double @GetSliceIndexDouble(i8*, i64)
+
+declare i8* @GetSliceIndexFuture(i8*, i64)
+
+declare i8* @GetSliceIndexString(i8*, i64)
+
+declare i64 @GetSliceIndexInt(i8*, i64)
+
+declare i8* @ReadFile(i8*)
+
+define void @digo_main() {
+entry:
+  br i1 false, label %then, label %else
+
+merge:                                            ; preds = %else, %then
+  %createstr1 = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr.1, i32 0, i32 0))
+  call void (i8*, ...) @println(i8* %createstr1, i64 17)
+  ret void
+
+then:                                             ; preds = %entry
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr, i32 0, i32 0))
+  call void (i8*, ...) @println(i8* %createstr, i64 42)
+  br label %merge
+
+else:                                             ; preds = %entry
+  br label %merge
+}
 
 ##### Testing test-if4
 
 ##### Testing test-if5
+; ModuleID = 'Digo'
+source_filename = "Digo"
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+@createstr_ptr = private unnamed_addr constant [3 x i8] c"%d\00"
+@createstr_ptr.1 = private unnamed_addr constant [3 x i8] c"%d\00"
+
+declare void @print(i8*, ...)
+
+declare void @println(i8*, ...)
+
+declare i8* @CreateString(i8*)
+
+declare i8* @CreateEmptyString()
+
+declare i8* @AddString(i8*, i8*)
+
+declare i64 @CompareString(i8*, i8*)
+
+declare i8* @CloneString(i8*)
+
+declare i64 @GetStringSize(i8*)
+
+declare i8* @CreateSlice(i64)
+
+declare i8* @SliceAppend(i8*, ...)
+
+declare i8* @SliceSlice(i8*, i64, i64)
+
+declare i64 @GetSliceSize(i8*)
+
+declare double @SetSliceIndexDouble(i8*, i64, double)
+
+declare i8* @SetSliceIndexFuture(i8*, i64, i8*)
+
+declare i8* @SetSliceIndexString(i8*, i64, i8*)
+
+declare i64 @SetSliceIndexInt(i8*, i64, i64)
+
+declare double @GetSliceIndexDouble(i8*, i64)
+
+declare i8* @GetSliceIndexFuture(i8*, i64)
+
+declare i8* @GetSliceIndexString(i8*, i64)
+
+declare i64 @GetSliceIndexInt(i8*, i64)
+
+declare i8* @ReadFile(i8*)
+
+define { i64 } @cond(i1 %b) {
+entry:
+  %b1 = alloca i1
+  store i1 %b, i1* %b1
+  %x = alloca i64
+  %b2 = load i1, i1* %b1
+  br i1 %b2, label %then, label %else
+
+merge:                                            ; preds = %else, %then
+  %x3 = load i64, i64* %x
+  %mrv = insertvalue { i64 } undef, i64 %x3, 0
+  ret { i64 } %mrv
+
+then:                                             ; preds = %entry
+  store i64 42, i64* %x
+  br label %merge
+
+else:                                             ; preds = %entry
+  br label %merge
+}
+
+define void @digo_main() {
+entry:
+  %createstr = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr, i32 0, i32 0))
+  %cond_result = call { i64 } @cond(i1 true)
+  call void (i8*, ...) @println(i8* %createstr, { i64 } %cond_result)
+  %createstr1 = call i8* @CreateString(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @createstr_ptr.1, i32 0, i32 0))
+  %cond_result2 = call { i64 } @cond(i1 false)
+  call void (i8*, ...) @println(i8* %createstr1, { i64 } %cond_result2)
+  ret void
+}
 
 ##### Testing test-if6
 

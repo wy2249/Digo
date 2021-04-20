@@ -4,5 +4,5 @@ func digo_main() void {
   } else {
    println("8")
   }
-  print("17")
+  println("%s", "17")
 }

@@ -9,6 +9,6 @@ func cond(b bool) int {
 }
 
 func digo_main() void {
- println("%d\n", cond(true))
- println("%d\n", cond(false))
+ println("%d", cond(true))
+ println("%d", cond(false))
 }
