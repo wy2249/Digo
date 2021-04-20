@@ -5,5 +5,5 @@ func digo_main() void {
     println("%d", i)
     i = i + 1
   }
-  print(42)
+  println("%d", 42)
 }
