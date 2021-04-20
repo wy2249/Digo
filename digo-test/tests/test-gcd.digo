@@ -1,6 +1,6 @@
 func gcd(a int, b int) int {
-  for a != b {
-    if a > b {
+  for (a != b) {
+    if (a > b) {
         a = a - b
     } else {
         b = b - a

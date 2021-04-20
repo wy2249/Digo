@@ -1,6 +1,6 @@
 func digo_main() void {
   var i int
-  for i = 0 ; i < 5 ; i = i + 1 {
+  for (i = 0 ; i < 5 ; i = i + 1) {
     println("%d", i)
   }
   println("%d", 42)

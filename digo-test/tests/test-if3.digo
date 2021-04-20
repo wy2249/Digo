@@ -1,5 +1,5 @@
 func digo_main() void {
-  if false {
+  if (false) {
    println("%d", 42)
   }
   print(17)

@@ -1,11 +1,11 @@
 func fib(x int) int {
-  if x < 2 {
+  if (x < 2) {
    return 1
   }
   return fib(x-1) + fib(x-2)
 }
 
-func difo_main() void {
+func digo_main() void {
   println("%d", fib(0))
   println("%d", fib(1))
   println("%d", fib(2))
