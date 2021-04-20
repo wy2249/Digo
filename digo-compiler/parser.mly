@@ -228,5 +228,5 @@ p_statement:
 // Continue
 | KEYWORD_CONTINUE   NEWLINE     {  Continue  }
 // Block
-| LEFT_BRACE NEWLINE p_statements RIGHT_BRACE NEWLINE {Block($3)}
+| LEFT_BRACE NEWLINE p_statements RIGHT_BRACE {Block($3)}
 

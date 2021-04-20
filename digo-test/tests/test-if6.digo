@@ -11,7 +11,7 @@ func cond(b bool) int {
   return x
 }
 
-func digo_main() int {
+func digo_main() void {
  println("%d", cond(true))
  println("%d", cond(false))
 }
