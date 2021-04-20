@@ -1,5 +1,5 @@
 func gcd(a int, b int) int {
-  for (a != b) {
+  for (;a != b;) {
     if (a > b) {
      a = a - b
     } else {
@@ -9,7 +9,7 @@ func gcd(a int, b int) int {
   return a
 }
 
-func main() void {
+func digo_main() void {
   println("%d", gcd(14,21))
   println("%d", gcd(8,36))
   println("%d", gcd(99,121))
