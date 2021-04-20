@@ -1,5 +1,5 @@
 func main() void {
-  if true {
+  if (true) {
    println("%d", 42)
   } else {
     println("%d", 8)
