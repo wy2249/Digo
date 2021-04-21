@@ -1,0 +1,5 @@
+func digo_main() void {
+  var i int
+  var j int 
+  i + j = 2
+}

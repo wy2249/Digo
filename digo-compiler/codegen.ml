@@ -138,6 +138,11 @@ let translate(functions) =
     let getSliceIndexInt = 
         declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
 
+    let cloneSlice_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in 
+    let cloneSlice =
+        declare_function "CloneSlice" (cloneSlice_t) the_module in 
+
     let readFile_t= 
           function_type (pointer_type i8_t) [|pointer_type i8_t|] in
     let readFile=
@@ -264,7 +269,7 @@ let translate(functions) =
               build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           | ([StringType],_)                                     ->
               let cmpllvm = build_call compareString [|e1; e2|] "cmpstr" builder in 
-              (match op with
+              let condition = (match op with
                 IsEqual  ->  
                 build_icmp Icmp.Eq 
               | LessThan  ->  
@@ -276,7 +281,8 @@ let translate(functions) =
               | GreaterEqual  -> 
                 build_icmp Icmp.Sge 
               | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder
+              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder in
+              build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
           let e1 = expr builder ex1
@@ -326,6 +332,9 @@ let translate(functions) =
                   let (_,SFunctionCall(fname,_)) = ex1 in
                   Hashtbl.add futures s fname;
                   ignore(build_store e_ (lookup s) builder); e_
+                | SliceType(x) -> 
+                  let clonellvm = build_call cloneSlice [|e_|] "cloneslice" builder in
+                  ignore(build_store clonellvm (lookup s) builder); e_ 
                 | _ -> 
                   ignore(build_store e_ (lookup s) builder); e_
               )
@@ -467,7 +476,8 @@ let translate(functions) =
             let rt = expr builder ex in
             build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
            | ([StringType],_)  ->
-            expr builder ex
+            let rt = expr builder ex in 
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
            ) 
         | ([BoolType],_) -> expr builder ex
         | _ -> raise(Failure("not boolean on if condition"))
@@ -508,7 +518,8 @@ let translate(functions) =
             let rt = expr pred_builder ex in
             build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" pred_builder
            | ([StringType],_)  ->
-            expr pred_builder ex
+            let rt = expr builder ex in 
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
            ) 
         | ([BoolType],_) -> expr builder ex
         | _ -> raise(Failure("not boolean on for condition"))

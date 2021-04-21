@@ -1,0 +1,4 @@
+func digo_main() void {
+  i := 2
+  i := 3
+}

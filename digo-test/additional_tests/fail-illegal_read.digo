@@ -1,0 +1,4 @@
+func digo_main() void {
+  var s int
+  f := read(s)
+}

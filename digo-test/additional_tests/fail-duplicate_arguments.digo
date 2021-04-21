@@ -1,0 +1,10 @@
+func digo_main() void {
+  var i int = 1
+  var j int = 2
+  foo(i,j)
+}
+
+func foo(a int,a int) void {
+  return 1
+}
+

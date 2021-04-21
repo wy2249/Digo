@@ -1,0 +1,3 @@
+func digo_main() void {
+  print("%d",i)
+}

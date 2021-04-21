@@ -1,0 +1,5 @@
+func digo_main() void {
+  var i int 
+  var j float  = 2.0 
+  i = j
+}
