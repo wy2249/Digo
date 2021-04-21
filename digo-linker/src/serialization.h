@@ -1,6 +1,8 @@
-//
-// Created by VM on 2021/3/21.
-//
+/* See serialization.cpp for details.
+ *
+ * Author: sh4081
+ * Date: 2021/3/21
+ */
 
 #ifndef DIGO_LINKER_SERIALIZATION_H
 #define DIGO_LINKER_SERIALIZATION_H

@@ -1,3 +1,9 @@
+/* This file is for testing purpose, and is not compiled as part of the Digo Linker.
+ *
+ * Author: sh4081
+ * Date: 2021/3/25
+ */
+
 #include <iostream>
 #include <fstream>
 #include <cmath>

@@ -1,18 +1,13 @@
-//
-// Created by VM on 2021/3/25.
-//
-
-// This file provides library API - LLVM IR boundaries
-// for the Digo compiler.
-// This wrapper is for future object(Async) and
-// linker-reserved objects only.
-// For built-in types, the library
-// directly uses gc.h template.
-
-// This wrapper:
-// 1. Adds GC wrapper for future object.
-// 2. Catches and handles all exceptions from C++.
-// 3. Provides an entry for the whole program.
+/* This file provides async API - LLVM IR boundaries.
+ * However, these interfaces are not directly used by Compiler.
+ * Instead, the Digo Linker uses these APIs and provides simpler
+ * interfaces for the Compiler and Async Library.
+ *
+ * This file also provides an entry for the whole program.
+ *
+ * Author: sh4081
+ * Date: 2021/3/25
+ */
 
 #include "../../async-remote-lib/src/async.h"
 #include "../../async-remote-lib/src/master_worker.h"
@@ -103,24 +98,6 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
         WrapperExceptionHandler("CreateRemoteJob", e);
     }
     return nullptr;
-}
-
-__attribute__((noinline)) void JobIncRef(void* future_obj) {
-    try {
-        ((DObject<Async>*)future_obj)->IncRef();
-    }
-    catch (std::exception & e) {
-        WrapperExceptionHandler("JobIncRef", e);
-    }
-}
-
-__attribute__((noinline)) void JobDecRef(void* future_obj) {
-    try {
-        ((DObject<Async>*)future_obj)->DecRef();
-    }
-    catch (std::exception & e) {
-        WrapperExceptionHandler("JobDecRef", e);
-    }
 }
 
 __attribute__((noinline)) void AwaitJob(void* future_obj, byte** result, int32* len) {

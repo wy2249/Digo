@@ -1,6 +1,8 @@
-//
-// Created by VM on 2021/3/25.
-//
+/* This file is the entry of the Digo Linker.
+ *
+ * Author: sh4081
+ * Date: 2021/3/25
+ */
 
 #include "metadata.h"
 #include <iostream>

@@ -2,7 +2,7 @@
  * It parses the function metadata, generates serialization code for each async (local/remote)
  * function, and provides simple APIs for the Digo Compiler and Digo Async Remote Library.
  *
- * Author:
+ * Author: sh4081
  * Date: 2021/3/21
  */
 

@@ -1,3 +1,8 @@
+/* This file provides common type definition, for the Digo libraries.
+ *
+ * Author: sh4081
+ * Date: 2021/3/21
+ */
 
 #ifndef DIGO_LINKER_COMMON_H_
 #define DIGO_LINKER_COMMON_H_

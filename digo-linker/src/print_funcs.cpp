@@ -1,6 +1,8 @@
-//
-// Created by VM on 2021/4/10.
-//
+/* This file provides print & println built-in Digo functions.
+ *
+ * Author: sh4081
+ * Date: 2021/4/10
+ */
 
 #include <string>
 #include <sstream>

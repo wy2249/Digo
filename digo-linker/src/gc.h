@@ -1,6 +1,10 @@
-//
-// Created by VM on 2021/3/25.
-//
+/* gc.h provides a C++ template for Digo objects that need reference count gc.
+ *
+ * Digo Slice and Digo String are wrapped in this gc template.
+ *
+ * Author: sh4081
+ * Date: 2021/3/25
+ */
 
 #ifndef DIGO_LINKER_GC_H
 #define DIGO_LINKER_GC_H
@@ -20,8 +24,6 @@ const bool GC_DEBUG = false;
 #include <mutex>
 #include <memory>
 #include "common.h"
-
-// gc.h provides a C++ template for objects that need reference count gc.
 
 /*  A Digo object with ref count GC support  */
 template <typename T>

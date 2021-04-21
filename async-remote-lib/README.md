@@ -1,13 +1,16 @@
 # Digo-Async-Remote-Library
 
-Install libc++:
-```
-sudo apt-get install libc++-dev
+This folder includes the implementation of
 
-sudo apt-get install libc++abi-dev
-```
+the async remote library, 
+
+the Digo Object library, 
+
+Utility Library,
+
+and ....
+
+Author Info...
 
 
-# Usage
-
-See `test/async_tests.cpp`
+// TODO

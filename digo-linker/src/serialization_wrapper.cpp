@@ -1,7 +1,11 @@
-//
-// Created by VM on 2021/3/21.
-//
-// This file wraps the serialzation class and provides LLVM IR boundaries.
+/* The LLVM IR boundary wrapper for the Digo Serialization Library.
+ * It provides serialization interface for each Digo type.
+ * Compiler does not use these interfaces directly.
+ * Instead, the details of serialization is hidden in the interfaces provided by Digo Linker.
+ *
+ * Author: sh4081
+ * Date: 2021/3/21
+ */
 
 #include <unistd.h>
 #include "serialization.h"

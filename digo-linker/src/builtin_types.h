@@ -1,6 +1,8 @@
-//
-// Created by VM on 2021/4/9.
-//
+/* This file includes the headers of Digo Objects for Digo Serialization Library.
+ *
+ * Author: sh4081
+ * Date: 2021/3/21
+ */
 
 #ifndef DIGO_LINKER_BUILTIN_TYPES_H
 #define DIGO_LINKER_BUILTIN_TYPES_H

@@ -1,6 +1,9 @@
 /* The Digo Serialization Library.
  * It provides serialization interface for each Digo type.
- * Author:
+ * Compiler does not use these interfaces directly.
+ * Instead, the details of serialization is hidden in the interfaces provided by Digo Linker.
+ *
+ * Author: sh4081
  * Date: 2021/3/21
  */
 

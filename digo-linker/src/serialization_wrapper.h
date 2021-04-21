@@ -1,6 +1,11 @@
-//
-// Created by VM on 2021/3/21.
-//
+/* The interface definition for the Digo Serialization Library.
+ * It provides serialization interface for each Digo type.
+ * Compiler does not use these interfaces directly.
+ * Instead, the details of serialization is hidden in the interfaces provided by Digo Linker.
+ *
+ * Author: sh4081
+ * Date: 2021/3/21
+ */
 
 #ifndef DIGO_LINKER_SERIALIZATION_WRAPPER_H
 #define DIGO_LINKER_SERIALIZATION_WRAPPER_H

@@ -1,9 +1,8 @@
 /* This file exports the GC_DecRef API for reference count GC.
  * The compiler may trace Digo Objects allocated in heap, and releases them
- * using this API,
- * if the objects do not escape their scope.
+ * using this API, if the objects do not escape their scope.
  *
- * Author:
+ * Author: sh4081
  * Date: 2021/4/14
  */
 
