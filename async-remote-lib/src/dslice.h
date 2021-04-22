@@ -5,21 +5,23 @@
 #include "dstring.h"
 #include "../../digo-linker/src/common.h"
 
-class DigoSlice {
+class DigoSlice : public DObject {
 public:
-  DigoSlice(digo_type t);
+  explicit DigoSlice(digo_type t);
 
   std::tuple<vector<TypeCell>&, size_t&, size_t&> Data();
 
-  int64_t Size() const;
+  [[nodiscard]] int64_t Size() const;
 
-  digo_type Type() const;
+  [[nodiscard]] digo_type Type() const;
 
-  DigoSlice Append(const TypeCell &tv);
+  [[nodiscard]] DigoSlice* Append(const TypeCell &tv) const;
 
-  DigoSlice Slice(int64_t begin, int64_t end) const;
+  [[nodiscard]] DigoSlice* Slice(int64_t begin, int64_t end) const;
 
-  TypeCell &Index(int64_t idx) const;
+  [[nodiscard]] DigoSlice* Clone() const;
+
+  [[nodiscard]] TypeCell & Index(int64_t idx) const;
 
 private:
   shared_ptr<vector<TypeCell>> raw_data_;
@@ -29,8 +31,6 @@ private:
 };
 
 #include "../../digo-linker/src/gc.h"
-
-using DSliObject = DObject<DigoSlice>;
 
 extern "C" {
 

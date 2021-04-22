@@ -65,10 +65,10 @@ void SW_AddDouble(void* w, double n) {
 
 void SW_AddString(void* wi, void* wj) {
     Serialization * w = (Serialization*)wi;
-    DStrObject * strWrapper = (DStrObject*)wj;
+    DigoString * strWrapper = (DigoString*)wj;
     try {
         /*   unwrap here  */
-        w->AddString(strWrapper->Get()->Data());
+        w->AddString(strWrapper->Data());
     }
     catch (std::exception & e) {
         SerializationExceptionHandler("SW_AddString", e);
@@ -77,18 +77,18 @@ void SW_AddString(void* wi, void* wj) {
 
 void SW_AddSlice(void* wi, void* wj) {
     Serialization * w = (Serialization*)wi;
-    DSliObject * sliceWrapper = (DSliObject*)wj;
+    DigoSlice * sliceWrapper = (DigoSlice*)wj;
     try {
         /*   unwrap here  */
         /*   generates an array with necessary data only   */
         vector<TypeCell> arr;
-        auto [underlying_arr, begin, end] = sliceWrapper->Get()->Data();
-        digo_type sliceType = sliceWrapper->Get()->Type();
+        auto [underlying_arr, begin, end] = sliceWrapper->Data();
+        digo_type sliceType = sliceWrapper->Type();
         arr.reserve(end - begin);
         for (auto i = begin; i < end; i++) {
             TypeCell cell = underlying_arr[i];
             if (sliceType == TYPE_STR) {
-                cell.str = ((DStrObject*)(cell.str_obj))->Get()->Data();
+                cell.str = ((DigoString*)(cell.str_obj))->Data();
             }
             cell.type = sliceType;
             arr.push_back(cell);
@@ -203,9 +203,9 @@ void* SW_ExtractSlice(void* s) {
             return nullptr;
         }
         /*  wraps it to Digo Object  */
-        auto sliceObj = (DSliObject*)CreateSlice(cell.arr_slice_type);
+        auto sliceObj = new DigoSlice(cell.arr_slice_type);
         /*  directly set data  */
-        auto [underlying_arr, begin, end] = sliceObj->Get()->Data();
+        auto [underlying_arr, begin, end] = sliceObj->Data();
         begin = 0; end = 0;
         for (int i = 0; i < (int)cell.arr.size(); i++) {
             auto nested_cell = cell.arr[i];

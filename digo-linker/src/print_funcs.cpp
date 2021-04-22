@@ -17,8 +17,8 @@ namespace Print {
         return std::to_string(num);
     }
     template<>
-    string ToString<DStrObject*> (DStrObject * obj) {
-        string ret = obj->Get()->Data();
+    string ToString<DigoString*> (DigoString * obj) {
+        string ret = obj->Data();
         return ret;
     }
     template<>
@@ -28,9 +28,9 @@ namespace Print {
         return buf.str();
     }
     template<>
-    string ToString<DSliObject*> (DSliObject * obj) {
-        auto [underlying_arr, begin, end] = obj->Get()->Data();
-        auto sliceType = obj->Get()->Type();
+    string ToString<DigoSlice*> (DigoSlice * obj) {
+        auto [underlying_arr, begin, end] = obj->Data();
+        auto sliceType = obj->Type();
         string ret = "[";
         for (auto i = begin; i < end; i++) {
             switch (sliceType) {
@@ -44,7 +44,7 @@ namespace Print {
                     ret += ToString(underlying_arr[i].num64);
                     break;
                 case TYPE_STR:
-                    ret += ToString((DStrObject*)(underlying_arr[i].str_obj));
+                    ret += ToString((DigoString*)(underlying_arr[i].str_obj));
                     break;
                 case TYPE_SLICE:
                     ret += "Error: Nested Slice";
@@ -93,10 +93,10 @@ namespace Print {
                         result += ToString(va_arg(va, void*));
                         break;
                     case 's':
-                        result += ToString(va_arg(va, DStrObject*));
+                        result += ToString(va_arg(va, DigoString*));
                         break;
                     case 'l':
-                        result += ToString(va_arg(va, DSliObject*));
+                        result += ToString(va_arg(va, DigoSlice*));
                         break;
                     default:
                         result += "Invalid Format";
@@ -117,7 +117,7 @@ extern "C" {
 void print(void * format, ...) {
     auto raw_format = GetCStr(format);
     va_list va;
-    va_start(va, raw_format);
+    va_start(va, format);
     string str = Print::ToStringV(raw_format, va);
     va_end(va);
     cout << str;
@@ -126,7 +126,7 @@ void print(void * format, ...) {
 void println(void * format, ...) {
     auto raw_format = GetCStr(format);
     va_list va;
-    va_start(va, raw_format);
+    va_start(va, format);
     string str = Print::ToStringV(raw_format, va) + "\n";
     va_end(va);
     cout << str;

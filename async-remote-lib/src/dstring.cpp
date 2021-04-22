@@ -3,50 +3,46 @@
 #include "dstring.h"
 
 void* CreateString(const char* src) {
-  return DObject<DigoString>::Create(new DigoString(src));
+    return new DigoString(src);
 }
 
 void* CreateEmptyString() {
-    return DObject<DigoString>::Create(new DigoString());
+    return new DigoString();
 }
 
 void* AddString(void* vl,
                 void* vr) {
-    auto l = (DObject<DigoString>*) vl;
-    auto r = (DObject<DigoString>*) vr;
-    return DObject<DigoString>::Create(new DigoString(
-            l->GetObj() + r->GetObj()
-            ));
+    auto l = (DigoString*) vl;
+    auto r = (DigoString*) vr;
+    return new DigoString(
+            *l + *r);
 }
 
 void* AddCString(void* vl, const char* r) {
-    auto l = (DObject<DigoString>*) vl;
-    return DObject<DigoString>::Create(new DigoString(
-            l->GetObj() + r
-            ));
+    auto l = (DigoString*) vl;
+    return new DigoString(
+            *l + r);
 }
 
 void* CloneString(void* vsrc) {
-    return DObject<DigoString>::Create(new DigoString(
-            ((DObject<DigoString>*)vsrc)->GetObj()
-            ));
+    return new DigoString(((DigoString*)vsrc)->Data());
 }
 
 int64_t CompareString(void* vl,
                       void* vr) {
-    auto l = (DObject<DigoString>*) vl;
-    auto r = (DObject<DigoString>*) vr;
-    return l->GetPtr()->Compare(r->GetObj());
+    auto l = (DigoString*) vl;
+    auto r = (DigoString*) vr;
+    return l->Compare(*r);
 }
 
 int64_t GetStringSize(void* vs) {
-    auto s = (DObject<DigoString>*) vs;
-    return s->GetPtr()->Size();
+    auto s = (DigoString*) vs;
+    return s->Size();
 }
 
 const char* GetCStr(void* vs) {
-    auto s = (DObject<DigoString>*) vs;
-    return s->GetPtr()->Data().c_str();
+    auto s = (DigoString*) vs;
+    return s->Data().c_str();
 }
 
 DigoString::DigoString(const char *src) {
