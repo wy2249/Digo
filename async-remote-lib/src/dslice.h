@@ -23,6 +23,10 @@ public:
 
   [[nodiscard]] TypeCell & Index(int64_t idx) const;
 
+  const char* name() override {
+      return "Slice Object";
+  }
+
 private:
   shared_ptr<vector<TypeCell>> raw_data_;
 

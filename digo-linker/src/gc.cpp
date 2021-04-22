@@ -9,6 +9,7 @@
 #include "gc.h"
 #include "builtin_types.h"
 #include <unordered_set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -35,6 +36,8 @@ extern "C" {
     void  __GC_Trace(void* map, void* obj);
     void  __GC_NoTrace(void* map, void* obj);
     void  __GC_ReleaseAll(void* map);
+
+    void  __GC_DEBUG_COLLECT_LEAK_INFO();
 }
 
 void __GC_DecRef(void* obj) {
@@ -47,6 +50,7 @@ void __GC_DecRef(void* obj) {
 
 struct TraceMap {
     unordered_set<void*> s;
+    unordered_map<void*, int> ref;
 };
 
 void* __GC_CreateTraceMap() {
@@ -69,4 +73,53 @@ void  __GC_ReleaseAll(void* map) {
         __GC_DecRef(obj);
     }
     delete m;
+}
+
+TraceMap GC_DEBUG_AllocatedObjects;
+
+void  __GC_DEBUG_COLLECT_LEAK_INFO() {
+    if (GC_DEBUG) {
+        for (auto r : GC_DEBUG_AllocatedObjects.ref) {
+            if (r.second != 0) {
+                fprintf(stderr, "GC Leak: %p\n", r.first);
+            }
+        }
+    }
+}
+
+DObject::DObject() {
+    ref_cnt = 1;
+    if (GC_DEBUG) {
+        fprintf(stderr, "GC Debug: %p is created\n", this);
+        GC_DEBUG_AllocatedObjects.ref[this] = 1;
+    }
+}
+
+void DObject::IncRef() {
+    this->ref_lock.lock();
+    this->ref_cnt++;
+    if (GC_DEBUG) {
+        fprintf(stderr, "GC Debug: ref cnt of %s, %p is incremented to %d\n", name(), this, this->ref_cnt);
+        GC_DEBUG_AllocatedObjects.ref[this]++;
+    }
+    this->ref_lock.unlock();
+}
+
+void DObject::DecRef() {
+    this->ref_lock.lock();
+    this->ref_cnt--;
+    if (GC_DEBUG) {
+        fprintf(stderr, "GC Debug: ref cnt of %s, %p is decremented to %d\n", name(), this, this->ref_cnt);
+        GC_DEBUG_AllocatedObjects.ref[this]--;
+    }
+    if (this->ref_cnt < 0) {
+        fprintf(stderr, "using an already released object\n");
+        exit(1);
+    }
+    if (this->ref_cnt == 0) {
+        this->ref_lock.unlock();
+        delete this;
+    } else {
+        this->ref_lock.unlock();
+    }
 }

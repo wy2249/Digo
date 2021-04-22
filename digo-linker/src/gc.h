@@ -31,46 +31,19 @@ private:
     std::mutex ref_lock;
     int ref_cnt = 0;
 
-    const char* type_;
-
 public:
     virtual ~DObject() = default;
 
-    DObject() {
-        type_ = typeid(this).name();
-        ref_cnt = 1;
-        if (GC_DEBUG) {
-            fprintf(stderr, "GC Debug: %s, %p is created\n", type_, this);
-        }
+    /*   overrides this function to provide the name of the object;
+     *   for debugging purpose.
+     */
+    virtual const char* name() {
+        return "Base Object";
     }
 
-    void IncRef() {
-        this->ref_lock.lock();
-        this->ref_cnt++;
-        if (GC_DEBUG) {
-            fprintf(stderr, "GC Debug: ref cnt of %s, %p is incremented to %d\n", type_, this, this->ref_cnt);
-        }
-        this->ref_lock.unlock();
-    }
-
-    void DecRef() {
-        this->ref_lock.lock();
-        this->ref_cnt--;
-        if (GC_DEBUG) {
-            fprintf(stderr, "GC Debug: ref cnt of %s, %p is decremented to %d\n", type_, this, this->ref_cnt);
-        }
-        if (this->ref_cnt < 0) {
-            fprintf(stderr, "using an already released object\n");
-            exit(1);
-        }
-        if (this->ref_cnt == 0) {
-            this->ref_lock.unlock();
-            delete this;
-        } else {
-            this->ref_lock.unlock();
-        }
-    }
-
+    DObject();
+    virtual void IncRef() final;
+    virtual void DecRef() final;
 };
 
 

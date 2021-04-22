@@ -22,6 +22,10 @@ public:
 
   int64_t Size() const;
 
+  const char* name() override {
+      return "String Object";
+  }
+
 private:
   string raw_data_;
 
