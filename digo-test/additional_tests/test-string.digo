@@ -1,0 +1,10 @@
+func digo_main() void {
+	a := "abc"
+	var b string 
+	b = a
+	c := len(b)
+	d := a+b
+	println("%d",c)
+	println("%s",d)
+	println("%d",a == d)
+}

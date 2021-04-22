@@ -138,6 +138,11 @@ let translate(functions) =
     let getSliceIndexInt = 
         declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
 
+    let cloneSlice_t =
+        function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in 
+    let cloneSlice =
+        declare_function "CloneSlice" (cloneSlice_t) the_module in 
+
     let readFile_t= 
           function_type (pointer_type i8_t) [|pointer_type i8_t|] in
     let readFile=
@@ -237,34 +242,34 @@ let translate(functions) =
           and e2 = expr builder ex2 in         
           (match ex1 with
             ([FloatType],_)                                     ->
-              (match op with
+              let condition = (match op with
                 LessThan    ->  build_fcmp Fcmp.Olt
               | LessEqual   ->  build_fcmp Fcmp.Ole
               | GreaterThan   ->  build_fcmp Fcmp.Ogt
               | GreaterEqual  ->  build_fcmp Fcmp.Oge
               | IsEqual     ->  build_fcmp Fcmp.Oeq
               | IsNotEqual  ->  build_fcmp Fcmp.One
-              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) e1 e2 "tmp" builder 
+              ) e1 e2 "tmp" builder in
+              build_select condition (const_float float_t 1.0) (const_float float_t 0.0) "booleantofloat" builder
           | ([IntegerType],_)                                   ->
-              (match op with
+              let condition = (match op with
                 LessThan    ->  build_icmp Icmp.Slt
               | LessEqual   ->  build_icmp Icmp.Sle
               | GreaterThan   ->  build_icmp Icmp.Sgt
               | GreaterEqual  ->  build_icmp Icmp.Sge
               | IsEqual     ->  build_icmp Icmp.Eq
               | IsNotEqual  ->  build_icmp Icmp.Ne
-              | _           ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) e1 e2 "tmp" builder              
+              ) e1 e2 "tmp" builder in
+              build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           | ([BoolType],_)                                      ->
-              (match op with
+              let condition = (match op with
               | LogicalAnd  ->  build_and
               | LogicalOr   ->  build_or
-              | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) e1 e2 "tmp" builder
+              ) e1 e2 "tmp" builder in
+              build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           | ([StringType],_)                                     ->
               let cmpllvm = build_call compareString [|e1; e2|] "cmpstr" builder in 
-              (match op with
+              let condition = (match op with
                 IsEqual  ->  
                 build_icmp Icmp.Eq 
               | LessThan  ->  
@@ -276,8 +281,8 @@ let translate(functions) =
               | GreaterEqual  -> 
                 build_icmp Icmp.Sge 
               | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
-              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder
-          | _                                                   ->  raise(Failure("binary operation is invalid and should be rejected in semant!"))
+              ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder in
+              build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
           let e1 = expr builder ex1
@@ -327,6 +332,9 @@ let translate(functions) =
                   let (_,SFunctionCall(fname,_)) = ex1 in
                   Hashtbl.add futures s fname;
                   ignore(build_store e_ (lookup s) builder); e_
+                | SliceType(x) -> 
+                  let clonellvm = build_call cloneSlice [|e_|] "cloneslice" builder in
+                  ignore(build_store clonellvm (lookup s) builder); e_ 
                 | _ -> 
                   ignore(build_store e_ (lookup s) builder); e_
               )
@@ -452,9 +460,28 @@ let translate(functions) =
       let rec stmt builder = function  
         SEmptyStatement                                                        ->  builder
       | SBlock(sl)                                                             ->  
-        List.fold_left stmt builder sl 
+        List.fold_left stmt builder sl
       | SIfStatement(ex, s1, s2)                                               ->  
-        let bool_val = expr builder ex in 
+        let bool_val = 
+        (match ex with
+          ([BoolType],SBinaryOp(e1,op,e2)) -> 
+           (match e1 with
+             ([FloatType],_)   -> 
+            let rt = expr builder ex in
+            build_fcmp Fcmp.Oeq rt (const_float float_t 1.0) "judgeif" builder              
+           | ([IntegerType],_) -> 
+            let rt = expr builder ex in
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder           
+           | ([BoolType],_)    -> 
+            let rt = expr builder ex in
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
+           | ([StringType],_)  ->
+            let rt = expr builder ex in 
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
+           ) 
+        | ([BoolType],_) -> expr builder ex
+        | _ -> raise(Failure("not boolean on if condition"))
+        ) in
         let merge_bb = append_block context "merge" the_function in
         let build_br_merge = build_br merge_bb in
 
@@ -477,7 +504,27 @@ let translate(functions) =
         add_terminal (stmt (builder_at_end context body_bb) whole_body) (build_br pred_bb);
 
         let pred_builder = builder_at_end context pred_bb in
-        let bool_val = expr pred_builder ex in
+        let bool_val = 
+        (match ex with
+        | ([BoolType],SBinaryOp(e1,op,e2)) -> 
+           (match e1 with
+             ([FloatType],_)   -> 
+            let rt = expr pred_builder ex in
+            build_fcmp Fcmp.Oeq rt (const_float float_t 1.0) "judgeif" pred_builder              
+           | ([IntegerType],_) -> 
+            let rt = expr pred_builder ex in
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" pred_builder           
+           | ([BoolType],_)    -> 
+            let rt = expr pred_builder ex in
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" pred_builder
+           | ([StringType],_)  ->
+            let rt = expr builder ex in 
+            build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
+           ) 
+        | ([BoolType],_) -> expr builder ex
+        | _ -> raise(Failure("not boolean on for condition"))
+        )
+        in
         let merge_bb = append_block context "merge" the_function in
         ignore(build_cond_br bool_val body_bb merge_bb pred_builder);
         builder_at_end context merge_bb 
@@ -536,7 +583,7 @@ let translate(functions) =
 
       in
 
-        let builder = stmt builder (SBlock(fdecl.sbody)) in
+        let builder = stmt builder (SBlock fdecl.sbody) in
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
         [VoidType] -> ignore(build_ret_void builder)

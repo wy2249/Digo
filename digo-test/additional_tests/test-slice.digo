@@ -1,0 +1,11 @@
+func digo_main() void {
+  a := []int {1,2,3,4}
+  b := append(a,10)
+  c := len(b)
+  var d []int
+  d = b
+  println("%d",b[0])
+  println("%l",b[1:2])
+  println("%d",c)
+  println("%l",d)
+}

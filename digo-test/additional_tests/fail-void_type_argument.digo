@@ -1,0 +1,8 @@
+func digo_main() void {
+  var a void  
+  foo(a)
+}
+
+func foo(a void) void {
+  return 1
+}
