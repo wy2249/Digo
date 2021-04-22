@@ -23,7 +23,6 @@ const bool GC_DEBUG = false;
 
 #include <mutex>
 #include <memory>
-#include "common.h"
 
 /*  A Digo object with ref count GC support  */
 class DObject {

@@ -246,13 +246,22 @@ let translate(functions) =
         but the GC wants to know the type of this llvalue in the
         form of Digo type.
 
-           Since GC is introduced after this part of code is written,
+        Since GC is introduced after this part of code is written,
            to avoid changing the prototype of `expr`, 
-           I have to use a ref value here to store whether
+        I have to use a ref value here to store whether
            the evaluation result is a Digo Object.
       *)
 
       let expr_is_lvalue_obj = ref 0 in
+
+      (*  This function takes the return value of a function call;
+          adds it to GC tracing map; and sets the is_lvalue_obj to 1 indicating 
+          it is a Digo Object  *)
+      let rec gc_inject func_ret_val builder = 
+        build_call gc_trace [|gc_trace_map_obj; func_ret_val|] "" builder;
+        expr_is_lvalue_obj := 1; 
+        func_ret_val
+      in
 
       let rec expr builder (e_typl,e) = 
         expr_is_lvalue_obj := 0;
@@ -333,9 +342,7 @@ let translate(functions) =
           (match op with
             Add ->  let call_ret = build_call addString [|e1; e2|] "addstr" builder in 
                     (*  GC injection for AddString  *)
-                    build_call gc_trace [|gc_trace_map_obj; call_ret|] "" builder;
-                    expr_is_lvalue_obj := 1; 
-                    call_ret
+                    gc_inject call_ret builder
           | _   ->  raise(Failure("codegen error: semant should reject any operation between string except add"))
           )  
         | SUnaryOp(op,((ex1_typl,_) as ex1))                                                     ->
@@ -375,14 +382,19 @@ let translate(functions) =
                 StringType ->
                   let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
                   ignore(build_store clonellvm (lookup s) builder);
-                  expr_is_lvalue_obj := 1; clonellvm
+                   (*  GC Injection for CloneString  *)
+                  gc_inject clonellvm builder
                 | FutureType ->
                   let (_,SFunctionCall(fname,_)) = ex1 in
                   Hashtbl.add futures s fname;
+                  (*  No GC here; no new object is actually created; it is just a reference  *)
                   ignore(build_store e_ (lookup s) builder); e_
                 | SliceType(x) -> 
                   let clonellvm = build_call cloneSlice [|e_|] "cloneslice" builder in
-                  ignore(build_store clonellvm (lookup s) builder); e_ 
+                  ignore(build_store clonellvm (lookup s) builder);
+                   (* FIXME TODO BUG: return e_ ??*) 
+                   (*  GC Injection for CloneSlice  *)
+                  gc_inject clonellvm builder
                 | _ -> 
                   ignore(build_store e_ (lookup s) builder); e_
               )
@@ -413,8 +425,10 @@ let translate(functions) =
         | SAppend(args)                                    ->
             let e1 = expr builder (List.hd args) in 
             let e2 = expr builder (List.nth args 1) in 
-            build_call sliceAppend [|e1;e2|] "initslice" builder;
-            (*   GC  *)
+            let call_ret = 
+            build_call sliceAppend [|e1;e2|] "slice_append" builder in 
+            (*   GC Injection for SliceAppend  *)
+            gc_inject call_ret builder
         | SFunctionCall(f_name,args)                                           ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
@@ -431,14 +445,20 @@ let translate(functions) =
               let argument_types = Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fd.sformals) in
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
+              let call_ret = 
                 build_call new_fdef (Array.of_list llargs) result builder
-          in build_func_call
+             (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
+              in gc_inject call_ret builder
+              in build_func_call
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
         (* build_global_stringptr ex "str" builder *)
           let current_ptr = build_global_stringptr ex "createstr_ptr" builder in
-          build_call createString [|current_ptr|] "createstr" builder
+          let call_ret = 
+            build_call createString [|current_ptr|] "createstr" builder in
+            (*  GC Injection for CreateString  *)
+          gc_inject call_ret builder
         | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
         | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
         | SSliceLiteral(built_typ,len,e1_l)                                    ->  
@@ -446,11 +466,16 @@ let translate(functions) =
         let arg_sn = get_slice_argument_number tp in 
         let empty_slice = build_call createSlice [|arg_sn|] "createslice" builder in
         (
+          (*  GC Injection for CreateSlice  *)
+          ignore(gc_inject empty_slice builder);
         match tp  with 
           StringType  -> 
             let append_string slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslices" builder 
+            (*  TODO:   GC Injection TODO: ????  *)
+            (*  code review needed here   *)
+            build_call sliceAppend [|slc;e|] "initslices" builder
+            (*   the SliceAppend will IncRef the object being appended. Slice will DecRef objects when appropriate.   *)
             in
             List.fold_left append_string empty_slice e1_l 
         | IntegerType -> 
@@ -497,8 +522,10 @@ let translate(functions) =
            let slen = build_call getSliceSize [|ex1'|] "totallen" builder in 
            build_sub slen (const_int i64_t 1) "getlastindex" builder
         | _ -> raise(Failure("sliceslice error: should be rejected in semant"))
-        in          
-        build_call sliceSlice [|ex1';start_idx;end_idx|] "SliceSlice"builder
+        in let call_ret = 
+        build_call sliceSlice [|ex1';start_idx;end_idx|] "SliceSlice" builder
+         (*  GC Injection for SliceSlice  *)
+        in gc_inject call_ret builder
     in
 
       let add_terminal builder instr  =
@@ -615,8 +642,16 @@ let translate(functions) =
             let e_ = expr builder (List.hd el) in 
             let rec apply_extractvaluef current_idx = function 
               []          ->  ()
-              | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
-                                apply_extractvaluef (current_idx+1) tl  
+              | a::tl       ->  
+                (*   GC Injection of return value here   *)
+                let extracted_llvalue = build_extractvalue e_ current_idx "extracted_value" builder
+                in
+                (* GC Inject if the type is i8*  *)
+                if type_of extracted_llvalue == pointer_type i8_t then
+                  ignore(gc_inject extracted_llvalue builder);
+
+                ignore(build_store extracted_llvalue (lookup a) builder);   
+                apply_extractvaluef (current_idx+1) tl  
             in  ignore(apply_extractvaluef 0 nl);  
             builder
           | _ -> List.map2 build_decll nl el; builder

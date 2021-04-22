@@ -62,6 +62,23 @@ DigoSlice *DigoSlice::Clone() const {
     return ret;
 }
 
+DigoSlice::~DigoSlice() {
+    switch (this->type) {
+        case TYPE_STR:
+            for (auto & tc : *(this->raw_data_)) {
+                ((DObject *)tc.str_obj)->DecRef();
+            }
+            break;
+        case TYPE_FUTURE_OBJ:
+            for (auto & tc : *(this->raw_data_)) {
+                ((DObject *)tc.future_obj)->DecRef();
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 void *CreateSlice(int64_t type) {
     return new DigoSlice(digo_type(type));
 }
@@ -83,15 +100,22 @@ void *SliceAppend(void *vobj, ...) {
     TypeCell tv;
     tv.type = obj->Type();
 
+    if (tv.type != obj->Type()) {
+        fprintf(stderr, "type inconsistency when calling SliceAppend\n");
+        return nullptr;
+    }
+
     switch (tv.type) {
         case TYPE_INT64:
             tv.num64 = va_arg(valist, int64_t);
             break;
         case TYPE_STR:
             tv.str_obj = va_arg(valist, void*);
+            ((DObject*)tv.str_obj)->IncRef();
             break;
         case TYPE_FUTURE_OBJ:
             tv.future_obj = va_arg(valist, void*);
+            ((DObject*)tv.future_obj)->IncRef();
             break;
         case TYPE_DOUBLE:
             tv.num_double = va_arg(valist, double);

@@ -8,6 +8,7 @@
 class DigoSlice : public DObject {
 public:
   explicit DigoSlice(digo_type t);
+  ~DigoSlice() override;
 
   std::tuple<vector<TypeCell>&, size_t&, size_t&> Data();
 
