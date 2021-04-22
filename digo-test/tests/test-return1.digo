@@ -1,0 +1,10 @@
+func foo(x int) int {
+  if (x == 1) {
+    return 1
+  }
+  return 2
+}
+
+func digo_main() void {
+  println("%d", foo(1))
+}
