@@ -581,17 +581,17 @@ let translate(functions) =
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
-            let e_ = expr builder (List.hd el) in
             let (ret_typ, _) = (List.hd el) in
             (match List.length ret_typ with
-            1 -> ignore(build_store e_ (lookup (List.hd nl))); builder
-            | _ -> let rec apply_extractvaluef current_idx = function 
-              []          ->  ()
-              | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
-                                apply_extractvaluef (current_idx+1) tl  
-            in  ignore(apply_extractvaluef 0 nl);  
-            builder
-            )
+            1 -> List.map2 build_decll nl el; builder
+            | _ -> 
+              let e_ = expr builder (List.hd el) in
+              let rec apply_extractvaluef current_idx = function 
+                []          ->  ()
+                | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
+                                  apply_extractvaluef (current_idx+1) tl  
+              in  ignore(apply_extractvaluef 0 nl);  
+              builder)
           | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
