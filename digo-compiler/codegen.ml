@@ -389,7 +389,10 @@ let translate(functions) =
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
                 build_call new_fdef (Array.of_list llargs) result builder
-          in build_func_call
+          in ( match List.length (fd.styp) with
+              1 -> build_extractvalue build_func_call 0 "extracted_value" builder
+              | _ -> build_func_call
+          )
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
@@ -591,14 +594,13 @@ let translate(functions) =
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
-      | SReturn(el)                                                           ->  
-       (* (match List.length el with
-          1 ->
-            let [e_] = el in 
-            ignore(build_ret (expr builder e_) builder);
-            builder
-          | _ -> *)
-          let agg = Array.of_list (List.map (expr builder) el) in 
+      | SReturn(el)                                                           -> 
+          let e_ = List.map (expr builder) el in
+          let extract_single_type el_e e_llvm = match el_e with
+            (_, SFunctionCall(_,_)) -> build_extractvalue e_llvm 0 "extracted_value" builder
+            | _ -> e_llvm
+          in let agg_llvm = List.map2 extract_single_type el e_ in
+          let agg = Array.of_list agg_llvm in 
           ignore(build_aggregate_ret agg builder);
           builder
     
