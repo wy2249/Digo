@@ -1,3 +1,0 @@
-func digo_main() void {
-  var i int = 10.0
-}
