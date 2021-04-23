@@ -1,0 +1,29 @@
+func normal_function() int {
+    a := 1
+    b := 10.0
+    if (a == 1) {
+        c := try_return_one(a)
+        return a
+
+    } else if (b == 1.0) {
+        e,f := try_return_two(a,b)
+        return a
+
+    } else {
+        g02d := try_return_one(100)
+    }
+}
+
+func try_return_one(a int) int {
+
+    return a+10
+}
+
+func try_return_two(a int,b float) (int,float) {
+
+    return a+10,b+20.0
+}
+
+func digo_main() void {
+    println("%d", normal_function())
+}
