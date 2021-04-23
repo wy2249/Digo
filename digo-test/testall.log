@@ -28,14 +28,16 @@ diff -b test-arith3.exec.output /home/microc/digo-test/tests/test-arith3.digo.pa
 ##### Test test-arith3: Passed
 
 ##### Testing test-fib
- ## Build output: 
-Integer arithmetic operators only work with integral types!
-  %tmp8 = add { i64 } %fib_result, %fib_result7
-Invalid InsertValueInst operands!
-  %mrv = insertvalue { i64 } undef, { i64 } %tmp8, 0
-LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-fib.digo.fail.expected
-##### Test test-fib: Failed
+ ## Executable output: 
+1
+1
+2
+3
+5
+8
+diff -b test-fib.exec.output /home/microc/digo-test/tests/test-fib.digo.pass.expected > test-fib.diff.output
+ ## Diff output: 
+##### Test test-fib: Passed
 
 ##### Testing test-float1
  ## Executable output: 
@@ -58,79 +60,28 @@ diff -b test-float2.exec.output /home/microc/digo-test/tests/test-float2.digo.pa
 131.946780
 13.369027
 0.000000
+1.000000
+1.000000
 0.000000
-0.000000
-0.000000
-0.000000
-0.000000
+1.000000
+1.000000
 0.000000
 0.000000
 6.283180
 0.000000
 9.869588
 1.000000
+1.000000
+1.000000
 0.000000
 0.000000
 0.000000
+1.000000
 0.000000
-0.000000
-0.000000
-0.000000
-0.000000
+1.000000
 diff -b test-float3.exec.output /home/microc/digo-test/tests/test-float3.digo.pass.expected > test-float3.diff.output
-FAILED test-float3.exec.output differs from /home/microc/digo-test/tests/test-float3.digo.pass.expected
  ## Diff output: 
-1,24c1,24
-< 45.141590
-< 38.858410
-< 131.946780
-< 13.369027
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 6.283180
-< 0.000000
-< 9.869588
-< 1.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
----
-> 45.1416
-> 38.8584
-> 131.947
-> 13.369
-> 0
-> 1
-> 1
-> 0
-> 1
-> 1
-> 0
-> 0
-> 6.28318
-> 0
-> 9.86959
-> 1
-> 1
-> 1
-> 0
-> 0
-> 0
-> 1
-> 0
-> 1
-##### Test test-float3: Failed
+##### Test test-float3: Passed
 
 ##### Testing test-for1
  ## Executable output: 
@@ -146,20 +97,15 @@ diff -b test-for1.exec.output /home/microc/digo-test/tests/test-for1.digo.pass.e
 
 ##### Testing test-for2
  ## Executable output: 
+0
 1
 2
 3
 4
-5
 42
 diff -b test-for2.exec.output /home/microc/digo-test/tests/test-for2.digo.pass.expected > test-for2.diff.output
-FAILED test-for2.exec.output differs from /home/microc/digo-test/tests/test-for2.digo.pass.expected
  ## Diff output: 
-0a1
-> 0
-5d5
-< 5
-##### Test test-for2: Failed
+##### Test test-for2: Passed
 
 ##### Testing test-func1
  ## Executable output: 
@@ -183,12 +129,14 @@ diff -b test-func3.exec.output /home/microc/digo-test/tests/test-func3.digo.pass
 ##### Test test-func3: Passed
 
 ##### Testing test-func4
- ## Build output: 
-Stored value type does not match pointer operand type!
-  store { i64 } %add_result, i64* %d
- i64LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func4.digo.fail.expected
-##### Test test-func4: Failed
+ ## Executable output: 
+62
+62
+62
+62
+diff -b test-func4.exec.output /home/microc/digo-test/tests/test-func4.digo.pass.expected > test-func4.diff.output
+ ## Diff output: 
+##### Test test-func4: Passed
 
 ##### Testing test-func5
  ## Executable output: 
