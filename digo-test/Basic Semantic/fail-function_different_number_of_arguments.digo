@@ -1,0 +1,8 @@
+func digo_main() void {
+	i := 1
+	foo(i)
+}
+
+func foo(a int, b float) int{
+	return 0
+}

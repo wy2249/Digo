@@ -344,7 +344,7 @@ let translate(functions) =
             let (typl, _) = e in
             let e_ = expr builder e in
             (match typl with
-            [FloatType] -> build_call getSliceSize [|e_|] "slicelen" builder
+            [SliceType(x)] -> build_call getSliceSize [|e_|] "slicelen" builder
             | _ -> build_call lenString [| e_ |] "str_len" builder 
             )
         | SAwait(s)                                                  -> 
