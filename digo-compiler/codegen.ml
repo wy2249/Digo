@@ -387,8 +387,9 @@ let translate(functions) =
               let new_ftyp_t = function_type (pointer_type i8_t) argument_types in
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
                 build_call new_fdef (Array.of_list llargs) result builder
-          in ( match List.length (fd.styp) with
-              1 -> build_extractvalue build_func_call 0 "extracted_value" builder
+          in ( match fd.styp with
+              [StringType] | [IntegerType] | [FloatType] | [SliceType(_)] | [BoolType] | [FutureType] -> 
+                build_extractvalue build_func_call 0 "extracted_value" builder
               | _ -> build_func_call
           )
           
