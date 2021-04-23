@@ -1,332 +1,173 @@
 
-##### Testing test-add1
- ## Executable output: 
-42
-diff -b test-add1.exec.output /home/microc/digo-test/tests/test-add1.digo.pass.expected > test-add1.diff.output
- ## Diff output: 
-##### Test test-add1: Passed
-
-##### Testing test-arith1
- ## Executable output: 
-42
-diff -b test-arith1.exec.output /home/microc/digo-test/tests/test-arith1.digo.pass.expected > test-arith1.diff.output
- ## Diff output: 
-##### Test test-arith1: Passed
-
-##### Testing test-arith2
- ## Executable output: 
-11
-diff -b test-arith2.exec.output /home/microc/digo-test/tests/test-arith2.digo.pass.expected > test-arith2.diff.output
- ## Diff output: 
-##### Test test-arith2: Passed
-
-##### Testing test-arith3
- ## Executable output: 
-47
-diff -b test-arith3.exec.output /home/microc/digo-test/tests/test-arith3.digo.pass.expected > test-arith3.diff.output
- ## Diff output: 
-##### Test test-arith3: Passed
-
-##### Testing test-fib
+##### Testing fail-append_different_types
  ## Build output: 
-Integer arithmetic operators only work with integral types!
-  %tmp8 = add { i64 } %fib_result, %fib_result7
-Invalid InsertValueInst operands!
-  %mrv = insertvalue { i64 } undef, { i64 } %tmp8, 0
-LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-fib.digo.fail.expected
-##### Test test-fib: Failed
-
-##### Testing test-float1
- ## Executable output: 
-3.141593
-diff -b test-float1.exec.output /home/microc/digo-test/tests/test-float1.digo.pass.expected > test-float1.diff.output
+Fatal error: exception Failure("Built-in Append object and element are not compatible due to different type")
+diff -b fail-append_different_types.build.output /home/microc/digo-test/./Semantic/fail-append_different_types.digo.fail.expected > fail-append_different_types.diff.output
  ## Diff output: 
-##### Test test-float1: Passed
+##### Test fail-append_different_types: Passed
 
-##### Testing test-float2
- ## Executable output: 
-0.423313
-diff -b test-float2.exec.output /home/microc/digo-test/tests/test-float2.digo.pass.expected > test-float2.diff.output
+##### Testing fail-append_nonslice_object
+ ## Build output: 
+Fatal error: exception Failure("Built-in Append being called on non-slice object")
+diff -b fail-append_nonslice_object.build.output /home/microc/digo-test/./Semantic/fail-append_nonslice_object.digo.fail.expected > fail-append_nonslice_object.diff.output
  ## Diff output: 
-##### Test test-float2: Passed
+##### Test fail-append_nonslice_object: Passed
 
-##### Testing test-float3
- ## Executable output: 
-45.141590
-38.858410
-131.946780
-13.369027
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-6.283180
-0.000000
-9.869588
-1.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-0.000000
-diff -b test-float3.exec.output /home/microc/digo-test/tests/test-float3.digo.pass.expected > test-float3.diff.output
-FAILED test-float3.exec.output differs from /home/microc/digo-test/tests/test-float3.digo.pass.expected
+##### Testing fail-assign_different_types
+ ## Build output: 
+Fatal error: exception Failure("illegal assignment ")
+diff -b fail-assign_different_types.build.output /home/microc/digo-test/./Semantic/fail-assign_different_types.digo.fail.expected > fail-assign_different_types.diff.output
  ## Diff output: 
-1,24c1,24
-< 45.141590
-< 38.858410
-< 131.946780
-< 13.369027
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 6.283180
-< 0.000000
-< 9.869588
-< 1.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
-< 0.000000
+##### Test fail-assign_different_types: Passed
+
+##### Testing fail-assign_nonvariable
+ ## Build output: 
+Fatal error: exception Failure("AssignOp error: left hand side is invalide")
+diff -b fail-assign_nonvariable.build.output /home/microc/digo-test/./Semantic/fail-assign_nonvariable.digo.fail.expected > fail-assign_nonvariable.diff.output
+FAILED fail-assign_nonvariable.build.output differs from /home/microc/digo-test/./Semantic/fail-assign_nonvariable.digo.fail.expected
+ ## Diff output: 
+1c1
+< Fatal error: exception Failure("AssignOp error: left hand side is invalide")
 ---
-> 45.1416
-> 38.8584
-> 131.947
-> 13.369
-> 0
-> 1
-> 1
-> 0
-> 1
-> 1
-> 0
-> 0
-> 6.28318
-> 0
-> 9.86959
-> 1
-> 1
-> 1
-> 0
-> 0
-> 0
-> 1
-> 0
-> 1
-##### Test test-float3: Failed
+> Fatal error: exception Failure("AssignOp error: left hand side is invalid")
+##### Test fail-assign_nonvariable: Failed
 
-##### Testing test-for1
- ## Executable output: 
-0
-1
-2
-3
-4
-42
-diff -b test-for1.exec.output /home/microc/digo-test/tests/test-for1.digo.pass.expected > test-for1.diff.output
- ## Diff output: 
-##### Test test-for1: Passed
-
-##### Testing test-for2
- ## Executable output: 
-1
-2
-3
-4
-5
-42
-diff -b test-for2.exec.output /home/microc/digo-test/tests/test-for2.digo.pass.expected > test-for2.diff.output
-FAILED test-for2.exec.output differs from /home/microc/digo-test/tests/test-for2.digo.pass.expected
- ## Diff output: 
-0a1
-> 0
-5d5
-< 5
-##### Test test-for2: Failed
-
-##### Testing test-func1
- ## Executable output: 
-42
-diff -b test-func1.exec.output /home/microc/digo-test/tests/test-func1.digo.pass.expected > test-func1.diff.output
- ## Diff output: 
-##### Test test-func1: Passed
-
-##### Testing test-func2
- ## Executable output: 
-3
-diff -b test-func2.exec.output /home/microc/digo-test/tests/test-func2.digo.pass.expected > test-func2.diff.output
- ## Diff output: 
-##### Test test-func2: Passed
-
-##### Testing test-func3
- ## Executable output: 
-42 17 192 8
-diff -b test-func3.exec.output /home/microc/digo-test/tests/test-func3.digo.pass.expected > test-func3.diff.output
- ## Diff output: 
-##### Test test-func3: Passed
-
-##### Testing test-func4
+##### Testing fail_main_return_value.digo
  ## Build output: 
-Stored value type does not match pointer operand type!
-  store { i64 } %add_result, i64* %d
- i64LLVM ERROR: Broken module found, compilation aborted!
- ## Compilation failed, but we cannot find /home/microc/digo-test/tests/test-func4.digo.fail.expected
-##### Test test-func4: Failed
-
-##### Testing test-func5
- ## Executable output: 
-diff -b test-func5.exec.output /home/microc/digo-test/tests/test-func5.digo.pass.expected > test-func5.diff.output
+Fatal error: exception Failure("Semant Err: digo_main should be void type.")
+diff -b fail_main_return_value.digo.build.output /home/microc/digo-test/./Semantic/fail-digo_main_return_value.digo.fail.expected > fail_main_return_value.digo.diff.output
  ## Diff output: 
-##### Test test-func5: Passed
+##### Test fail_main_return_value.digo: Passed
 
-##### Testing test-func6
- ## Executable output: 
-42
-diff -b test-func6.exec.output /home/microc/digo-test/tests/test-func6.digo.pass.expected > test-func6.diff.output
+##### Testing fail_main_undeclared.digo
+ ## Build output: 
+Fatal error: exception Failure("unrecognized function digo_main")
+diff -b fail_main_undeclared.digo.build.output /home/microc/digo-test/./Semantic/fail-digo_main_undeclared.digo.fail.expected > fail_main_undeclared.digo.diff.output
  ## Diff output: 
-##### Test test-func6: Passed
+##### Test fail_main_undeclared.digo: Passed
 
-##### Testing test-func8
- ## Executable output: 
-43
-diff -b test-func8.exec.output /home/microc/digo-test/tests/test-func8.digo.pass.expected > test-func8.diff.output
+##### Testing fail_main_with_arguments.digo
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: digo_main should be no-arugment.")
+diff -b fail_main_with_arguments.digo.build.output /home/microc/digo-test/./Semantic/fail-digo_main_with_arguments.digo.fail.expected > fail_main_with_arguments.digo.diff.output
  ## Diff output: 
-##### Test test-func8: Passed
+##### Test fail_main_with_arguments.digo: Passed
 
-##### Testing test-func9
- ## Executable output: 
-43
-diff -b test-func9.exec.output /home/microc/digo-test/tests/test-func9.digo.pass.expected > test-func9.diff.output
+##### Testing fail-duplicate_arguments
+ ## Build output: 
+Fatal error: exception Failure("duplicate in argument : a")
+diff -b fail-duplicate_arguments.build.output /home/microc/digo-test/./Semantic/fail-duplicate_arguments.digo.fail.expected > fail-duplicate_arguments.diff.output
  ## Diff output: 
-##### Test test-func9: Passed
+##### Test fail-duplicate_arguments: Passed
 
-##### Testing test-gcd
- ## Executable output: 
-2
-3
-11
-diff -b test-gcd.exec.output /home/microc/digo-test/tests/test-gcd.digo.pass.expected > test-gcd.diff.output
+##### Testing fail-duplicate_function_name
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: duplicate function foo")
+diff -b fail-duplicate_function_name.build.output /home/microc/digo-test/./Semantic/fail-duplicate_function_name.digo.fail.expected > fail-duplicate_function_name.diff.output
  ## Diff output: 
-##### Test test-gcd: Passed
+##### Test fail-duplicate_function_name: Passed
 
-##### Testing test-gcd2
- ## Executable output: 
-7
-4
-11
-diff -b test-gcd2.exec.output /home/microc/digo-test/tests/test-gcd2.digo.pass.expected > test-gcd2.diff.output
+##### Testing fail-duplicate_local_var
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: duplicate local variable declarations ( i )")
+diff -b fail-duplicate_local_var.build.output /home/microc/digo-test/./Semantic/fail-duplicate_local_var.digo.fail.expected > fail-duplicate_local_var.diff.output
  ## Diff output: 
-##### Test test-gcd2: Passed
+##### Test fail-duplicate_local_var: Passed
 
-##### Testing test-hello
- ## Executable output: 
-42
-71
-1
-diff -b test-hello.exec.output /home/microc/digo-test/tests/test-hello.digo.pass.expected > test-hello.diff.output
+##### Testing fail-function_different_number_of_arguments
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: different number of aruguments passed. Expected 2 aruguments but 1 aruguments provided in function foo")
+diff -b fail-function_different_number_of_arguments.build.output /home/microc/digo-test/./Semantic/fail-function_different_number_of_arguments.digo.fail.expected > fail-function_different_number_of_arguments.diff.output
  ## Diff output: 
-##### Test test-hello: Passed
+##### Test fail-function_different_number_of_arguments: Passed
 
-##### Testing test-if1
- ## Executable output: 
-42
-17
-diff -b test-if1.exec.output /home/microc/digo-test/tests/test-if1.digo.pass.expected > test-if1.diff.output
+##### Testing fail-function_undefined
+ ## Build output: 
+Fatal error: exception Failure("unrecognized function foo")
+diff -b fail-function_undefined.build.output /home/microc/digo-test/./Semantic/fail-function_undefined.digo.fail.expected > fail-function_undefined.diff.output
  ## Diff output: 
-##### Test test-if1: Passed
+##### Test fail-function_undefined: Passed
 
-##### Testing test-if2
- ## Executable output: 
-42
-17
-diff -b test-if2.exec.output /home/microc/digo-test/tests/test-if2.digo.pass.expected > test-if2.diff.output
+##### Testing fail-illegal_append
+ ## Build output: 
+Fatal error: exception Failure("Append needs two objects")
+diff -b fail-illegal_append.build.output /home/microc/digo-test/./Semantic/fail-illegal_append.digo.fail.expected > fail-illegal_append.diff.output
  ## Diff output: 
-##### Test test-if2: Passed
+##### Test fail-illegal_append: Passed
 
-##### Testing test-if3
- ## Executable output: 
-17
-diff -b test-if3.exec.output /home/microc/digo-test/tests/test-if3.digo.pass.expected > test-if3.diff.output
+##### Testing fail-illegal_declare
+ ## Build output: 
+Fatal error: exception Failure("assignment mismatch: 1 variables but 2 values")
+diff -b fail-illegal_declare.build.output /home/microc/digo-test/./Semantic/fail-illegal_declare.digo.fail.expected > fail-illegal_declare.diff.output
  ## Diff output: 
-##### Test test-if3: Passed
+##### Test fail-illegal_declare: Passed
 
-##### Testing test-if4
- ## Executable output: 
-8
-17
-diff -b test-if4.exec.output /home/microc/digo-test/tests/test-if4.digo.pass.expected > test-if4.diff.output
+##### Testing fail-illegal_declare2
+ ## Build output: 
+Fatal error: exception Failure("illegal assignment type")
+diff -b fail-illegal_declare2.build.output /home/microc/digo-test/./Semantic/fail-illegal_declare2.digo.fail.expected > fail-illegal_declare2.diff.output
  ## Diff output: 
-##### Test test-if4: Passed
+##### Test fail-illegal_declare2: Passed
 
-##### Testing test-if5
- ## Executable output: 
-42
-17
-diff -b test-if5.exec.output /home/microc/digo-test/tests/test-if5.digo.pass.expected > test-if5.diff.output
+##### Testing fail-illegal_len
+ ## Build output: 
+Fatal error: exception Failure("Built-in Len being called on non-slice object")
+diff -b fail-illegal_len.build.output /home/microc/digo-test/./Semantic/fail-illegal_len.digo.fail.expected > fail-illegal_len.diff.output
  ## Diff output: 
-##### Test test-if5: Passed
+##### Test fail-illegal_len: Passed
 
-##### Testing test-if6
- ## Executable output: 
-42
-17
-diff -b test-if6.exec.output /home/microc/digo-test/tests/test-if6.digo.pass.expected > test-if6.diff.output
+##### Testing fail-illegal_read
+ ## Build output: 
+Fatal error: exception Failure("error: read is not supported for int")
+diff -b fail-illegal_read.build.output /home/microc/digo-test/./Semantic/fail-illegal_read.digo.fail.expected > fail-illegal_read.diff.output
  ## Diff output: 
-##### Test test-if6: Passed
+##### Test fail-illegal_read: Passed
 
-##### Testing test-local1
- ## Executable output: 
-47
-diff -b test-local1.exec.output /home/microc/digo-test/tests/test-local1.digo.pass.expected > test-local1.diff.output
+##### Testing fail-illegal_shortdecl1
+ ## Build output: 
+Fatal error: exception Failure("short decl assignment mismatch: 1 variables but 2 values")
+diff -b fail-illegal_shortdecl1.build.output /home/microc/digo-test/./Semantic/fail-illegal_shortdecl1.digo.fail.expected > fail-illegal_shortdecl1.diff.output
  ## Diff output: 
-##### Test test-local1: Passed
+##### Test fail-illegal_shortdecl1: Passed
 
-##### Testing test-ops1
- ## Executable output: 
-3 -1 2 50
-99
-0
-1
-99
-1 0
-1 0 1 1
-diff -b test-ops1.exec.output /home/microc/digo-test/tests/test-ops1.digo.pass.expected > test-ops1.diff.output
+##### Testing fail-illegal_shortdecl2
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: duplicate local variable declarations ( i )")
+diff -b fail-illegal_shortdecl2.build.output /home/microc/digo-test/./Semantic/fail-illegal_shortdecl2.digo.fail.expected > fail-illegal_shortdecl2.diff.output
  ## Diff output: 
-##### Test test-ops1: Passed
+##### Test fail-illegal_shortdecl2: Passed
 
-##### Testing test-ops2
- ## Executable output: 
-1
-0
-1
-0
-0
-0
-1
-1
-1
-0
-1
-0
--10
-42
-diff -b test-ops2.exec.output /home/microc/digo-test/tests/test-ops2.digo.pass.expected > test-ops2.diff.output
+##### Testing fail-illegal_slice_index
+ ## Build output: 
+Fatal error: exception Failure("illgal slice index: non-integer index")
+diff -b fail-illegal_slice_index.build.output /home/microc/digo-test/./Semantic/fail-illegal_slice_index.digo.fail.expected > fail-illegal_slice_index.diff.output
  ## Diff output: 
-##### Test test-ops2: Passed
+##### Test fail-illegal_slice_index: Passed
+
+##### Testing fail-statement_after_return
+ ## Build output: 
+Fatal error: exception Failure("Statements appear after Return")
+diff -b fail-statement_after_return.build.output /home/microc/digo-test/./Semantic/fail-statement_after_return.digo.fail.expected > fail-statement_after_return.diff.output
+ ## Diff output: 
+##### Test fail-statement_after_return: Passed
+
+##### Testing fail-undeclared_future_object
+ ## Build output: 
+Fatal error: exception Failure("Semant Err: undeclared future object foo")
+diff -b fail-undeclared_future_object.build.output /home/microc/digo-test/./Semantic/fail-undeclared_future_object.digo.fail.expected > fail-undeclared_future_object.diff.output
+ ## Diff output: 
+##### Test fail-undeclared_future_object: Passed
+
+##### Testing fail-undeclared_variable
+ ## Build output: 
+Fatal error: exception Failure("Sement Err: undeclared identifier i")
+diff -b fail-undeclared_variable.build.output /home/microc/digo-test/./Semantic/fail-undeclared_variable.digo.fail.expected > fail-undeclared_variable.diff.output
+ ## Diff output: 
+##### Test fail-undeclared_variable: Passed
+
+##### Testing fail-void_type_argument
+ ## Build output: 
+Fatal error: exception Failure("illegal VoidType in argument : a")
+diff -b fail-void_type_argument.build.output /home/microc/digo-test/./Semantic/fail-void_type_argument.digo.fail.expected > fail-void_type_argument.diff.output
+ ## Diff output: 
+##### Test fail-void_type_argument: Passed

@@ -25,10 +25,24 @@ MAKE_DIR='../'
 BuildCompiler() {
     echo "------------------ Generating Compiler ------------------------"
     echo "Please wait....... It may take 1-5 minutes to generate compiler"
-    make -C $MAKE_DIR clean &>/dev/null
-    make -C $MAKE_DIR generate-dependency &>/dev/null
+
+    if ! make -C $MAKE_DIR clean &>/dev/null; then
+      echo "clean failed "
+      exit 1
+    fi
+
+    if ! make -C $MAKE_DIR generate-dependency &>/dev/null;
+    then
+      echo "build dependency failed"
+      exit 1
+    fi
+
     echo "Library compilation succeeds, now generating OCaml compiler..."
-    make -C $MAKE_DIR generate-digo-compiler &>/dev/null
+    if ! make -C $MAKE_DIR generate-digo-compiler &>/dev/null; then
+      echo "build compiler failed"
+      exit 1
+    fi
+
     echo "------------------ Compiler Generated ------------------------"
 }
 
