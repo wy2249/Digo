@@ -325,9 +325,7 @@ let translate(functions) =
               )            
             | (_,SNamedVariable(s)) -> 
               let (typl, ex1_) = ex1 in
-              let from_llvm = match ex1_ with
-              SFunctionCall(_,_) -> build_extractvalue e_ 0 "extracted_value" builder
-              | _ -> e_
+               let from_llvm = e_
               in
               ( match List.hd typl with
                 StringType ->
@@ -393,6 +391,7 @@ let translate(functions) =
               1 -> build_extractvalue build_func_call 0 "extracted_value" builder
               | _ -> build_func_call
           )
+          
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
@@ -582,13 +581,17 @@ let translate(functions) =
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
-            let e_ = expr builder (List.hd el) in 
-            let rec apply_extractvaluef current_idx = function 
+            let e_ = expr builder (List.hd el) in
+            let (ret_typ, _) = (List.hd el) in
+            (match List.length ret_typ with
+            1 -> ignore(build_store e_ (lookup (List.hd nl))); builder
+            | _ -> let rec apply_extractvaluef current_idx = function 
               []          ->  ()
               | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
                                 apply_extractvaluef (current_idx+1) tl  
             in  ignore(apply_extractvaluef 0 nl);  
             builder
+            )
           | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
@@ -596,11 +599,7 @@ let translate(functions) =
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           -> 
           let e_ = List.map (expr builder) el in
-          let extract_single_type el_e e_llvm = match el_e with
-            (_, SFunctionCall(_,_)) -> build_extractvalue e_llvm 0 "extracted_value" builder
-            | _ -> e_llvm
-          in let agg_llvm = List.map2 extract_single_type el e_ in
-          let agg = Array.of_list agg_llvm in 
+          let agg = Array.of_list e_ in 
           ignore(build_aggregate_ret agg builder);
           builder
     
