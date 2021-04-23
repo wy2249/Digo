@@ -660,9 +660,12 @@ let translate(functions) =
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           ->  
-        let el_mapper e = (expr builder e, !expr_is_lvalue_obj) in
-        let agg_with_type = List.map el_mapper el in 
+        let el_mapper e = let expr_llvalue = expr builder e in
+           (expr_llvalue, !expr_is_lvalue_obj)
+      in
         let el_unmmaper (e2, _) = e2 in
+
+        let agg_with_type = List.map el_mapper el in 
         let agg = Array.of_list (List.map el_unmmaper agg_with_type) in
         gc_gen_notrace_from_retval builder gc_trace_map_obj agg_with_type;
         build_call gc_release_all [|gc_trace_map_obj|] "" builder; 
