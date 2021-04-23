@@ -4,7 +4,15 @@ func add(a int, b int) int {
 }
 
 func digo_main() void {
-  var d int
-  d = add(52, 10)
-  println("%d", d)
+  var x int
+  x = add(52, 10)
+
+  var y int = add(52, 10)
+
+  z := add(52, 10)
+
+  println("%d", x)
+  println("%d", y)
+  println("%d", z)
+  println("%d", add(52, 10))
 }
