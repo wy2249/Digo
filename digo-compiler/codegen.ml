@@ -159,6 +159,7 @@ let translate(functions) =
       let stype =
         match fdecl.styp with
         [VoidType] -> void_t
+       
         | _ -> 
         struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) 
       in
@@ -323,20 +324,24 @@ let translate(functions) =
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )            
             | (_,SNamedVariable(s)) -> 
-              let (typl, _) = ex1 in
+              let (typl, ex1_) = ex1 in
+              let from_llvm = match ex1_ with
+              SFunctionCall(_,_) -> build_extractvalue e_ 0 "extracted_value" builder
+              | _ -> e_
+              in
               ( match List.hd typl with
                 StringType ->
-                  let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
+                  let clonellvm = build_call cloneString [|from_llvm|] "clonestr" builder in
                   ignore(build_store clonellvm (lookup s) builder); clonellvm
                 | FutureType ->
                   let (_,SFunctionCall(fname,_)) = ex1 in
                   Hashtbl.add futures s fname;
                   ignore(build_store e_ (lookup s) builder); e_
                 | SliceType(x) -> 
-                  let clonellvm = build_call cloneSlice [|e_|] "cloneslice" builder in
+                  let clonellvm = build_call cloneSlice [|from_llvm|] "cloneslice" builder in
                   ignore(build_store clonellvm (lookup s) builder); e_ 
                 | _ -> 
-                  ignore(build_store e_ (lookup s) builder); e_
+                  ignore(build_store from_llvm (lookup s) builder); e_
               )
             | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
           )
@@ -371,7 +376,8 @@ let translate(functions) =
           let llargs = List.map (expr builder) args in 
           let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
           let build_func_call = match fd.sann with
-            FuncNormal -> build_call fdef (Array.of_list llargs) result builder
+            FuncNormal -> 
+              build_call fdef (Array.of_list llargs) result builder
             | _ ->
               let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
               let stype = struct_type context return_types in
@@ -531,8 +537,18 @@ let translate(functions) =
       | SDeclare(nl,ty,el) ->
         let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
         in List.iter add_decl nl;
-        let ck = match (List.hd el) with
-          ([VoidType],_) -> builder
+        let ck = match el with
+          [([VoidType],_)] -> builder
+          (*
+          | [(_,SFunctionCall(_,_))] | [(_,SAwait(_))] -> 
+          print_string("fucntion call\n");
+          let e_ = expr builder (List.hd el) in 
+          let rec apply_extractvaluef current_idx = function 
+            []          ->  ()
+            | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
+                              apply_extractvaluef (current_idx+1) tl  
+          in  ignore(apply_extractvaluef 0 nl);  
+          builder *)
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(([ty],SNamedVariable(n)),e))
             in List.map2 build_decll nl el;
@@ -576,9 +592,16 @@ let translate(functions) =
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
       | SReturn(el)                                                           ->  
-        let agg = Array.of_list (List.map (expr builder) el) in 
-        ignore(build_aggregate_ret agg builder);
-        builder
+       (* (match List.length el with
+          1 ->
+            let [e_] = el in 
+            ignore(build_ret (expr builder e_) builder);
+            builder
+          | _ -> *)
+          let agg = Array.of_list (List.map (expr builder) el) in 
+          ignore(build_aggregate_ret agg builder);
+          builder
+    
       | SExpr(ex)                                                             ->  ignore(expr builder ex); builder    
 
       in
@@ -587,6 +610,8 @@ let translate(functions) =
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
         [VoidType] -> ignore(build_ret_void builder)
+        (*| [StringType] -> add_terminal builder (build_ret (build_global_stringptr "" "str" builder)) *)
+        (*| [IntegerType] -> ignore(build_ret (const_of_int64 i64_t 0) builder)*)
         | _ -> add_terminal builder (build_aggregate_ret agg_)  
 
       in
