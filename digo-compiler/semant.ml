@@ -426,7 +426,19 @@ let check (functions) =
         | s::ss           ->
           let a = check_stmt s in
           a :: check_stmt_list ss
-        | []              ->   [SEmptyStatement]
+        | []              -> 
+          (match func.typ with
+          [VoidType] -> []
+          | _ -> 
+            let rec make_arr = function
+              [] -> []
+              | IntegerType :: ar -> Integer(0) :: make_arr ar
+              | FloatType :: ar -> Float(0.0) :: make_arr ar
+              | StringType :: ar -> String("") :: make_arr ar
+            in 
+            let new_return = make_arr func.typ in
+            [check_stmt (Return(new_return))]
+          )
         in
         SBlock(check_stmt_list stl) 
 
