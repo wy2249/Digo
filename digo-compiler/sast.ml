@@ -42,3 +42,24 @@ type sfunc_decl = {
 }
 
 type functions = sfunc_decl list
+
+let rec string_of_sexpr (tl, e) =
+  "(" ^ String.concat ", " (List.map string_of_typ tl) ^ " : " ^ (match e with
+  SEmptyExpr -> "empty"
+| SInteger(x) -> string_of_int x
+| SFloat(x) -> string_of_float x
+| SString(x) -> x
+| SBool(x) -> string_of_bool x
+| SBinaryOp(e1,op,e2) -> string_of_sexpr e1 ^ " " ^ string_of_op op ^ " " ^ string_of_sexpr e2
+| SUnaryOp(op,e) -> string_of_uop op ^ string_of_sexpr e
+| SAssignOp(e1,e2)-> string_of_sexpr e1 ^ " = " ^ string_of_sexpr e2
+| SFunctionCall(f,el)->f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+| SNamedVariable(x) -> x
+| SSliceLiteral(t,int,el) -> "[]"^string_of_typ t ^ "{"^ String.concat ", " (List.map string_of_sexpr el) ^ "}"
+| SSliceIndex(e1,e2)-> string_of_sexpr e1 ^ "[" ^ string_of_sexpr e2^ "]" 
+| SSliceSlice (e1,e2,e3)->string_of_sexpr e1 ^ "[" ^ string_of_sexpr e2 ^":"^ string_of_sexpr e3^ "]"
+| SLen(e1)->"len("^string_of_sexpr e1 ^ ")" 
+| SAppend(el)->"append("^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+| SAwait(e)->"await "^string_of_sexpr e
+| SRead(e)->"read " ^string_of_sexpr e
+) ^ ")"				  

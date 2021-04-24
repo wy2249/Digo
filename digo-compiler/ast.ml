@@ -100,11 +100,22 @@ FuncNormal -> "normal"
 | FuncAsync -> "async"
 | FuncAsyncRemote -> "async remote"
 
-let string_of_expr = function
-  Integer(l) -> string_of_int l
-  | Float(f) ->  string_of_float f
-  | String(s) -> s
-  | Bool(true) -> "true"
-  | Bool(false) -> "false"
-
+let rec string_of_expr = function
+EmptyExpr -> "empty"
+| Integer(x) -> string_of_int x
+| Float(x) -> string_of_float x
+| String(x) -> x
+| Bool(x) -> string_of_bool x
+| BinaryOp(e1,op,e2) -> string_of_expr e1 ^ " " ^ string_of_op op ^ " " ^ string_of_expr e2
+| UnaryOp(op,e) -> string_of_uop op ^ string_of_expr e
+| AssignOp(e1,e2)-> string_of_expr e1 ^ " = " ^ string_of_expr e2
+| FunctionCall(f,el)->f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+| NamedVariable(x) -> x
+| SliceLiteral(t,int,el) -> "[]"^string_of_typ t ^ "{"^ String.concat ", " (List.map string_of_expr el) ^ "}"
+| SliceIndex(e1,e2)-> string_of_expr e1 ^ "[" ^ string_of_expr e2^ "]" 
+| SliceSlice (e1,e2,e3)->string_of_expr e1 ^ "[" ^ string_of_expr e2 ^":"^ string_of_expr e3^ "]"
+| Len(e1)->"len("^string_of_expr e1 ^ ")" 
+| Append(el)->"append("^ String.concat ", " (List.map string_of_expr el) ^ ")"
+| Await(e)->"await "^string_of_expr e
+| Read(e)->"read " ^string_of_expr e
 
