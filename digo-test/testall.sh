@@ -4,10 +4,16 @@
 
 # Reference: the regression testing script in MicroC
 
-# This script first generates all dependencies including the
-# Digo Library, Digo Linker, and Digo Compiler
-# then it goes through a list of test files, 
-#    Compile, run, and check the output.
+# This script first generates the Digo Library, Digo Linker, and Digo Compiler,
+#    if the Digo Compiler does not exist.
+
+# then it goes through a list of test groups, 
+# for each test group, we have a config.txt file which tells the script that 
+#     how many workers the tests in this group need;
+#     also, some options like GC_DEBUG can be enabled in this config.txt.
+#    all tests in the same test group will use the same config.
+# for each test, 
+#    compile, run, and check the output.
 #    If the compilation fails, it will diff
 #       the error reported by the compiler and the $source_code.fail.expected
 #    If the compilation succeeds, it will diff
@@ -23,6 +29,7 @@ Usage() {
 MAKE_DIR='../'
 # Generate depenencies and Digo Compiler
 BuildCompiler() {
+    echo "------------------ Compiler not found -------------------------"
     echo "------------------ Generating Compiler ------------------------"
     echo "Please wait....... It may take 1-5 minutes to generate compiler"
 
@@ -102,7 +109,7 @@ RunTest() {
         exec_output="$test_name.exec.output"
         expected_file="$test_src.pass.expected"
 
-        ../executable --master 127.0.0.1:20001 > "$exec_output" 2>/dev/null
+        ../executable --no-master > "$exec_output" 2>/dev/null
 
         echo " ## Executable output: " >> "$global_log"
         cat "$exec_output" >> "$global_log"
@@ -148,13 +155,33 @@ RunTest() {
     fi
 }
 
+# RunTest <test_group_dir>
+RunTestGroup() {
+    group_dir=$1
+    # default config
+    WORKER_COUNT=0
+    GC_DEBUG=0
+    # load config
+    source "$group_dir/config.txt"
+    worker_pid=()
+    if [ $WORKER_COUNT -gt 0 ] ; then
+        for i in {0..$WORKER_COUNT}
+        do
+            ../executable --worker $MASTER_ADDR $WORKER_ADDR > "$exec_output" 2>/dev/null
+        done
+    fi
+
+}
+
 Clean() {
-    #make -C $MAKE_DIR clean &>/dev/null
+    # make -C $MAKE_DIR clean &>/dev/null
     rm -f *.build.output
     rm -f *.exec.output
     rm -f *.diff.output
     rm -f *.linker.output
 }
+
+
 
 # Set time limit for all operations
 ulimit -t 30
@@ -175,7 +202,6 @@ shift `expr $OPTIND - 1`
 
 
 if [ ! -f ../digo-compiler/digo.native ]; then
-    echo "----------------- !!! Compiler not found ----------------------"
     BuildCompiler
 fi
 
