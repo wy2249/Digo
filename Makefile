@@ -1,4 +1,7 @@
-all: clean generate-dependency generate-digo-compiler build
+all: clean gen build
+
+.PHONY: gen
+gen: generate-dependency generate-digo-compiler
 
 .PHONY: build-compiler-pass
 build-compiler-pass:
@@ -6,6 +9,10 @@ build-compiler-pass:
 
 .PHONY: build
 build: build-compiler-pass build-link-pass
+
+.PHONY: print-llvm
+print-llvm:
+	./digo-compiler/digo.native $(digo)
 
 .PHONY: build-link-pass
 build-link-pass:

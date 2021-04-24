@@ -21,6 +21,35 @@ And run the executable. For example,
 ./executable --master 127.0.0.1:20001
 ```
 
+The above full clean compilation is slow, so you can break the compilation into two parts:
+
+(1) Generate Digo Compiler, Digo Library & Linker
+
+```
+    make clean
+    make gen
+```
+There is no need to generate them every time.
+
+(2)  Compile Digo:
+```
+    make build digo=DIGOFILE.digo out=ExecutableName
+```
+
+  For example:
+```
+  make build digo=./digo-compiler/test/test-future-decl.digo out=executable
+```
+
+(3)   Other debugging commands:
+
+```
+    make print-llvm digo=./digo-test/Basic/test-fib.digo
+```
+
+--------
+Legacy:
+
 The above full clean compilation is slow, so you can break the compilation into three parts:
 
 (1) Generate dependency:
