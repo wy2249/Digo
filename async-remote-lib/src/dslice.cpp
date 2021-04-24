@@ -77,7 +77,7 @@ digo_type DigoSlice::Type() const {
 }
 
 TypeCell &DigoSlice::Index(int64_t idx) const {
-    return *(this->raw_data_->get()->begin() + this->begin_ + idx);
+    return this->raw_data_->get()->at(this->begin_ + idx);
 }
 
 DigoSlice *DigoSlice::Slice(int64_t begin, int64_t end) const {

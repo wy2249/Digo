@@ -9,10 +9,12 @@
 #include "dstring.h"
 
 void* ReadStream(istream &in) {
-  auto d_sli = CreateSlice(TYPE_STR);
+  auto d_sli = (DigoSlice*)CreateSlice(TYPE_STR);
   string word;
   while (in >> word) {
-    d_sli = SliceAppend(d_sli, CreateString(word.c_str()));
+    auto next_d_sli = (DigoSlice*)SliceAppend(d_sli, CreateString(word.c_str()));
+    d_sli->DecRef();
+    d_sli = next_d_sli;
   }
   return d_sli;
 }
