@@ -1,4 +1,7 @@
 file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp *.c)
-add_executable(async-remote-ext ${SOURCES})
-add_library(async-remote-lib STATIC ${SOURCES})
+
+file(GLOB_RECURSE LINKER_SOURCES LIST_DIRECTORIES true ../../digo-linker/*.cpp)
+
+add_executable(async-remote-ext ${SOURCES} ${LINKER_SOURCES})
+add_library(async-remote-lib STATIC ${SOURCES} ${LINKER_SOURCES})
 

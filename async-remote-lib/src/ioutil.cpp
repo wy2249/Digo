@@ -12,7 +12,7 @@ void* ReadStream(istream &in) {
   auto d_sli = CreateSlice(TYPE_STR);
   string word;
   while (in >> word) {
-    SliceAppend(d_sli, CreateString(word.c_str()));
+    d_sli = SliceAppend(d_sli, CreateString(word.c_str()));
   }
   return d_sli;
 }
