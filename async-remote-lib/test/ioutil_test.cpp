@@ -32,7 +32,8 @@ TEST(ReadFileTest, Normal) {
   f << "hello world\n foo hehe,\n";
   f.close();
 
-  auto sli = ReadFile("/tmp/test.txt");
+  auto path = DigoString("/tmp/test.txt");
+  auto sli = ReadFile(&path);
   string exps[] = {"hello", "world", "foo", "hehe,"};
   ASSERT_EQ(4, GetSliceSize(sli));
   for (int i = 0; i < GetSliceSize(sli); ++i) {

@@ -9,16 +9,19 @@
 #include "dstring.h"
 
 void* ReadStream(istream &in) {
-  auto d_sli = CreateSlice(TYPE_STR);
+  auto d_sli = (DigoSlice*)CreateSlice(TYPE_STR);
   string word;
   while (in >> word) {
-    SliceAppend(d_sli, CreateString(word.c_str()));
+    auto next_d_sli = (DigoSlice*)SliceAppend(d_sli, CreateString(word.c_str()));
+    d_sli->DecRef();
+    d_sli = next_d_sli;
   }
   return d_sli;
 }
 
-void* ReadFile(const char* path) {
-  ifstream file(path);
+void* ReadFile(void* path) {
+  auto path_cstr = ((DigoString *)path)->Data().c_str();
+  ifstream file(path_cstr);
   return ReadStream(file);
 }
 
