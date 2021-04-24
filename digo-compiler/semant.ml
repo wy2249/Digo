@@ -407,8 +407,17 @@ let check (functions) =
         SShortDecl(nl, ret_list)
       | Expr(e)                           ->  SExpr(expr e)
       | Return(el)                        -> 
-        let ret_list = List.map (fun e -> expr e) el in 
-        SReturn(ret_list)
+          (match func.typ with
+          [VoidType] -> if (List.length el) > 0 
+                          then raise (Failure ("Semant Err: too many arguments to return in a void function "^func.fname)) else raise (Failure ("Semant Err: "))
+          | _ -> 
+            (match (List.length func.typ - List.length el) with
+            0 -> let ret_list = List.map (fun e -> expr e) el in
+              let _ = List.iter2 (fun (rt,_) ft -> ignore(check_assign (List.hd rt) ft ("cannot use "^(string_of_typ (List.hd rt)) ^" in return argument of function " ^func.fname))) ret_list func.typ
+              in SReturn(ret_list)
+            | _ when (List.length func.typ - List.length el)> 0 -> raise (Failure ("Semant Err: not enough arguments to return in function "^func.fname))
+            | _ -> raise (Failure ("Semant Err: too many arguments in function "^func.fname))
+            ))
       | Block(stl)                        -> 
         let rec check_stmt_list = function 
           [Return _ as s] -> [check_stmt s]
@@ -417,7 +426,19 @@ let check (functions) =
         | s::ss           ->
           let a = check_stmt s in
           a :: check_stmt_list ss
-        | []              ->   [SEmptyStatement]
+        | []              -> 
+          (match func.typ with
+          [VoidType] -> []
+          | _ -> 
+            let rec make_arr = function
+              [] -> []
+              | IntegerType :: ar -> Integer(0) :: make_arr ar
+              | FloatType :: ar -> Float(0.0) :: make_arr ar
+              | StringType :: ar -> String("") :: make_arr ar
+            in 
+            let new_return = make_arr func.typ in
+            [check_stmt (Return(new_return))]
+          )
         in
         SBlock(check_stmt_list stl) 
 
