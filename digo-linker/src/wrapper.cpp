@@ -67,6 +67,7 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
             auto master = Master::GetInst();
             /*  master listens for new workers in another thread  */
             std::thread([=]{master->Listen(argv[2]);}).detach();
+            master->WaitForReady();
             /*  here the Entry() returns 1 indicating that
              *  the argument is --master, and
              *  control flow will go to digo_main() defined by Digo Compiler

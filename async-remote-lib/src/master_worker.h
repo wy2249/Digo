@@ -6,6 +6,7 @@
 #define ASYNC_REMOTE_LIB_SRC_MASTER_WORKER_H_
 
 #include <set>
+#include <atomic>
 
 #include "common.h"
 #include "network.h"
@@ -24,6 +25,8 @@ class Master : public noncopyable {
   void Listen(string server_addr);
 
   void StopListen();
+
+  void WaitForReady();
 
   vector<byte> CallRemoteFunctionByName(const string &digo_func_name, const vector<byte> &parameters);
 

@@ -9,6 +9,7 @@
 #include <string>
 #include <ctime>
 #include <future>
+#include <atomic>
 
 #include "common.h"
 
@@ -38,11 +39,14 @@ class Server : public noncopyable {
 
   ~Server() {this->Stop();}
 
+  bool IsListening();
+
  private:
   void HandleConn(int fd, const string &client_addr);
 
   std::map<string, Handler> handlers_;
   int socket_;
+  std::atomic<bool> listening_;
 };
 
 #endif //ASYNC_REMOTE_LIB_SRC_NETWORK_H_
