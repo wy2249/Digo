@@ -8,4 +8,5 @@ parser.mli
 scanner.ml
 printer.out
 cmake-build-debug/
-
+_build/
+digo.native

@@ -464,7 +464,6 @@ let translate(functions) =
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
               let call_ret = 
                 build_call new_fdef (Array.of_list llargs) result builder
-             (*    MERGE CONFLICT   *)
              (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
               in gc_inject call_ret builder
           )
@@ -708,11 +707,11 @@ let translate(functions) =
       | SContinue                                                             ->  builder   
 
       | SReturn(el)                                                           ->  
-        let el_mapper e = let expr_llvalue = expr builder e in
+        let el_mapper e = 
+          let expr_llvalue = expr builder e in
            (expr_llvalue, !expr_is_lvalue_obj)
-      in
+        in
         let el_unmmaper (e2, _) = e2 in
-
         let agg_with_type = List.map el_mapper el in 
         let agg = Array.of_list (List.map el_unmmaper agg_with_type) in
         gc_gen_notrace_from_retval builder gc_trace_map_obj agg_with_type;

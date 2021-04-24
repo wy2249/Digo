@@ -6,8 +6,8 @@ semant : parser.cmo scanner.cmo semant.cmo
 printer : parser.cmo scanner.cmo printer.cmo
 	ocamlc -o printer $^
 
-metadata-generator : parser.cmo scanner.cmo tmp_metadata_gen.cmo
-	ocamlc -o tmp_metadata_gen $^
+metadata-generator : parser.cmo scanner.cmo metadata_gen.cmo
+	ocamlc -o metadata_gen $^
 
 %.cmo : %.ml
 	ocamlc -c $<
@@ -42,7 +42,7 @@ remake: clean printer
 clean :
 	rm -rf *.cmi *.cmo parser.ml parser.mli scanner.ml printer.out printer semant.out semant
 	rm -rf _build
-	rm -rf digo.native tmp_metadata_gen
+	rm -rf digo.native metadata_gen
 
 generate-compiler: clean
 	ocamlbuild -use-ocamlfind digo.native -package llvm,llvm.analysis
