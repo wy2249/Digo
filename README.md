@@ -1,9 +1,7 @@
 # Digo
 
 ```
-  docker run --rm -it -v `pwd`:/home/microc -w=/home/microc columbiasedwards/plt
-  apt update
-  apt install -y libc++-dev libc++abi-dev clang llvm
+  docker run --rm -it -v `pwd`:/home/microc -w=/home/microc wy2249/plt
  ```
 
 Now you can compile a digo file to executable by:

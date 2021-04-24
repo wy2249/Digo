@@ -1,0 +1,1 @@
+Fatal error: exception Failure("Semant Err: different number of aruguments passed. Expected 2 aruguments but 1 aruguments provided in function foo")

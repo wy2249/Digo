@@ -100,11 +100,6 @@ void *SliceAppend(void *vobj, ...) {
     TypeCell tv;
     tv.type = obj->Type();
 
-    if (tv.type != obj->Type()) {
-        fprintf(stderr, "type inconsistency when calling SliceAppend\n");
-        return nullptr;
-    }
-
     switch (tv.type) {
         case TYPE_INT64:
             tv.num64 = va_arg(valist, int64_t);

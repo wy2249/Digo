@@ -1,4 +1,0 @@
-func digo_main() void {
-	f := read("a.txt")
-	println("%s",f)
-}

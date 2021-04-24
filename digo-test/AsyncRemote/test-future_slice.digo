@@ -1,0 +1,23 @@
+func digo_main() void {
+    s := []future{}
+    a := 10
+    b := 1.0
+    c := try_return_one(a)
+    e := try_return_two(a,b)
+    s = append(s, c)
+    s = append(s, e)
+
+    f, g := await s[1]
+
+    println("%d", f)
+    println("%f", g)
+
+}
+
+async func try_return_one(a int) int {
+    return a+10
+}
+
+async func try_return_two(a int,b float) (int,float) {
+    return a+10,b+20.0
+}

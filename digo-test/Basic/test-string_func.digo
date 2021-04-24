@@ -1,0 +1,11 @@
+func foo(s string) string {
+    s = s + "haha"
+    return s
+}
+
+func digo_main() void {
+    s := "hello"
+    s2 := foo(s)
+	println("%s", s)
+	println("%s", s2)
+}

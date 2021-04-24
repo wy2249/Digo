@@ -186,6 +186,7 @@ let translate(functions) =
       let stype =
         match fdecl.styp with
         [VoidType] -> void_t
+       
         | _ -> 
         struct_type context (Array.of_list (List.map ltype_of_typ fdecl.styp)) 
       in
@@ -377,26 +378,32 @@ let translate(functions) =
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )            
             | (_,SNamedVariable(s)) -> 
-              let (typl, _) = ex1 in
+              let (typl, ex1_) = ex1 in
+               let from_llvm = e_
+              in
               ( match List.hd typl with
                 StringType ->
-                  let clonellvm = build_call cloneString [|e_|] "clonestr" builder in
+
+                  let clonellvm = build_call cloneString [|from_llvm|] "clonestr" builder in
                   ignore(build_store clonellvm (lookup s) builder);
                    (*  GC Injection for CloneString  *)
                   gc_inject clonellvm builder
+
                 | FutureType ->
                   let (_,SFunctionCall(fname,_)) = ex1 in
                   Hashtbl.add futures s fname;
                   (*  No GC here; no new object is actually created; it is just a reference  *)
                   ignore(build_store e_ (lookup s) builder); e_
                 | SliceType(x) -> 
-                  let clonellvm = build_call cloneSlice [|e_|] "cloneslice" builder in
+
+                  let clonellvm = build_call cloneSlice [|from_llvm|] "cloneslice" builder in
                   ignore(build_store clonellvm (lookup s) builder);
-                   (* FIXME TODO BUG: return e_ ??*) 
+                   (* MERGE CONFLICT FIXME TODO BUG: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
                   gc_inject clonellvm builder
+
                 | _ -> 
-                  ignore(build_store e_ (lookup s) builder); e_
+                  ignore(build_store from_llvm (lookup s) builder); e_
               )
             | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
           )
@@ -404,7 +411,7 @@ let translate(functions) =
             let (typl, _) = e in
             let e_ = expr builder e in
             (match typl with
-            [FloatType] -> build_call getSliceSize [|e_|] "slicelen" builder
+            [SliceType(x)] -> build_call getSliceSize [|e_|] "slicelen" builder
             | _ -> build_call lenString [| e_ |] "str_len" builder 
             )
         | SAwait(s)                                                  -> 
@@ -434,7 +441,8 @@ let translate(functions) =
           let llargs = List.map (expr builder) args in 
           let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
           let build_func_call = match fd.sann with
-            FuncNormal -> build_call fdef (Array.of_list llargs) result builder
+            FuncNormal -> 
+              build_call fdef (Array.of_list llargs) result builder
             | _ ->
               let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
               let stype = struct_type context return_types in
@@ -447,9 +455,16 @@ let translate(functions) =
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
               let call_ret = 
                 build_call new_fdef (Array.of_list llargs) result builder
+             (*    MERGE CONFLICT   *)
              (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
               in gc_inject call_ret builder
-              in build_func_call
+              
+              in ( match fd.styp with
+                  [StringType] | [IntegerType] | [FloatType] | [SliceType(_)] | [BoolType] | [FutureType] -> 
+                    build_extractvalue build_func_call 0 "extracted_value" builder
+                  | _ -> build_func_call
+              )
+
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
         | SString(ex)  ->  
@@ -607,8 +622,18 @@ let translate(functions) =
       | SDeclare(nl,ty,el) ->
         let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
         in List.iter add_decl nl;
-        let ck = match (List.hd el) with
-          ([VoidType],_) -> builder
+        let ck = match el with
+          [([VoidType],_)] -> builder
+          (*
+          | [(_,SFunctionCall(_,_))] | [(_,SAwait(_))] -> 
+          print_string("fucntion call\n");
+          let e_ = expr builder (List.hd el) in 
+          let rec apply_extractvaluef current_idx = function 
+            []          ->  ()
+            | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
+                              apply_extractvaluef (current_idx+1) tl  
+          in  ignore(apply_extractvaluef 0 nl);  
+          builder *)
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(([ty],SNamedVariable(n)),e))
             in List.map2 build_decll nl el;
@@ -639,10 +664,16 @@ let translate(functions) =
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
-            let e_ = expr builder (List.hd el) in 
-            let rec apply_extractvaluef current_idx = function 
-              []          ->  ()
-              | a::tl       ->  
+
+            let (ret_typ, _) = (List.hd el) in
+            (match List.length ret_typ with
+            1 -> List.map2 build_decll nl el; builder
+            | _ -> 
+              let e_ = expr builder (List.hd el) in
+              let rec apply_extractvaluef current_idx = function 
+                []          ->  ()
+                | a::tl       ->   
+                
                 (*   GC Injection of return value here   *)
                 let extracted_llvalue = build_extractvalue e_ current_idx "extracted_value" builder
                 in
@@ -652,13 +683,15 @@ let translate(functions) =
 
                 ignore(build_store extracted_llvalue (lookup a) builder);   
                 apply_extractvaluef (current_idx+1) tl  
-            in  ignore(apply_extractvaluef 0 nl);  
-            builder
+                
+              in  ignore(apply_extractvaluef 0 nl);  
+              builder)
           | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)
       | SContinue                                                             ->  builder   
+
       | SReturn(el)                                                           ->  
         let el_mapper e = let expr_llvalue = expr builder e in
            (expr_llvalue, !expr_is_lvalue_obj)
@@ -679,6 +712,8 @@ let translate(functions) =
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
         [VoidType] -> ignore(build_ret_void builder)
+        (*| [StringType] -> add_terminal builder (build_ret (build_global_stringptr "" "str" builder)) *)
+        (*| [IntegerType] -> ignore(build_ret (const_of_int64 i64_t 0) builder)*)
         | _ -> add_terminal builder (build_aggregate_ret agg_)  
 
       in
@@ -687,9 +722,3 @@ let translate(functions) =
         the_module
 
 
-
-
-	
-	
-
-	
