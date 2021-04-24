@@ -19,8 +19,9 @@ void* ReadStream(istream &in) {
   return d_sli;
 }
 
-void* ReadFile(const char* path) {
-  ifstream file(path);
+void* ReadFile(void* path) {
+  auto path_cstr = ((DigoString *)path)->Data().c_str();
+  ifstream file(path_cstr);
   return ReadStream(file);
 }
 

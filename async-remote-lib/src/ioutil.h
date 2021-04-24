@@ -9,7 +9,7 @@ using std::ifstream;
 void* ReadStream(istream &in);
 
 extern "C" {
-  void *ReadFile(const char* path);
+  void *ReadFile(void* path);
 };
 
 #endif //ASYNC_REMOTE_LIB_SRC_IOUTIL_H_
