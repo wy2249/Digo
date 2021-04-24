@@ -72,6 +72,16 @@ Compare() {
     }
 }
 
+WORKER_COUNT=0
+GC_DEBUG=0
+ENABLE_MASTER=0
+
+LoadDefaultConfig() {
+    WORKER_COUNT=0
+    GC_DEBUG=0
+    ENABLE_MASTER=0
+}
+
 # RunTest <digofile>
 #    Compile, run, and check the output.
 #    If the compilation fails, it will diff
@@ -109,7 +119,31 @@ RunTest() {
         exec_output="$test_name.exec.output"
         expected_file="$test_src.pass.expected"
 
-        ../executable --no-master > "$exec_output" 2>/dev/null
+        if [ $ENABLE_MASTER -eq 0 ] ; then
+            ../executable --no-master > "$exec_output" 2>/dev/null &
+            master_pid=$!
+        else
+            # echo ../executable --master $MASTER_ADDR
+            ../executable --master $MASTER_ADDR > "$exec_output" 2>/dev/null &
+            master_pid=$!
+        fi
+
+        worker_pid=()
+        if [ $WORKER_COUNT -gt 0 ] ; then
+            for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
+            do
+                # echo "Running worker $i"
+                # echo ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]}
+                ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} > "$test_name.worker$i.output" 2>/dev/null &
+                worker_pid[$i]=$!
+            done
+        fi
+
+        wait $master_pid
+
+        for pid in ${worker_pid[*]}; do
+            kill -9 $pid
+        done
 
         echo " ## Executable output: " >> "$global_log"
         cat "$exec_output" >> "$global_log"
@@ -155,22 +189,23 @@ RunTest() {
     fi
 }
 
-# RunTest <test_group_dir>
-RunTestGroup() {
-    group_dir=$1
-    # default config
-    WORKER_COUNT=0
-    GC_DEBUG=0
-    # load config
-    source "$group_dir/config.txt"
-    worker_pid=()
-    if [ $WORKER_COUNT -gt 0 ] ; then
-        for i in {0..$WORKER_COUNT}
-        do
-            ../executable --worker $MASTER_ADDR $WORKER_ADDR > "$exec_output" 2>/dev/null
-        done
-    fi
+RunTestFiles() {
+    test_files=$@
+    for filename in $test_files; do
+        RunTest "$(pwd)/$filename"
+    done
+}
 
+# RunTestGroup <test_group_dir>
+RunTestGroup() {
+    echo "--- Test Group: $1"
+    group_dir=$1
+    LoadDefaultConfig
+    # load config
+
+    . "$group_dir/config.txt"
+
+    RunTestFiles "$group_dir/*.digo"
 }
 
 Clean() {
@@ -179,9 +214,8 @@ Clean() {
     rm -f *.exec.output
     rm -f *.diff.output
     rm -f *.linker.output
+    rm -f *.worker*.output
 }
-
-
 
 # Set time limit for all operations
 ulimit -t 30
@@ -208,14 +242,17 @@ fi
 
 if [ $# -ge 1 ]
 then
-    files=$@
+    RunTestFiles $@
 else
-    files="tests/*.digo"
+    RunTestGroup "Basic"
+    RunTestGroup "Async"
+    RunTestGroup "Syntax"
+    RunTestGroup "Semantic"
+    RunTestGroup "ControlFlow"
+    RunTestGroup "GC"
+    RunTestGroup "Remote"
+    RunTestGroup "Utils"
 fi
-
-for filename in $files; do
-    RunTest "$(pwd)/$filename"
-done
 
 
 if [ $keep -eq 0 ] ; then
