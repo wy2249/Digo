@@ -1,0 +1,5 @@
+func digo_main() void {
+  words := read("/home/microc/digo-test/Utils/words.txt")
+  println("%d", len(words))
+  println("%s", words[0])
+}
