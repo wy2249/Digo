@@ -4,10 +4,16 @@
 
 # Reference: the regression testing script in MicroC
 
-# This script first generates all dependencies including the
-# Digo Library, Digo Linker, and Digo Compiler
-# then it goes through a list of test files, 
-#    Compile, run, and check the output.
+# This script first generates the Digo Library, Digo Linker, and Digo Compiler,
+#    if the Digo Compiler does not exist.
+
+# then it goes through a list of test groups, 
+# for each test group, we have a config.txt file which tells the script that 
+#     how many workers the tests in this group need;
+#     also, some options like GC_DEBUG can be enabled in this config.txt.
+#    all tests in the same test group will use the same config.
+# for each test, 
+#    compile, run, and check the output.
 #    If the compilation fails, it will diff
 #       the error reported by the compiler and the $source_code.fail.expected
 #    If the compilation succeeds, it will diff
@@ -23,6 +29,7 @@ Usage() {
 MAKE_DIR='../'
 # Generate depenencies and Digo Compiler
 BuildCompiler() {
+    echo "------------------ Compiler not found -------------------------"
     echo "------------------ Generating Compiler ------------------------"
     echo "Please wait....... It may take 1-5 minutes to generate compiler"
 
@@ -65,6 +72,16 @@ Compare() {
     }
 }
 
+WORKER_COUNT=0
+GC_DEBUG=0
+ENABLE_MASTER=0
+
+LoadDefaultConfig() {
+    WORKER_COUNT=0
+    GC_DEBUG=0
+    ENABLE_MASTER=0
+}
+
 # RunTest <digofile>
 #    Compile, run, and check the output.
 #    If the compilation fails, it will diff
@@ -102,7 +119,31 @@ RunTest() {
         exec_output="$test_name.exec.output"
         expected_file="$test_src.pass.expected"
 
-        ../executable --master 127.0.0.1:20001 > "$exec_output" 2>/dev/null
+        if [ $ENABLE_MASTER -eq 0 ] ; then
+            ../executable --no-master > "$exec_output" 2>/dev/null &
+            master_pid=$!
+        else
+            # echo ../executable --master $MASTER_ADDR
+            ../executable --master $MASTER_ADDR > "$exec_output" 2>/dev/null &
+            master_pid=$!
+        fi
+
+        worker_pid=()
+        if [ $WORKER_COUNT -gt 0 ] ; then
+            for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
+            do
+                # echo "Running worker $i"
+                # echo ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]}
+                ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} > "$test_name.worker$i.output" 2>/dev/null &
+                worker_pid[$i]=$!
+            done
+        fi
+
+        wait $master_pid
+
+        for pid in ${worker_pid[*]}; do
+            kill -9 $pid
+        done
 
         echo " ## Executable output: " >> "$global_log"
         cat "$exec_output" >> "$global_log"
@@ -148,12 +189,32 @@ RunTest() {
     fi
 }
 
+RunTestFiles() {
+    test_files=$@
+    for filename in $test_files; do
+        RunTest "$(pwd)/$filename"
+    done
+}
+
+# RunTestGroup <test_group_dir>
+RunTestGroup() {
+    echo "--- Test Group: $1"
+    group_dir=$1
+    LoadDefaultConfig
+    # load config
+
+    . "$group_dir/config.txt"
+
+    RunTestFiles "$group_dir/*.digo"
+}
+
 Clean() {
-    #make -C $MAKE_DIR clean &>/dev/null
+    # make -C $MAKE_DIR clean &>/dev/null
     rm -f *.build.output
     rm -f *.exec.output
     rm -f *.diff.output
     rm -f *.linker.output
+    rm -f *.worker*.output
 }
 
 # Set time limit for all operations
@@ -175,21 +236,23 @@ shift `expr $OPTIND - 1`
 
 
 if [ ! -f ../digo-compiler/digo.native ]; then
-    echo "----------------- !!! Compiler not found ----------------------"
     BuildCompiler
 fi
 
 
 if [ $# -ge 1 ]
 then
-    files=$@
+    RunTestFiles $@
 else
-    files="tests/*.digo"
+    RunTestGroup "Basic"
+    RunTestGroup "Async"
+    RunTestGroup "Syntax"
+    RunTestGroup "Semantic"
+    RunTestGroup "ControlFlow"
+    RunTestGroup "GC"
+    RunTestGroup "Remote"
+    RunTestGroup "Utils"
 fi
-
-for filename in $files; do
-    RunTest "$(pwd)/$filename"
-done
 
 
 if [ $keep -eq 0 ] ; then

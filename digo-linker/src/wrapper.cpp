@@ -51,6 +51,11 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
     string usage = "usage: --worker MasterIP:MasterPort WorkerIP:WorkerPort\n   or --master ip:port\n";
     try {
         if (argc < 3) {
+            if (argc == 2) {
+                if(string(argv[1]) == "--no-master") {
+                    return 1;
+                }
+            }
             std::cerr << "Wrong arguments, " + usage;
             exit(1);
         }

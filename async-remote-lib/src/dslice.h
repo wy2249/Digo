@@ -5,66 +5,59 @@
 #include "dstring.h"
 #include "../../digo-linker/src/common.h"
 
+class TypeCellArray;
+
 class DigoSlice : public DObject {
 public:
-  explicit DigoSlice(digo_type t);
-  ~DigoSlice() override;
+    explicit DigoSlice(digo_type t);
 
-  std::tuple<vector<TypeCell>&, size_t&, size_t&> Data();
+    ~DigoSlice() override;
 
-  [[nodiscard]] int64_t Size() const;
+    std::tuple<vector<TypeCell> &, size_t &, size_t &> Data();
 
-  [[nodiscard]] digo_type Type() const;
+    [[nodiscard]] int64_t Size() const;
 
-  [[nodiscard]] DigoSlice* Append(const TypeCell &tv) const;
+    [[nodiscard]] digo_type Type() const;
 
-  [[nodiscard]] DigoSlice* Slice(int64_t begin, int64_t end) const;
+    [[nodiscard]] DigoSlice *Append(const TypeCell &tv) const;
 
-  [[nodiscard]] DigoSlice* Clone() const;
+    [[nodiscard]] DigoSlice *Slice(int64_t begin, int64_t end) const;
 
-  [[nodiscard]] TypeCell & Index(int64_t idx) const;
+    [[nodiscard]] DigoSlice *Clone() const;
 
-  const char* name() override {
-      return "Slice Object";
-  }
+    [[nodiscard]] TypeCell &Index(int64_t idx) const;
+
+    const char *name() override {
+        return "Slice Object";
+    }
 
 private:
-  shared_ptr<vector<TypeCell>> raw_data_;
+    shared_ptr<TypeCellArray> raw_data_;
 
-  digo_type type = TYPE_UNDEFINED;
-  size_t begin_, end_;
+    digo_type type = TYPE_UNDEFINED;
+    size_t begin_, end_;
+
 };
 
 #include "../../digo-linker/src/gc.h"
 
 extern "C" {
 
-void* CreateSlice(int64_t type);
+void *CreateSlice(int64_t type);
+void *SliceSlice(void *obj, int64_t begin, int64_t end);
+void *CloneSlice(void *obj);
+void *SliceAppend(void *obj, ...);
+int64_t GetSliceSize(void *obj);
 
-void* SliceSlice(void* obj, int64_t begin, int64_t end);
+void *GetSliceIndexString(void *obj, int64_t idx);
+int64_t GetSliceIndexInt(void *obj, int64_t idx);
+double GetSliceIndexDouble(void *obj, int64_t idx);
+void *GetSliceIndexFuture(void *obj, int64_t idx);
 
-void* CloneSlice(void* obj);
-
-void* SliceAppend(void* obj, ...);
-
-int64_t GetSliceSize(void* obj);
-
-
-void* GetSliceIndexString(void* obj, int64_t idx);
-
-int64_t GetSliceIndexInt(void* obj, int64_t idx);
-
-double GetSliceIndexDouble(void* obj, int64_t idx);
-
-void* GetSliceIndexFuture(void* obj, int64_t idx);
-
-void* SetSliceIndexString(void* obj, int64_t idx, void* val);
-
-int64_t SetSliceIndexInt(void* obj, int64_t idx, int64_t val);
-
-double SetSliceIndexDouble(void* obj, int64_t idx, double val);
-
-void* SetSliceIndexFuture(void* obj, int64_t idx, void* val);
+void *SetSliceIndexString(void *obj, int64_t idx, void *val);
+int64_t SetSliceIndexInt(void *obj, int64_t idx, int64_t val);
+double SetSliceIndexDouble(void *obj, int64_t idx, double val);
+void *SetSliceIndexFuture(void *obj, int64_t idx, void *val);
 }
 
 

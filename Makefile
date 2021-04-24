@@ -1,7 +1,7 @@
-all: clean gen build
+all: gen build
 
 .PHONY: gen
-gen: generate-dependency generate-digo-compiler
+gen: clean generate-dependency generate-digo-compiler
 
 .PHONY: build-compiler-pass
 build-compiler-pass:
@@ -16,7 +16,7 @@ print-llvm:
 
 .PHONY: build-link-pass
 build-link-pass:
-	./digo-compiler/tmp_metadata_gen < $(digo) > tmp.metadata.ll
+	./digo-compiler/metadata_gen < $(digo) > tmp.metadata.ll
 	cat tmp.compiled.nometadata.ll tmp.metadata.ll > tmp.compiled.ll
 	./digo-linker/digo-linker async tmp.compiled.ll tmp.async.linker.ll
 	llvm-link -S -v -o tmp.async.ll tmp.compiled.ll tmp.async.linker.ll

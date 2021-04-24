@@ -243,7 +243,9 @@ let translate(functions) =
       | _           -> raise(Failure("invalide slice type"))
       in
 
-      (*   function expr only returns the llvalue here, 
+      (*   Now we just infer from the i8* type.
+      Obsolete:
+      function expr only returns the llvalue here, 
         but the GC wants to know the type of this llvalue in the
         form of Digo type.
 
@@ -398,9 +400,9 @@ let translate(functions) =
 
                   let clonellvm = build_call cloneSlice [|from_llvm|] "cloneslice" builder in
                   ignore(build_store clonellvm (lookup s) builder);
-                   (* MERGE CONFLICT FIXME TODO BUG: return e_ ??*) 
+                   (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
-                  gc_inject clonellvm builder
+                  gc_inject clonellvm builder; e_
 
                 | _ -> 
                   ignore(build_store from_llvm (lookup s) builder); e_
@@ -440,9 +442,18 @@ let translate(functions) =
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
-          let build_func_call = match fd.sann with
+          ( match fd.sann with
             FuncNormal -> 
-              build_call fdef (Array.of_list llargs) result builder
+              let build_llvm = build_call fdef (Array.of_list llargs) result builder
+              in ( match fd.styp with
+                  [IntegerType] | [FloatType] | [BoolType] -> 
+                    build_extractvalue build_llvm 0 "extracted_value" builder
+                  | [StringType] | [SliceType(_)] | [FutureType] ->
+                    let extracted_val = build_extractvalue build_llvm 0 "extracted_value" builder in
+                    (*  GC Injection for function return  *)
+                    gc_inject extracted_val builder
+                  | _ -> build_llvm
+              )
             | _ ->
               let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
               let stype = struct_type context return_types in
@@ -455,19 +466,9 @@ let translate(functions) =
               let new_fdef = declare_function ("digo_linker_async_call_func_"^f_name) new_ftyp_t the_module in
               let call_ret = 
                 build_call new_fdef (Array.of_list llargs) result builder
-             (*    MERGE CONFLICT   *)
              (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
               in gc_inject call_ret builder
-              
-              in ( match fd.styp with
-                  [IntegerType] | [FloatType] | [BoolType] -> 
-                    build_extractvalue build_func_call 0 "extracted_value" builder
-                  | [StringType] | [SliceType(_)] | [FutureType] ->
-                    let extracted_val = build_extractvalue build_func_call 0 "extracted_value" builder in
-                    (*  GC Injection for function return  *)
-                    gc_inject extracted_val builder
-                  | _ -> build_func_call
-              )
+          )
 
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
@@ -491,28 +492,39 @@ let translate(functions) =
           StringType  -> 
             let append_string slc e1 = 
             let e = expr builder e1 in
-            (*  TODO:   GC Injection TODO: ????  *)
-            (*  code review needed here   *)
-            build_call sliceAppend [|slc;e|] "initslices" builder
+            (*  GC Injection for sliceAppend  *)
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslices" builder
+            in 
+                gc_inject eval_result builder
             (*   the SliceAppend will IncRef the object being appended. Slice will DecRef objects when appropriate.   *)
             in
             List.fold_left append_string empty_slice e1_l 
         | IntegerType -> 
             let append_integer slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicen" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicen" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_integer empty_slice e1_l 
         | FloatType   -> 
             let append_float slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicef" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicef" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_float empty_slice e1_l 
         | FutureType  -> 
             let append_future slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicenF" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicenF" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_future empty_slice e1_l           
         | _           -> raise(Failure("invalide slice type"))   
@@ -697,11 +709,15 @@ let translate(functions) =
       | SContinue                                                             ->  builder   
 
       | SReturn(el)                                                           ->  
-        let el_mapper e = let expr_llvalue = expr builder e in
-           (expr_llvalue, !expr_is_lvalue_obj)
-      in
+        let el_mapper e = 
+          let expr_llvalue = expr builder e in
+           (*(expr_llvalue, !expr_is_lvalue_obj)*)
+           if type_of expr_llvalue == pointer_type i8_t then
+              (expr_llvalue, 1)
+           else 
+              (expr_llvalue, 0)
+        in
         let el_unmmaper (e2, _) = e2 in
-
         let agg_with_type = List.map el_mapper el in 
         let agg = Array.of_list (List.map el_unmmaper agg_with_type) in
         gc_gen_notrace_from_retval builder gc_trace_map_obj agg_with_type;

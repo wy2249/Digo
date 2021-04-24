@@ -1,9 +1,9 @@
 func digo_main() void {
     a := get_one_str()
     b := get_one_int()
-    c1, c2 := get_two_str()
     d1, d2, d3, d4, d5 := get_many()
-    println("%s", a + "343221")
+    p1, p2, p3 := get_three2()
+    println("%s %f %d", a + "343221" + p2, p3, p1)
 }
 
 func get_one_str() string {
@@ -19,8 +19,8 @@ func get_one_str() string {
     return "invalid" + "12343" + "3"
 }
 
-func get_two_str() (string, string) {
-
+func get_three2() (int,string,float) {
+    
 }
 
 

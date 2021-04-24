@@ -6,14 +6,65 @@
 #include <iterator>
 #include <cstdarg>
 
+class TypeCellArray {
+public:
+    vector<TypeCell> arr_;
+    digo_type type_;
+    explicit TypeCellArray(digo_type type) {
+        type_ = type;
+    }
+    TypeCellArray(digo_type type, vector<TypeCell> && arr): TypeCellArray(type, arr) {
+
+    }
+    TypeCellArray(digo_type type, vector<TypeCell> & arr) {
+        type_ = type;
+        arr_ = arr;
+        switch (type) {
+            case TYPE_STR:
+                for (auto & tc : arr_) {
+                    ((DObject *)tc.str_obj)->IncRef();
+                }
+                break;
+            case TYPE_FUTURE_OBJ:
+                for (auto & tc : arr_) {
+                    ((DObject *)tc.future_obj)->IncRef();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    vector<TypeCell> * get() {
+        return &arr_;
+    }
+
+    ~TypeCellArray() {
+        switch (type_) {
+            case TYPE_STR:
+                for (auto & tc : arr_) {
+                    ((DObject *)tc.str_obj)->DecRef();
+                }
+                break;
+            case TYPE_FUTURE_OBJ:
+                for (auto & tc : arr_) {
+                    ((DObject *)tc.future_obj)->DecRef();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+};
+
 DigoSlice::DigoSlice(digo_type t) {
-    this->raw_data_ = make_shared<vector<TypeCell>>();
+    this->raw_data_ = make_shared<TypeCellArray>(t);
     this->type = t;
     this->begin_ = this->end_ = 0;
 }
 
 std::tuple<vector<TypeCell> &, size_t &, size_t &> DigoSlice::Data() {
-    return std::make_tuple(std::ref(*this->raw_data_),
+    return std::make_tuple(std::ref(*this->raw_data_->get()),
                            std::ref(this->begin_), std::ref(this->end_));
 }
 
@@ -26,7 +77,7 @@ digo_type DigoSlice::Type() const {
 }
 
 TypeCell &DigoSlice::Index(int64_t idx) const {
-    return *(this->raw_data_->begin() + this->begin_ + idx);
+    return *(this->raw_data_->get()->begin() + this->begin_ + idx);
 }
 
 DigoSlice *DigoSlice::Slice(int64_t begin, int64_t end) const {
@@ -43,12 +94,14 @@ DigoSlice *DigoSlice::Append(const TypeCell &tv) const {
     ret->end_ = this->end_;
     ret->raw_data_ = this->raw_data_;
 
-    if (ret->end_ < ret->raw_data_->size()) {
-        (*ret->raw_data_)[ret->end_] = tv;
+    if (ret->end_ < ret->raw_data_->get()->size()) {
+        (*ret->raw_data_->get())[ret->end_] = tv;
     } else {
-        ret->raw_data_ = make_shared<vector<TypeCell>>(
-                ret->raw_data_->begin() + ret->begin_, ret->raw_data_->begin() + ret->end_);
-        ret->raw_data_->push_back(tv);
+        ret->raw_data_ = make_shared<TypeCellArray>(this->type,
+                vector<TypeCell>(
+                        ret->raw_data_->get()->begin() + ret->begin_,
+                        ret->raw_data_->get()->begin() + ret->end_));
+        ret->raw_data_->get()->push_back(tv);
     }
     ret->end_ += 1;
     return ret;
@@ -63,20 +116,7 @@ DigoSlice *DigoSlice::Clone() const {
 }
 
 DigoSlice::~DigoSlice() {
-    switch (this->type) {
-        case TYPE_STR:
-            for (auto & tc : *(this->raw_data_)) {
-                ((DObject *)tc.str_obj)->DecRef();
-            }
-            break;
-        case TYPE_FUTURE_OBJ:
-            for (auto & tc : *(this->raw_data_)) {
-                ((DObject *)tc.future_obj)->DecRef();
-            }
-            break;
-        default:
-            break;
-    }
+
 }
 
 void *CreateSlice(int64_t type) {
