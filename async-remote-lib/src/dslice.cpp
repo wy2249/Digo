@@ -38,15 +38,17 @@ DigoSlice DigoSlice::Slice(int64_t begin, int64_t end) const {
 }
 
 DigoSlice DigoSlice::Append(const TypeCell &tv) {
-  if (this->end_ < this->raw_data_->size()) {
-    (*this->raw_data_)[this->end_] = tv;
+  auto new_slice = DigoSlice(*this);
+  if (new_slice.end_ < new_slice.raw_data_->size()) {
+    (*new_slice.raw_data_)[new_slice.end_] = tv;
   } else {
-    this->raw_data_ = make_shared<vector<TypeCell>>(
-        this->raw_data_->begin()+this->begin_, this->raw_data_->begin() + this->end_);
-    this->raw_data_->push_back(tv);
+    new_slice.raw_data_ = make_shared<vector<TypeCell>>(
+        new_slice.raw_data_->begin()+new_slice.begin_,
+        new_slice.raw_data_->begin() + new_slice.end_);
+    new_slice.raw_data_->push_back(tv);
   }
-  this->end_ += 1;
-  return DigoSlice(*this);
+  new_slice.end_ += 1;
+  return new_slice;
 }
 
 void* CreateSlice(int64_t type) {
