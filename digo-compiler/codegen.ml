@@ -460,8 +460,12 @@ let translate(functions) =
               in gc_inject call_ret builder
               
               in ( match fd.styp with
-                  [StringType] | [IntegerType] | [FloatType] | [SliceType(_)] | [BoolType] | [FutureType] -> 
+                  [IntegerType] | [FloatType] | [BoolType] -> 
                     build_extractvalue build_func_call 0 "extracted_value" builder
+                  | [StringType] | [SliceType(_)] | [FutureType] ->
+                    let extracted_val = build_extractvalue build_func_call 0 "extracted_value" builder in
+                    (*  GC Injection for function return  *)
+                    gc_inject extracted_val builder
                   | _ -> build_func_call
               )
 
@@ -711,10 +715,10 @@ let translate(functions) =
         let builder = stmt builder (SBlock fdecl.sbody) in
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
-        [VoidType] -> ignore(build_ret_void builder)
-        (*| [StringType] -> add_terminal builder (build_ret (build_global_stringptr "" "str" builder)) *)
-        (*| [IntegerType] -> ignore(build_ret (const_of_int64 i64_t 0) builder)*)
-        | _ -> add_terminal builder (build_aggregate_ret agg_)  
+        [VoidType] -> build_call gc_release_all [|gc_trace_map_obj|] "" builder; 
+                     ignore(build_ret_void builder)
+        | _ -> 
+              add_terminal builder (build_aggregate_ret agg_)  
 
       in
 
