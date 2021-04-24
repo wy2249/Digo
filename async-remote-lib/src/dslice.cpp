@@ -146,6 +146,8 @@ void *SetSliceIndexString(void *obj, int64_t idx, void *val) {
     TypeCell tv;
     tv.type = TYPE_STR;
     tv.str_obj = val;
+    ((DigoString *)val)->IncRef();
+    ((DigoString *)((DigoSlice *) obj)->Index(idx).str_obj)->DecRef();
     ((DigoSlice *) obj)->Index(idx) = tv;
     return val;
 }
@@ -170,6 +172,8 @@ void *SetSliceIndexFuture(void *obj, int64_t idx, void *val) {
     TypeCell tv;
     tv.type = TYPE_FUTURE_OBJ;
     tv.future_obj = val;
+    ((DigoString *)val)->IncRef();
+    ((DigoString *)((DigoSlice *) obj)->Index(idx).str_obj)->DecRef();
     ((DigoSlice *) obj)->Index(idx) = tv;
     return val;
 }
