@@ -1,7 +1,7 @@
-all: clean gen build
+all: gen build
 
 .PHONY: gen
-gen: generate-dependency generate-digo-compiler
+gen: clean generate-dependency generate-digo-compiler
 
 .PHONY: build-compiler-pass
 build-compiler-pass:

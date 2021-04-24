@@ -8,49 +8,40 @@
 
 class DigoString : public DObject {
 public:
-  DigoString() = default;
-  explicit DigoString(const char *);
-  explicit DigoString(const string&);
+    DigoString() = default;
+    explicit DigoString(const char *);
+    explicit DigoString(const string &);
 
-  DigoString operator+ (const DigoString&) const;
+    DigoString operator+(const DigoString &) const;
+    DigoString operator+(const char *) const;
 
-  DigoString operator+ (const char*) const;
+    const string &Data() const;
+    int64_t Compare(const DigoString &) const;
+    int64_t Size() const;
 
-  const string &Data() const;
-
-  int64_t Compare(const DigoString&) const;
-
-  int64_t Size() const;
-
-  const char* name() override {
-      return "String Object";
-  }
+    const char *name() override {
+        return "String Object";
+    }
 
 private:
-  string raw_data_;
+    string raw_data_;
 
 };
 
 extern "C" {
 
-void* CreateString(const char*);
+void *CreateString(const char *);
+void *CreateEmptyString();
 
-void* CreateEmptyString();
+void *AddString(void *, void *);
+void *AddCString(void *, const char *);
 
-void* AddString(void*, void*);
-
-void* AddCString(void*, const char*);
-
-void* CloneString(void*);
-
-int64_t CompareString(void*, void*);
-
-int64_t GetStringSize(void*);
-
-const char* GetCStr(void*);
+void *CloneString(void *);
+int64_t CompareString(void *, void *);
+int64_t GetStringSize(void *);
+const char *GetCStr(void *);
 
 }
-
 
 
 #endif //ASYNC_REMOTE_LIB_SRC_RESOURCE_H_

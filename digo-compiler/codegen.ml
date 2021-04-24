@@ -243,7 +243,9 @@ let translate(functions) =
       | _           -> raise(Failure("invalide slice type"))
       in
 
-      (*   function expr only returns the llvalue here, 
+      (*   Now we just infer from the i8* type.
+      Obsolete:
+      function expr only returns the llvalue here, 
         but the GC wants to know the type of this llvalue in the
         form of Digo type.
 
@@ -709,7 +711,11 @@ let translate(functions) =
       | SReturn(el)                                                           ->  
         let el_mapper e = 
           let expr_llvalue = expr builder e in
-           (expr_llvalue, !expr_is_lvalue_obj)
+           (*(expr_llvalue, !expr_is_lvalue_obj)*)
+           if type_of expr_llvalue == pointer_type i8_t then
+              (expr_llvalue, 1)
+           else 
+              (expr_llvalue, 0)
         in
         let el_unmmaper (e2, _) = e2 in
         let agg_with_type = List.map el_mapper el in 
