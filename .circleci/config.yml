@@ -12,5 +12,4 @@ jobs:
       - run: |
           eval `opam config env`
           cd ./digo-test
-          ./testall.sh ./Basic/*.digo
-          cat testall.log
+          ./testall.sh ./Basic/*.digo || ( cat testall.log && exit 1 )
