@@ -440,9 +440,14 @@ let translate(functions) =
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
-          let build_func_call = match fd.sann with
+          ( match fd.sann with
             FuncNormal -> 
-              build_call fdef (Array.of_list llargs) result builder
+              let build_llvm = build_call fdef (Array.of_list llargs) result builder
+              in ( match fd.styp with
+                  [StringType] | [IntegerType] | [FloatType] | [SliceType(_)] | [BoolType] | [FutureType] -> 
+                    build_extractvalue build_llvm 0 "extracted_value" builder
+                  | _ -> build_llvm
+              )
             | _ ->
               let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
               let stype = struct_type context return_types in
@@ -458,12 +463,7 @@ let translate(functions) =
              (*    MERGE CONFLICT   *)
              (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
               in gc_inject call_ret builder
-              
-              in ( match fd.styp with
-                  [StringType] | [IntegerType] | [FloatType] | [SliceType(_)] | [BoolType] | [FutureType] -> 
-                    build_extractvalue build_func_call 0 "extracted_value" builder
-                  | _ -> build_func_call
-              )
+          )
 
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
