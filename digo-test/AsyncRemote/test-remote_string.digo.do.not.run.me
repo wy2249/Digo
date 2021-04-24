@@ -1,0 +1,14 @@
+func digo_main() void {
+    a := "haha"
+    b := "hehe"
+    e := try_return_two(a,b)
+    f, g := await e
+
+    println("%s", f)
+    println("%s", g)
+}
+
+
+async remote func try_return_two(a string,b string) (string,string) {
+    return a+b,b+a
+}

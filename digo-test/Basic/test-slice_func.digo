@@ -1,0 +1,11 @@
+func foo(s []int) []int {
+    s2 := append(s, 999)
+    return s2
+}
+
+func digo_main() void {
+  a := []int {1,2,3,4}
+  b := foo(a)
+  println("%d",len(a))
+  println("%d",len(b))
+}
