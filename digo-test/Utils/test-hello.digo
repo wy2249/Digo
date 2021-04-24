@@ -1,5 +1,0 @@
-func digo_main() void {
-  println("%d", 42)
-  println("%d", 71)
-  println("%d", 1)
-}

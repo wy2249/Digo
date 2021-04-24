@@ -1,0 +1,5 @@
+func digo_main() void {
+  println("%d", 42)
+  println("%f", 42.012)
+  println("%s", "hello")
+}

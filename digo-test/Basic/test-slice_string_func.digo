@@ -1,0 +1,13 @@
+func foo(s []string) []string {
+    s2 := append(s, "haha")
+    return s2
+}
+
+func digo_main() void {
+  a := []string {"hello", "word"}
+  b := foo(a)
+  println("%d",len(a))
+  println("%d",len(b))
+  println("%s", a[1])
+  println("%s", b[2])
+}
