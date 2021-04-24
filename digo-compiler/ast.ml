@@ -100,5 +100,11 @@ FuncNormal -> "normal"
 | FuncAsync -> "async"
 | FuncAsyncRemote -> "async remote"
 
+let string_of_expr = function
+  Integer(l) -> string_of_int l
+  | Float(f) ->  string_of_float f
+  | String(s) -> s
+  | Bool(true) -> "true"
+  | Bool(false) -> "false"
 
 

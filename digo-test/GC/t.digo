@@ -1,0 +1,33 @@
+func digo_main() void {
+    a := get_one_str()
+    b := get_one_int()
+    c1, c2 := get_two_str()
+    d1, d2, d3, d4, d5 := get_many()
+    println("%s", a + "343221")
+}
+
+func get_one_str() string {
+    a := "2394239234"
+    if (1 == 1) {
+        return "12341235622" + a
+    } else if (2==1) {
+        return a + "123412334" + "222"
+    } else {
+        return "!234123"
+    }
+
+    return "invalid" + "12343" + "3"
+}
+
+func get_two_str() (string, string) {
+
+}
+
+
+func get_many() (string, string, string, int, string) {
+    return "12", "23", "454", 100, "4000"
+}
+
+func get_one_int() int {
+    return 0
+}

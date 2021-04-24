@@ -5,8 +5,8 @@ build-all: clean generate-digo-dependency generate-digo-linker
 
 .PHONY: generate-digo-dependency
 generate-digo-dependency:
-	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm src/serialization.cpp src/wrapper.cpp src/serialization_wrapper.cpp src/print_funcs.cpp
-	llvm-link -S -v -o allinone.ll serialization.ll wrapper.ll serialization_wrapper.ll print_funcs.ll
+	clang -stdlib=libc++ -std=c++2a -O3 -S -emit-llvm src/serialization.cpp src/wrapper.cpp src/serialization_wrapper.cpp src/print_funcs.cpp src/gc.cpp
+	llvm-link -S -v -o allinone.ll serialization.ll wrapper.ll serialization_wrapper.ll print_funcs.ll gc.ll
 
 .PHONY: generate-digo-linker
 generate-digo-linker:
@@ -14,5 +14,5 @@ generate-digo-linker:
 
 .PHONY: clean
 clean:
-	rm -f serialization.ll wrapper.ll serialization_wrapper.ll print_funcs.ll
+	rm -f serialization.ll wrapper.ll serialization_wrapper.ll print_funcs.ll gc.ll
 	rm -f allinone.ll digo-linker
