@@ -398,9 +398,9 @@ let translate(functions) =
 
                   let clonellvm = build_call cloneSlice [|from_llvm|] "cloneslice" builder in
                   ignore(build_store clonellvm (lookup s) builder);
-                   (* MERGE CONFLICT FIXME TODO BUG: return e_ ??*) 
+                   (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
-                  gc_inject clonellvm builder
+                  gc_inject clonellvm builder; e_
 
                 | _ -> 
                   ignore(build_store from_llvm (lookup s) builder); e_
@@ -491,28 +491,39 @@ let translate(functions) =
           StringType  -> 
             let append_string slc e1 = 
             let e = expr builder e1 in
-            (*  TODO:   GC Injection TODO: ????  *)
-            (*  code review needed here   *)
-            build_call sliceAppend [|slc;e|] "initslices" builder
+            (*  GC Injection for sliceAppend  *)
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslices" builder
+            in 
+                gc_inject eval_result builder
             (*   the SliceAppend will IncRef the object being appended. Slice will DecRef objects when appropriate.   *)
             in
             List.fold_left append_string empty_slice e1_l 
         | IntegerType -> 
             let append_integer slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicen" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicen" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_integer empty_slice e1_l 
         | FloatType   -> 
             let append_float slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicef" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicef" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_float empty_slice e1_l 
         | FutureType  -> 
             let append_future slc e1 = 
             let e = expr builder e1 in
-            build_call sliceAppend [|slc;e|] "initslicenF" builder 
+            let eval_result = 
+                build_call sliceAppend [|slc;e|] "initslicenF" builder 
+            in 
+                gc_inject eval_result builder
             in
             List.fold_left append_future empty_slice e1_l           
         | _           -> raise(Failure("invalide slice type"))   
