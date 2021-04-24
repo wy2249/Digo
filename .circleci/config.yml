@@ -1,0 +1,15 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+     - image: wy2249/plt
+
+    working_directory: /home/microc
+
+    steps:
+      - checkout
+      - run: |
+          eval `opam config env`
+          cd ./digo-test
+          ./testall.sh ./Basic/*.digo || ( cat testall.log && exit 1 )
