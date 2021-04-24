@@ -450,7 +450,7 @@ let translate(functions) =
                     let extracted_val = build_extractvalue build_llvm 0 "extracted_value" builder in
                     (*  GC Injection for function return  *)
                     gc_inject extracted_val builder
-                  | _ -> build_func_call
+                  | _ -> build_llvm
               )
             | _ ->
               let return_types = Array.of_list (List.map (fun t -> ltype_of_typ t) fd.styp) in
@@ -467,6 +467,7 @@ let translate(functions) =
              (*    MERGE CONFLICT   *)
              (*   GC Inject the future object returned by digo_linker_async_call_func_  *)
               in gc_inject call_ret builder
+          )
 
         | SInteger(ex)                                                         ->  const_int i64_t ex
         | SFloat(ex)                                                           ->  const_float float_t ex
