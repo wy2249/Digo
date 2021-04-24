@@ -16,11 +16,11 @@
 using namespace std;
 
 int test_serialization();
-int test_serialization2();
+
 int generate_async_call_entry(const string& input_file, const string& output_file);
 
 int main() {
-    test_serialization2();
+
     return 0;
 
     string command = "async";
@@ -135,31 +135,6 @@ int test_serialization() {
         }
         std::cout << std::endl;
     }
-
-    return 0;
-}
-
-int test_serialization2() {
-    DStrObject * strobj = static_cast<DStrObject *>(CreateString("12343134"));
-
-
-    void * obj = SW_CreateWrapper();
-    void * slice = CreateSlice(TYPE_STR);
-    DSliObject * slice2 = static_cast<DSliObject *>(SliceAppend(slice, strobj));
-
-    SW_AddSlice(obj, slice2);
-
-    ::byte* result;
-    int len;
-    SW_GetAndDestroy(obj, &result, &len);
-
-    void * ext = SW_CreateExtractor(result, len);
-    void * slice_out;
-    slice_out = SW_ExtractSlice(ext);
-
-    DSliObject * conv = (DSliObject*)slice_out;
-
-    DStrObject  * strObject = static_cast<DStrObject *>((std::get<0>(conv->Get()->Data()).at(0)).str_obj);
 
     return 0;
 }

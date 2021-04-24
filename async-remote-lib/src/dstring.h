@@ -4,8 +4,9 @@
 #include "common.h"
 #include <memory>
 #include <cstdint>
+#include "../../digo-linker/src/gc.h"
 
-class DigoString {
+class DigoString : public DObject {
 public:
   DigoString() = default;
   explicit DigoString(const char *);
@@ -21,14 +22,14 @@ public:
 
   int64_t Size() const;
 
+  const char* name() override {
+      return "String Object";
+  }
+
 private:
   string raw_data_;
 
 };
-
-#include "../../digo-linker/src/gc.h"
-
-using DStrObject = DObject<DigoString>;
 
 extern "C" {
 

@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "gc.h"
+
 using std::string;
 typedef unsigned char byte;
 

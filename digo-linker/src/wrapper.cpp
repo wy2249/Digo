@@ -19,10 +19,24 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <utility>
 #include <unistd.h>
 
 using std::unordered_map;
 using std::string;
+
+class DigoFuture : public DObject {
+public:
+    explicit DigoFuture(shared_ptr<Async> ptr) : p(std::move(ptr)) {}
+    shared_ptr<Async> Get() {
+        return p;
+    }
+    const char* name() override {
+        return "Future Object";
+    }
+private:
+    shared_ptr<Async> p;
+};
 
 unordered_map<int, string> ASYNC_FUNC_ID2NAME;
 unordered_map<string, int> ASYNC_FUNC_NAME2ID;
@@ -80,7 +94,7 @@ __attribute__((noinline)) void* CreateAsyncJob(int32 func, byte* args, int32 arg
     try {
         auto future_obj = Async::CreateLocal(ASYNC_FUNC_ID2NAME[func],
                   bytes{.content=shared_ptr<byte>(args), .length=arg_len});
-        return DObject<Async>::Create(future_obj);
+        return new DigoFuture(future_obj);
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("CreateAsyncJob", e);
@@ -92,7 +106,7 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
     try {
         auto future_obj = Async::CreateRemote(ASYNC_FUNC_ID2NAME[func],
                   bytes{.content=shared_ptr<byte>(args), .length=arg_len});
-        return DObject<Async>::Create(future_obj);
+        return new DigoFuture(future_obj);
     }
     catch (std::exception & e) {
         WrapperExceptionHandler("CreateRemoteJob", e);
@@ -102,7 +116,10 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
 
 __attribute__((noinline)) void AwaitJob(void* future_obj, byte** result, int32* len) {
     try {
-        auto r = ((DObject<Async>*)future_obj)->Get()->Await();
+        if (future_obj == nullptr) {
+            throw std::bad_function_call();
+        }
+        auto r = ((DigoFuture*)future_obj)->Get()->Await();
         // the result will not be deconstructed because
         // we have a reference in Async->result_
         *result = r.content.get();
