@@ -116,6 +116,9 @@ __attribute__((noinline)) void* CreateRemoteJob(int32 func, byte* args, int32 ar
 
 __attribute__((noinline)) void AwaitJob(void* future_obj, byte** result, int32* len) {
     try {
+        if (future_obj == nullptr) {
+            throw std::bad_function_call();
+        }
         auto r = ((DigoFuture*)future_obj)->Get()->Await();
         // the result will not be deconstructed because
         // we have a reference in Async->result_
