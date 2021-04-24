@@ -158,6 +158,11 @@ void Server::SetHandlers(const map<string, Handler> &hs) {
 
 void Server::Stop() {
   close(this->socket_);
+  this->listening_ = false;
+}
+
+bool Server::IsListening() {
+  return this->listening_;
 }
 
 void Server::Start() {
@@ -165,6 +170,8 @@ void Server::Start() {
     perror("server::start::listen");
     exit(EXIT_FAILURE);
   }
+
+  this->listening_ = true;
 
   int accept_fd;
   socklen_t addr_len;

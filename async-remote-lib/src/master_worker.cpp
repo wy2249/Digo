@@ -45,6 +45,11 @@ shared_ptr<Master> Master::GetInst() {
   return master_;
 }
 
+void Master::WaitForReady() {
+  while (!this->srv || !this->srv->IsListening())
+    std::this_thread::yield();
+}
+
 void Master::StopListen() {
   this->srv->Stop();
   this->srv = nullptr;
@@ -134,10 +139,11 @@ void Worker::Start(const string &server_addr, const string &client_addr) {
   auto cli = Client::Create();
 
   vector<byte> resp;
-  if (cli->Call(server_addr, "join", vector<byte>(client_addr.begin(),
+  while (cli->Call(server_addr, "join", vector<byte>(client_addr.begin(),
       client_addr.end()), resp) != 0) {
-    cerr << "join master fail" << endl;
-    exit(EXIT_FAILURE);
+    sleep(1);
+//    cerr << "join master fail" << endl;
+//    exit(EXIT_FAILURE);
   }
 
   if (string(resp.begin(), resp.end()) != "success\n") {
