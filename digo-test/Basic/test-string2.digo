@@ -1,5 +1,0 @@
-func digo_main() void {
-	a := "abcdefg"
-	b := a[1:4]
-	println("%s", b)
-}
