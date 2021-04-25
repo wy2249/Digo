@@ -570,10 +570,12 @@ let translate(functions) =
         let ex1' = expr builder ex1 in 
         let ex2' = expr builder ex2 in 
         (match rt with
-          StringType        ->  build_call getSliceIndexString [|ex1';ex2'|] "findsliceindexs" builder
+          StringType        -> let call_ret = build_call getSliceIndexString [|ex1';ex2'|] "findsliceindexs" builder in
+                                gc_inject call_ret builder
         | IntegerType       ->  build_call getSliceIndexInt [|ex1';ex2'|] "findsliceindexn" builder
         | FloatType         ->  build_call getSliceIndexDouble [|ex1';ex2'|] "findsliceindexf" builder
-        | FutureType        ->  build_call getSliceIndexFuture [|ex1';ex2'|] "findsliceindexF" builder
+        | FutureType        -> let call_ret = build_call getSliceIndexFuture [|ex1';ex2'|] "findsliceindexF" builder in
+                                gc_inject call_ret builder
         | _                 ->  raise(Failure("sliceindex error: should be rejected in semant"))
         )
       | SSliceSlice(ex1,ex2,ex3)                                             ->  

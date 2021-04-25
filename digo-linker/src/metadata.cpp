@@ -210,13 +210,25 @@ if.func#<id>#:
   %aggResult#<id># = call #<ret_type># @#<func_name>#(#<arguments>#)
 #<ret_serializer>#
   call void @SW_GetAndDestroy(i8* %wrapper, i8** %result, i32* %result_len)
-
+#<dec_ref>#
   br label %if.end
 )XXXXX";
 
     label_template = regex_replace(label_template, regex("\\{"), "{{");
     label_template = regex_replace(label_template, regex("\\}"), "}}");
     label_template = regex_replace(label_template, regex("#<([a-z_]+)>#"), "{$1}");
+
+    /*  We do not need the digo function result after serializing them.
+     *  So we have to do GC_DecRef.
+     */
+    string dec_ref;
+
+    for (int i = 0; i < proto.return_type.size(); i++) {
+        auto t = proto.return_type[i];
+        if (t == TYPE_STR || t == TYPE_SLICE) {
+            dec_ref += "  call void @__GC_DecRef(i8* %aggResult" + to_string(id) + "_tmp_" + to_string(i) + ")\n";
+        }
+    }
 
     string ret_type = "{ " + GenerateArgumentsType(proto.return_type) + " }";
 
@@ -229,7 +241,8 @@ if.func#<id>#:
                                                                           "arg" + to_string(id) + "_")),
                               fmt::arg("ret_serializer",
                                        GenerateSerializerAggregated(proto.return_type,
-                                                                    "%aggResult" + to_string(id))));
+                                                                    "%aggResult" + to_string(id))),
+                              fmt::arg("dec_ref", dec_ref));
     return result;
 }
 
@@ -527,6 +540,8 @@ declare dso_local i32 @entry(i32, i8**)
 
 declare dso_local void @Debug_Real_LinkerCallFunction(i32, i32)
 declare dso_local void @__DIGO_RUNTIME_OnExit()
+
+declare dso_local void @__GC_DecRef(i8*)
 
 )XXXXX";
 

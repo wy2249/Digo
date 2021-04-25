@@ -13,33 +13,12 @@ public:
     explicit TypeCellArray(digo_type type) {
         type_ = type;
     }
-    TypeCellArray(digo_type type, vector<TypeCell> && arr): TypeCellArray(type, arr) {
-
-    }
-    TypeCellArray(digo_type type, vector<TypeCell> & arr) {
-        type_ = type;
-        arr_ = arr;
-        switch (type) {
-            case TYPE_STR:
-                for (auto & tc : arr_) {
-                    ((DObject *)tc.str_obj)->IncRef();
-                }
-                break;
-            case TYPE_FUTURE_OBJ:
-                for (auto & tc : arr_) {
-                    ((DObject *)tc.future_obj)->IncRef();
-                }
-                break;
-            default:
-                break;
-        }
-    }
 
     vector<TypeCell> * get() {
         return &arr_;
     }
 
-    ~TypeCellArray() {
+    virtual ~TypeCellArray() {
         switch (type_) {
             case TYPE_STR:
                 for (auto & tc : arr_) {
@@ -89,18 +68,20 @@ DigoSlice *DigoSlice::Slice(int64_t begin, int64_t end) const {
 }
 
 DigoSlice *DigoSlice::Append(const TypeCell &tv) const {
+    /*  tv's ref count is already incremented */
     auto ret = new DigoSlice(this->type);
     ret->begin_ = this->begin_;
     ret->end_ = this->end_;
     ret->raw_data_ = this->raw_data_;
 
     if (ret->end_ < ret->raw_data_->get()->size()) {
+        if (this->type == TYPE_STR) {
+            ((DObject*)((*ret->raw_data_->get())[ret->end_].str_obj))->DecRef();
+        } else if (this->type == TYPE_FUTURE_OBJ) {
+            ((DObject*)((*ret->raw_data_->get())[ret->end_].future_obj))->DecRef();
+        }
         (*ret->raw_data_->get())[ret->end_] = tv;
     } else {
-        ret->raw_data_ = make_shared<TypeCellArray>(this->type,
-                vector<TypeCell>(
-                        ret->raw_data_->get()->begin() + ret->begin_,
-                        ret->raw_data_->get()->begin() + ret->end_));
         ret->raw_data_->get()->push_back(tv);
     }
     ret->end_ += 1;

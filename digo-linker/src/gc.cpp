@@ -39,7 +39,6 @@ void __GC_DecRef(void* obj) {
 }
 
 struct TraceMap {
-    unordered_set<void*> s;
     unordered_map<void*, int> ref;
 };
 
@@ -49,18 +48,20 @@ void* __GC_CreateTraceMap() {
 
 void  __GC_Trace(void* map, void* obj) {
     auto m = (TraceMap*)map;
-    m->s.insert(obj);
+    m->ref[obj]++;
 }
 
 void  __GC_NoTrace(void* map, void* obj) {
     auto m = (TraceMap*)map;
-    m->s.erase(obj);
+    m->ref[obj]--;
 }
 
 void  __GC_ReleaseAll(void* map) {
     auto m = (TraceMap*)map;
-    for (auto obj : m->s) {
-        __GC_DecRef(obj);
+    for (auto obj : m->ref) {
+        for (int i = 0; i < obj.second; i++) {
+            __GC_DecRef(obj.first);
+        }
     }
     delete m;
 }

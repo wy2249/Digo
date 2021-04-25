@@ -1,0 +1,16 @@
+func digo_main() void {
+    s := []string{}
+
+    c := "23123423"
+    e := "324123423"
+    s = append(s, c)
+    s = append(s, e)
+
+    fu := s[1]
+
+    println("%s", fu)
+
+    fu = s[0]
+    println("%s", fu)
+
+}

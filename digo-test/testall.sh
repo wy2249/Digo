@@ -80,7 +80,7 @@ WORKER_ADDR=()
 
 LoadDefaultConfig() {
     WORKER_COUNT=0
-    GC_DEBUG=0
+    GC_DEBUG=1
     ENABLE_MASTER=0
     MASTER_ADDR=()
     WORKER_ADDR=()
@@ -178,6 +178,15 @@ RunTest() {
         echo " ## Executable debug output: " >> "$global_log"
         cat "$exec_debug_output" >> "$global_log"
 
+        if [ $GC_DEBUG -eq 1 ] ; then
+            if grep -q "GC Leak:" "$exec_debug_output"; then
+                echo " ### FAIL: GC Leak" >> "$global_log"
+                global_test_error=1
+            else
+                echo " ### GC Check Passed" >> "$global_log"
+            fi
+        fi
+
         if [ $WORKER_COUNT -gt 0 ] ; then
             for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
             do
@@ -189,7 +198,7 @@ RunTest() {
         fi
 
         if [ ! -f $expected_file ]; then
-            echo " ## Compilation passed, but we cannot find $expected_file" >> "$global_log"
+            echo " ### Compilation passed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
             echo " ## Diff output: " >> "$global_log"
@@ -206,7 +215,7 @@ RunTest() {
         cat "$build_output" >> "$global_log"
 
         if [ ! -f $expected_file ]; then
-            echo " ## Compilation failed, but we cannot find $expected_file" >> "$global_log"
+            echo " ### Compilation failed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
             Compare "$build_output" "$expected_file" "$diff_output_file"
@@ -221,10 +230,10 @@ RunTest() {
     fi
 
     if [ $global_test_error -eq 1 ] ; then
-        echo "##### Test $test_name: Failed" >> "$global_log"
+        echo "### Test $test_name: Failed" >> "$global_log"
         echo "FAIL"
     else
-        echo "##### Test $test_name: Passed" >> "$global_log"
+        echo "### Test $test_name: Passed" >> "$global_log"
         echo "OK"
     fi
     

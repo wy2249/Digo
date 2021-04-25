@@ -1,0 +1,23 @@
+func digo_main() void {
+    s := []future{}
+    a := 10
+    b := 20
+    c := try_return_one(a)
+    e := try_return_one(b)
+    s = append(s, c)
+    s = append(s, e)
+
+    fu := s[1]
+    g := await fu
+
+    println("%d", g)
+
+    fu = s[0]
+    g1 := await fu
+    println("%d", g1)
+
+}
+
+async func try_return_one(a int) int {
+    return a+10
+}
