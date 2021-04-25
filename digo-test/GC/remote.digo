@@ -1,0 +1,18 @@
+func digo_main() void {
+    a := []string{"1234", "4234fff", "da4dfa", "dfa4fda"}
+    b := []string{"hedfa", "fdafedf", "fdafe", "hello"}
+    c := []int{1, 2,3,4,5,6,7}
+
+    future1 := f1(a, b, c)
+
+    f, g, h := await future1
+
+    println("%l", f)
+    println("%l", g)
+    println("%l", h)
+}
+
+
+async func f1(a []string, b []string, c []int) ([]string, []string, []int) {
+    return b, a, c
+}

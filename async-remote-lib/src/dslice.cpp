@@ -167,7 +167,9 @@ int64_t GetSliceSize(void *obj) {
 }
 
 void *GetSliceIndexString(void *obj, int64_t idx) {
-    return ((DigoSlice *) obj)->Index(idx).str_obj;
+    auto s = ((DigoSlice *) obj)->Index(idx).str_obj;
+    ((DObject*)s)->IncRef();
+    return s;
 }
 
 int64_t GetSliceIndexInt(void *obj, int64_t idx) {
@@ -179,7 +181,9 @@ double GetSliceIndexDouble(void *obj, int64_t idx) {
 }
 
 void *GetSliceIndexFuture(void *obj, int64_t idx) {
-    return ((DigoSlice *) obj)->Index(idx).future_obj;
+    auto s = ((DigoSlice *) obj)->Index(idx).future_obj;
+    ((DObject*)s)->IncRef();
+    return s;
 }
 
 void *SetSliceIndexString(void *obj, int64_t idx, void *val) {

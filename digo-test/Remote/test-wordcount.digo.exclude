@@ -1,4 +1,4 @@
-//   word-count
+//word-count
 
 // The workers execute this `async remote` function.
 // Calling an `async remote` function returns immediately
@@ -9,7 +9,8 @@
 // Instead, it returns a future object, on which 
 // user can call await/gather to get the actual return values.
 
-async remote func remote_count_word(words []string) ([]string, []int) {
+async func remote_count_word(words []string) ([]string, []int) {
+     // println("in remote_count_word: parameters: %l", words)
     // we first sorts the words.
     quick_sort(words, 0, len(words) - 1)
 
@@ -32,6 +33,8 @@ async remote func remote_count_word(words []string) ([]string, []int) {
             resultCount = append(resultCount, 1)
         }
     }
+    
+    /// println("remote_count_word: going to return: %l | %l", resultWord, resultCount)
     return resultWord, resultCount
 }
 
@@ -39,9 +42,14 @@ async remote func remote_count_word(words []string) ([]string, []int) {
 // Calling an `async` function returns immediately with
 // a implicit future object.
 async func count_words_in_file(file string, taskCount int) ([]string, []int) {
+
     words := read(file)
     worker_word_cnt := len(words) / taskCount
     i := 0
+
+    if (len(words) == 0) {
+        println("warning!!!! len words = 0")
+    }
 
     futures := []future{}
     for (i = 0; i < len(words); i = i + worker_word_cnt) {
@@ -54,24 +62,27 @@ async func count_words_in_file(file string, taskCount int) ([]string, []int) {
         futures = append(futures, remote_count_word(words[i : len(words)]))
     }
     
-    var mergedWords []string
-    var mergedCount []int
+    mergedWords := []string{}
+    mergedCount := []int{}
 
-    for (i = 0 ; i < len(taskCount); i = i + 1) {
+    for (i = 0 ; i < len(futures) ; i = i + 1) {
         // Here, we are explicity waiting for the remote task
         // to finish.
         remote_task := futures[i]
         resultWord, resultCount := await remote_task
         
         w, c := merge_two_word_cnt(resultWord, resultCount, mergedWords, mergedCount)
+        // println("count_words_in_file: current: %l | %l", mergedWords, mergedCount)
         mergedWords = w
         mergedCount = c
     }
+
+    // println("count_words_in_file: going to return: %l | %l", mergedWords, mergedCount)
     return mergedWords, mergedCount
 }
 
 // we merge wordcnt1 into wordcnt2
-func merge_two_word_cnt(words1 []string, cnt1 []int, words2 []string, words2 []int) ([]string, []int) {
+func merge_two_word_cnt(words1 []string, cnt1 []int, words2 []string, cnt2 []int) ([]string, []int) {
     j := 0
     k := 0
 
@@ -83,7 +94,7 @@ func merge_two_word_cnt(words1 []string, cnt1 []int, words2 []string, words2 []i
                     println("error")
                 }
                 found = 1
-                words2[k] = words2[k] + words1[j]
+                cnt2[k] = cnt2[k] + cnt1[j]
             }
         }
         if (found == 0) {
@@ -97,10 +108,10 @@ func merge_two_word_cnt(words1 []string, cnt1 []int, words2 []string, words2 []i
 func word_count_entry() {
     futures := []future{}
 
-    futures = append(futures, count_words_in_file("book1.txt", 4))
-    futures = append(futures, count_words_in_file("book2.txt", 4))
-    futures = append(futures, count_words_in_file("book3.txt", 4))
-    
+    futures = append(futures, count_words_in_file("./digo-test/Remote/book1.txt", 4))
+    futures = append(futures, count_words_in_file("./digo-test/Remote/book2.txt", 4))
+    futures = append(futures, count_words_in_file("./digo-test/Remote/book3.txt", 4))
+
     // Calling `async`/`async remote` functions does not block unless
     // we expicitly wait for them to finish by calling await/gather.
     // So word_count_entry() does not block until we `gather` here:
@@ -139,13 +150,13 @@ func quick_sort(arr []string, p int, q int) void {
     }
 }
 
-func swap(arr []string, p int, q int) void {
+func swap(arr []string, i int, j int) void {
     tmp := arr[i]
     arr[i] = arr[j]
     arr[j] = tmp
 }
 
-func min(p int, q int) void {
+func min(p int, q int) int {
     if (p < q) {
         return p
     } else {

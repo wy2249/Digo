@@ -79,6 +79,9 @@ void SW_AddSlice(void* wi, void* wj) {
     Serialization * w = (Serialization*)wi;
     DigoSlice * sliceWrapper = (DigoSlice*)wj;
     try {
+        if (sliceWrapper == nullptr) {
+            // throw NullPointerException("Add a null slice");
+        }
         /*   unwrap here  */
         /*   generates an array with necessary data only   */
         vector<TypeCell> arr;
@@ -96,7 +99,7 @@ void SW_AddSlice(void* wi, void* wj) {
         w->AddSlice(arr, sliceType);
     }
     catch (std::exception & e) {
-        SerializationExceptionHandler("SW_AddString", e);
+        SerializationExceptionHandler("SW_AddSlice", e);
     }
 }
 
