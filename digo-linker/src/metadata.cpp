@@ -526,7 +526,7 @@ declare dso_local void @ASYNC_AddFunction(i32, i8*)
 declare dso_local i32 @entry(i32, i8**)
 
 declare dso_local void @Debug_Real_LinkerCallFunction(i32, i32)
-declare dso_local void @__GC_DEBUG_COLLECT_LEAK_INFO()
+declare dso_local void @__DIGO_RUNTIME_OnExit()
 
 )XXXXX";
 
@@ -578,11 +578,11 @@ entry:
 
 if.master:
   call void @digo_main()
-  call void @__GC_DEBUG_COLLECT_LEAK_INFO()
+  call void @__DIGO_RUNTIME_OnExit()
   ret i32 0
 
 if.worker:
-  call void @__GC_DEBUG_COLLECT_LEAK_INFO()
+  call void @__DIGO_RUNTIME_OnExit()
   ret i32 0
 }
 )XXXXX";

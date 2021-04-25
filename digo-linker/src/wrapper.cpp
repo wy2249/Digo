@@ -47,6 +47,12 @@ static void WrapperExceptionHandler(const std::string& func, std::exception & e)
     exit(1);
 }
 
+struct RuntimeInfo {
+    shared_ptr<Master> master;
+};
+
+RuntimeInfo g_runtime_info;
+
 __attribute__((noinline)) int entry(int argc, char* argv[]) {
     string usage = "usage: --worker MasterIP:MasterPort WorkerIP:WorkerPort\n   or --master ip:port\n";
     try {
@@ -68,6 +74,7 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
             /*  master listens for new workers in another thread  */
             std::thread([=]{master->Listen(argv[2]);}).detach();
             master->WaitForReady();
+            g_runtime_info.master = master;
             /*  here the Entry() returns 1 indicating that
              *  the argument is --master, and
              *  control flow will go to digo_main() defined by Digo Compiler
@@ -94,6 +101,12 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
     exit(1);
     /*  unreachable  */
     return 0;
+}
+
+__attribute__((noinline)) void __DIGO_RUNTIME_OnExit() {
+    // if (g_runtime_info.master)
+        // g_runtime_info.master->StopListen();
+    __GC_DEBUG_COLLECT_LEAK_INFO();
 }
 
 __attribute__((noinline)) void* CreateAsyncJob(int32 func, byte* args, int32 arg_len) {

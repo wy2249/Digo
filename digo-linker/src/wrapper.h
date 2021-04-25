@@ -24,6 +24,8 @@ __attribute__((noinline)) int32 ASYNC_GetFunctionId(const char* func_name);
 
 __attribute__((noinline)) void Debug_Real_LinkerCallFunction(int32_t id, int32_t arg_len);
 __attribute__((noinline)) void NoMatchExceptionHandler(int32_t id);
+
+__attribute__((noinline)) void __DIGO_RUNTIME_OnExit();
 }
 
 #endif //ASYNC_REMOTE_LIB_WRAPPER_H

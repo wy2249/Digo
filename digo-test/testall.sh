@@ -117,14 +117,15 @@ RunTest() {
     if [ $errorlevel -eq 0 ] ; then
         # success expected, so try to run the executable
         exec_output="$test_name.exec.output"
+        exec_debug_output="$test_name.debug.output"
         expected_file="$test_src.pass.expected"
 
         if [ $ENABLE_MASTER -eq 0 ] ; then
-            ../executable --no-master > "$exec_output" 2>/dev/null &
+            ../executable --no-master > "$exec_output" 2>"$exec_debug_output" &
             master_pid=$!
         else
             # echo ../executable --master $MASTER_ADDR
-            ../executable --master $MASTER_ADDR > "$exec_output" 2>/dev/null &
+            ../executable --master $MASTER_ADDR > "$exec_output" 2>"$exec_debug_output" &
             master_pid=$!
         fi
 
@@ -142,11 +143,14 @@ RunTest() {
         wait $master_pid
 
         for pid in ${worker_pid[*]}; do
-            kill -9 $pid
+            kill -9 $pid > /dev/null
         done
 
         echo " ## Executable output: " >> "$global_log"
         cat "$exec_output" >> "$global_log"
+
+        echo " ## Executable debug output: " >> "$global_log"
+        cat "$exec_debug_output" >> "$global_log"
 
         if [ ! -f $expected_file ]; then
             echo " ## Compilation passed, but we cannot find $expected_file" >> "$global_log"
@@ -215,6 +219,7 @@ Clean() {
     rm -f *.diff.output
     rm -f *.linker.output
     rm -f *.worker*.output
+    rm -f *.debug.output
 }
 
 # Set time limit for all operations

@@ -30,16 +30,6 @@ using namespace std;
  *                                                   and delete the tracing map itself.
  */
 
-extern "C" {
-    void __GC_DecRef(void* obj);
-    void* __GC_CreateTraceMap();
-    void  __GC_Trace(void* map, void* obj);
-    void  __GC_NoTrace(void* map, void* obj);
-    void  __GC_ReleaseAll(void* map);
-
-    void  __GC_DEBUG_COLLECT_LEAK_INFO();
-}
-
 void __GC_DecRef(void* obj) {
     if (obj == nullptr) {
         return;
