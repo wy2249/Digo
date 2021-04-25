@@ -410,7 +410,7 @@ let translate(functions) =
                       | SAppend(expl) -> 
                         let (_,SNamedVariable(slice_name))= (List.hd expl) in
                         Hashtbl.replace futures s (Hashtbl.find futures slice_name);
-                      | _ -> print_string(string_of_sexpr(ex1)^"\n"); ignore()
+                      | _ -> ignore()
                     )
                     | _ ->ignore()
                   in
@@ -460,10 +460,10 @@ let translate(functions) =
                 print_string((string_of_sexpr((ret_typl2,e2'))^"\n"));
                 print_string((slice_name ^ " " ^ future_object ^ "\n"));
                 *)
-                let check_eq a b = if a=b then ignore() else raise (Failure ( "Semant Err: only support add future objects with same async function in one slice")) in
+                let check_eq a b = if a=b then ignore() else raise (Failure ( "Codegen Err: only support add future objects with same async function in one slice")) in
                 let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
-                else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
-                ignore(if Hashtbl.mem futures slice_name then check_eq slice_name future_object else ignore(Hashtbl.add futures slice_name future_func));
+                else raise (Failure ( "Codegen Err: undeclared future object " ^ future_object)) in
+                ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func));
                 (* print_string(string_of_bool(Hashtbl.mem futures slice_name)) *)
             | _ -> ignore()
             in

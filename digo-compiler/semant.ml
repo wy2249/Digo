@@ -300,10 +300,12 @@ let check (functions) =
             FutureType ->
             let SNamedVariable(slice_name) = e1' in
             let SNamedVariable(future_object) = e2' in
-            let check_eq a b = if a=b then ignore() else raise (Failure ( "Semant Err: only support add future objects with same async function in one slice")) in
+            let check_eq a b = 
+              if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a))
+            in
             let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
             else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
-            ignore(if Hashtbl.mem futures slice_name then check_eq slice_name future_object else ignore(Hashtbl.add futures slice_name future_func));
+            ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func));
             | _ -> ignore()
             in
             (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
