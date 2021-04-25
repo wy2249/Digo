@@ -25,8 +25,8 @@
 %nonassoc COMMA
 %nonassoc ASSIGNNEW
 %nonassoc LEFT_PARENTHE
-%nonassoc LEFT_BRACKET
 %right ASSIGNMENT
+%nonassoc LEFT_BRACKET
 %left LOGICAL_OR
 %left LOGICAL_AND
 %right LOGICAL_NOT
