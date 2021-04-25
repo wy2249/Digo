@@ -74,6 +74,7 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
             /*  master listens for new workers in another thread  */
             std::thread([=]{master->Listen(argv[2]);}).detach();
             master->WaitForReady();
+            cerr << string("Debug Info: Master ready on ") + argv[2] + "\n";
             g_runtime_info.master = master;
             /*  here the Entry() returns 1 indicating that
              *  the argument is --master, and
@@ -87,6 +88,7 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
             }
             auto worker = Worker::GetInst();
             /*  worker has to block here  */
+            cerr << string("Debug Info: Worker ready on ") + argv[3] + ", master: " + argv[2] + "\n";
             std::thread([=]{ worker->Start(argv[2], argv[3]);})
             .join();
             return 2;

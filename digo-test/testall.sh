@@ -94,15 +94,18 @@ RunTest() {
                              s/.digo//'`
     test_src="$1"
 
+    dir_name=`dirname $test_src`
+
     echo -n "$test_name..."
 
+    rm -f "../executable"
+
     ../digo-compiler/digo.native "$test_src" > ../tmp.compiled.nometadata.ll 2>"$test_name.build.output"
+    errorlevel=$?
 
     echo "" >> "$global_llvm_ir_output_log"
-    echo "##### Testing $test_name" >> "$global_llvm_ir_output_log"
+    echo "-------------------- Testing $test_name" >> "$global_llvm_ir_output_log"
     cat ../tmp.compiled.nometadata.ll >> $global_llvm_ir_output_log
-
-    errorlevel=$?
 
     if [ $errorlevel -eq 0 ] ; then
         make -C $MAKE_DIR build-link-pass digo="$test_src" out=executable &>"$test_name.linker.output"
@@ -110,9 +113,25 @@ RunTest() {
     fi
 
     echo "" >> "$global_log"
-    echo "##### Testing $test_name" >> "$global_log"
+    echo "-------------------- Testing $test_name --------------------" >> "$global_log"
+
+    # load group config
+    if [ -f "$dir_name/config.txt" ] ; then
+        . "$dir_name/config.txt"
+    fi
+
+    # config override
+    if [ -f "$test_src.cfg" ] ; then
+        . "$test_src.cfg"
+    fi
+
+    echo "Config: WORKER_COUNT=$WORKER_COUNT; GC_DEBUG=$GC_DEBUG; ENABLE_MASTER=$ENABLE_MASTER" >> "$global_log"
 
     diff_output_file="$test_name.diff.output"
+
+    if [ ! -f "../executable" ]; then
+        errorlevel=1
+    fi
 
     if [ $errorlevel -eq 0 ] ; then
         # success expected, so try to run the executable
@@ -121,11 +140,11 @@ RunTest() {
         expected_file="$test_src.pass.expected"
 
         if [ $ENABLE_MASTER -eq 0 ] ; then
-            ../executable --no-master > "$exec_output" 2>"$exec_debug_output" &
+            eval '../executable --no-master > "$exec_output" 2>"$exec_debug_output" &'
             master_pid=$!
         else
             # echo ../executable --master $MASTER_ADDR
-            ../executable --master $MASTER_ADDR > "$exec_output" 2>"$exec_debug_output" &
+            eval '../executable --master $MASTER_ADDR > "$exec_output" 2>"$exec_debug_output" &'
             master_pid=$!
         fi
 
@@ -133,17 +152,18 @@ RunTest() {
         if [ $WORKER_COUNT -gt 0 ] ; then
             for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
             do
-                # echo "Running worker $i"
-                # echo ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]}
-                ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} > "$test_name.worker$i.output" 2>/dev/null &
+                echo "Running worker $i: ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]}" >> "$global_log"
+                (eval '../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} &> "$test_name.worker$i.output" &') 2>/dev/null
                 worker_pid[$i]=$!
             done
         fi
 
         wait $master_pid
 
+        kill -9 $master_pid &> /dev/null
+
         for pid in ${worker_pid[*]}; do
-            kill -9 $pid > /dev/null
+            kill -9 $pid &> /dev/null
         done
 
         echo " ## Executable output: " >> "$global_log"
@@ -152,13 +172,23 @@ RunTest() {
         echo " ## Executable debug output: " >> "$global_log"
         cat "$exec_debug_output" >> "$global_log"
 
+        if [ $WORKER_COUNT -gt 0 ] ; then
+            for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
+            do
+                echo "" >> "$global_log"
+                echo " ## Worker $i stdout&stderr output: " >> "$global_log"
+                cat "$test_name.worker$i.output" >> "$global_log"
+                worker_pid[$i]=$!
+            done
+        fi
+
         if [ ! -f $expected_file ]; then
             echo " ## Compilation passed, but we cannot find $expected_file" >> "$global_log"
             global_test_error=1
         else
+            echo " ## Diff output: " >> "$global_log"
             Compare "$exec_output" "$expected_file" "$diff_output_file"
 
-            echo " ## Diff output: " >> "$global_log"
             cat "$diff_output_file" >> "$global_log"
         fi
     else
@@ -191,6 +221,9 @@ RunTest() {
         echo "##### Test $test_name: Passed" >> "$global_log"
         echo "OK"
     fi
+    
+    echo "" >> "$global_log"
+
 }
 
 RunTestFiles() {
@@ -203,6 +236,9 @@ RunTestFiles() {
 # RunTestGroup <test_group_dir>
 RunTestGroup() {
     echo "--- Test Group: $1"
+
+    echo "-------------------------- Test Group: $1 ----------------------" >> "$global_log"
+
     group_dir=$1
     LoadDefaultConfig
     # load config
@@ -210,6 +246,9 @@ RunTestGroup() {
     . "$group_dir/config.txt"
 
     RunTestFiles "$group_dir/*.digo"
+
+    echo "" >> "$global_log"
+    echo "" >> "$global_log"
 }
 
 Clean() {
