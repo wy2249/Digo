@@ -299,7 +299,6 @@ let check (functions) =
             (* check future object type when appending. if it's the first one, add (slice, func of future) *)
             let _ = match x with 
               FutureType ->
-                print_string(string_of_sexpr((ret_typl2,e2'))^"\n");
                 let SNamedVariable(slice_name) = e1' in
                 let check_eq a b = 
                   if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a)) in
