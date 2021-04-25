@@ -165,7 +165,8 @@ let check (functions) =
 
     (* Type of each variable (global, formal, or local *)
     let symbols = Hashtbl.create 500 in
-    let futures = Hashtbl.create 500 in                                          
+    let futures = Hashtbl.create 500 in
+    let future_slice = Hashtbl.create 500 in                                      
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
     let type_of_identifier n =
       if Hashtbl.mem symbols n then Hashtbl.find symbols n
@@ -206,23 +207,34 @@ let check (functions) =
             and (ret_typ,e') = expr e in
             let err = "illegal assignment" in
             ([check_assign (List.hd var_typ) (List.hd ret_typ) err], SAssignOp((expr var),(ret_typ, e')))   
-          | _  -> raise(Failure("AssignOp error: left hand side is invalide"))
+          | _  -> raise(Failure("AssignOp error: left hand side is invalid"))
           )
         | NamedVariable(x)   -> 
           (* check named variable type macth with expression type *)
           let var_typ = type_of_identifier x
           and (ret_typ,e') = expr e in
-          let err = "illegal assignment " (*^ stringify_builtin_type var_type ^ " to expression type "
-            ^ stringify_builtin_type ret_typ*) in
+          let err = "illegal assignment " in
           let _ = match var_typ with
-            FutureType -> 
-            let SFunctionCall(fname,_) = e' in
-            Hashtbl.add futures x fname
+            FutureType -> (match e' with 
+                SFunctionCall(fname,_) -> Hashtbl.add futures x fname
+              | SSliceIndex((_,SNamedVariable(slice_name)),_) -> 
+                  Hashtbl.replace futures x (Hashtbl.find futures slice_name)
+              | SNamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e)^" is invalid")) 
+              )
+            | SliceType(FutureType) ->
+              (match e with 
+                NamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
+              | Append(expl) -> 
+                let NamedVariable(slice_name)= List.hd expl in
+                Hashtbl.replace futures x (Hashtbl.find futures slice_name);
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e) ^" is invalid"))
+              )
             | _ -> ignore()
           in
             ([check_assign var_typ (List.hd ret_typ) err], SAssignOp(expr var,(ret_typ, e')))  
         | _ ->
-          raise(Failure("AssignOp error: left hand side is invalide")) 
+          raise(Failure("AssignOp error: left hand side is invalid")) 
         )  
       | UnaryOp(op, e)   -> 
         let (ret_typl,e') = expr e in
@@ -282,7 +294,22 @@ let check (functions) =
           ( match ret_typl1 with
           | [SliceType(x)] -> 
             if x = (List.hd ret_typl2)
-            then (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
+            then 
+            (* check future object type when appending. if it's the first one, add (slice, func of future) *)
+            let _ = match x with 
+            FutureType ->
+            let SNamedVariable(slice_name) = e1' in
+            let SNamedVariable(future_object) = e2' in
+            let check_eq a b = 
+              if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a))
+            in
+            let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
+            else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
+            ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func));
+            | _ -> ignore()
+            in
+            (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
+
             else raise(Failure("Built-in Append object and element are not compatible due to different type"))
           | _  -> raise(Failure("Built-in Append being called on non-slice object"))  
           )
@@ -380,7 +407,7 @@ let check (functions) =
             let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment type")) ret_list
             in SDeclare(nl, t, ret_list)
         in ck
-      | ShortDecl(nl,el) -> 
+      | ShortDecl(nl,el) ->
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
@@ -400,8 +427,17 @@ let check (functions) =
             else ignore(Hashtbl.add symbols n FutureType)) nl;
             List.iter (fun n -> if Hashtbl.mem futures n then raise (Failure ("Semant Err: duplicate future variable declarations ( " ^ n ^ " )"))
             else  ignore(Hashtbl.add futures n fname)) nl;
+          | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
+            (* *)
+            List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
+                Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl ret_list;
+            List.iter2 check_dup_var nl ret_list
           | (etl,SFunctionCall(_,_)) | (etl, SAwait(_))   -> 
               List.iter2 check_dup_var_function nl etl
+          | ([SliceType(FutureType)], SSliceLiteral(_,_,_)) ->
+              (* add (slice_name, []) to future_slice. this is to initialize a list of functions*)
+              List.iter (fun n->Hashtbl.add future_slice n []) nl;
+              List.iter2 check_dup_var nl ret_list
           | _ -> List.iter2 check_dup_var nl ret_list
         in
         SShortDecl(nl, ret_list)
