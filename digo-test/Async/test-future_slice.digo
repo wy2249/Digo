@@ -13,8 +13,8 @@ func digo_main() void {
     println("%d", g)
 
     fu = s[0]
-    g = await fu
-    println("%d", g)
+    g1 := await fu
+    println("%d", g1)
 
 }
 

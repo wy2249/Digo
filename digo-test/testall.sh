@@ -29,7 +29,7 @@ Usage() {
 MAKE_DIR='../'
 # Generate depenencies and Digo Compiler
 BuildCompiler() {
-    echo "------------------ Compiler not found -------------------------"
+    echo "------------------ !Compiler not found -------------------------"
     echo "------------------ Generating Compiler ------------------------"
     echo "Please wait....... It may take 1-5 minutes to generate compiler"
 
@@ -75,11 +75,15 @@ Compare() {
 WORKER_COUNT=0
 GC_DEBUG=0
 ENABLE_MASTER=0
+MASTER_ADDR=()
+WORKER_ADDR=()
 
 LoadDefaultConfig() {
     WORKER_COUNT=0
     GC_DEBUG=0
     ENABLE_MASTER=0
+    MASTER_ADDR=()
+    WORKER_ADDR=()
 }
 
 # RunTest <digofile>
@@ -104,7 +108,7 @@ RunTest() {
     errorlevel=$?
 
     echo "" >> "$global_llvm_ir_output_log"
-    echo "-------------------- Testing $test_name" >> "$global_llvm_ir_output_log"
+    echo "# -------------------- Testing $test_name" >> "$global_llvm_ir_output_log"
     cat ../tmp.compiled.nometadata.ll >> $global_llvm_ir_output_log
 
     if [ $errorlevel -eq 0 ] ; then
@@ -113,7 +117,7 @@ RunTest() {
     fi
 
     echo "" >> "$global_log"
-    echo "-------------------- Testing $test_name --------------------" >> "$global_log"
+    echo "# -------------------- Testing $test_name --------------------" >> "$global_log"
 
     # load group config
     if [ -f "$dir_name/config.txt" ] ; then
@@ -153,9 +157,10 @@ RunTest() {
         if [ $WORKER_COUNT -gt 0 ] ; then
             for (( i = 0 ; i < $WORKER_COUNT ; i++ ))
             do
-                echo "Running worker $i: ../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]}" >> "$global_log"
-                (eval '../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} &> "$test_name.worker$i.output" &') 2>/dev/null
-                worker_pid[$i]=$!
+                command="../executable --worker $MASTER_ADDR ${WORKER_ADDR[$i]} &> \"$test_name.worker$i.output\" &"
+                echo "Running worker $i: $command" >> "$global_log"
+                pid=`(eval $command ; echo $!) 2>/dev/null`
+                worker_pid[$i]=$pid
             done
         fi
 
@@ -236,9 +241,9 @@ RunTestFiles() {
 
 # RunTestGroup <test_group_dir>
 RunTestGroup() {
-    echo "--- Test Group: $1"
+    echo "# --- Test Group: $1"
 
-    echo "-------------------------- Test Group: $1 ----------------------" >> "$global_log"
+    echo "# -------------------------- Test Group: $1 ----------------------" >> "$global_log"
 
     group_dir=$1
     LoadDefaultConfig

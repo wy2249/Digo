@@ -88,7 +88,8 @@ __attribute__((noinline)) int entry(int argc, char* argv[]) {
             }
             auto worker = Worker::GetInst();
             /*  worker has to block here  */
-            cerr << string("Debug Info: Worker ready on ") + argv[3] + ", master: " + argv[2] + "\n";
+            cerr << string("Debug Info: Worker ready on ") + argv[3] + ", master: "
+                    + argv[2] + ", my pid: " + to_string(getpid())  + "\n";
             std::thread([=]{ worker->Start(argv[2], argv[3]);})
             .join();
             return 2;
@@ -183,7 +184,8 @@ __attribute__((noinline)) int32 ASYNC_GetFunctionId(const char* func_name) {
 }
 
 __attribute__((noinline)) void Debug_Real_LinkerCallFunction(int32_t id, int32_t arg_len) {
-    cerr << "Digo Linker Info: the digo linker is calling func with id " << id << " and arg len " << arg_len << endl;
+    cerr << "Digo Linker Info: the digo linker is calling func with id " + to_string(id) + " and arg len "
+     + to_string(arg_len) + "\n";
 }
 
 __attribute__((noinline)) void NoMatchExceptionHandler(int32_t id) {
