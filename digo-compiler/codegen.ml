@@ -424,7 +424,10 @@ let translate(functions) =
      
         | SRead(e) ->
             let e_ = expr builder e in 
-            build_call readFile [| e_ |] "read_file" builder
+            let call_ret = 
+              build_call readFile [| e_ |] "read_file" builder in
+             (*   GC Injection for Read  *)
+              gc_inject call_ret builder
         | SFunctionCall("print",el)                                        -> 
             let exarr= Array.of_list (List.map (fun x -> expr builder x) el) in 
             build_call printf exarr "" builder

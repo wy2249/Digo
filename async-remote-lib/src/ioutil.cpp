@@ -12,8 +12,10 @@ void* ReadStream(istream &in) {
   auto d_sli = (DigoSlice*)CreateSlice(TYPE_STR);
   string word;
   while (in >> word) {
-    auto next_d_sli = (DigoSlice*)SliceAppend(d_sli, CreateString(word.c_str()));
+      auto tmp_str = (DigoString*)CreateString(word.c_str());
+    auto next_d_sli = (DigoSlice*)SliceAppend(d_sli, tmp_str);
     d_sli->DecRef();
+    tmp_str->DecRef();
     d_sli = next_d_sli;
   }
   return d_sli;
