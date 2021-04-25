@@ -1,0 +1,7 @@
+func digo_main() void {
+  a := 10
+  /* this is a comment
+   a = 20
+   end of commment */
+  println("%d", a)
+}

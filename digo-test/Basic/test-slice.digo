@@ -8,4 +8,6 @@ func digo_main() void {
   println("%l",b[1:2])
   println("%d",c)
   println("%l",d)
+  println("%l", b[:1])
+  println("%l", b[2:])
 }
