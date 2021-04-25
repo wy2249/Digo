@@ -214,27 +214,21 @@ let check (functions) =
           let var_typ = type_of_identifier x
           and (ret_typ,e') = expr e in
           let err = "illegal assignment " in
-          print_string(string_of_typ(var_typ)^"\n");
-          print_string(string_of_sexpr((ret_typ,e'))^"\n");
           let _ = match var_typ with
             FutureType -> (match e' with 
                 SFunctionCall(fname,_) -> Hashtbl.add futures x fname
               | SSliceIndex((_,SNamedVariable(slice_name)),_) -> 
                   Hashtbl.replace futures x (Hashtbl.find futures slice_name)
               | SNamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
-              | _ -> print_string(string_of_expr(e)^"\n"); raise(Failure("AssignOp error: left hand side is invalid")) 
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e)^" is invalid")) 
               )
             | SliceType(FutureType) ->
-              print_string("assign op a=s\n");
-              print_string(string_of_expr(e));
               (match e with 
                 NamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
               | Append(expl) -> 
                 let NamedVariable(slice_name)= List.hd expl in
-                print_string("slice_name: "^slice_name^"\n");
                 Hashtbl.replace futures x (Hashtbl.find futures slice_name);
-                print_string(string_of_bool(Hashtbl.mem futures slice_name))
-              | _ -> print_string(string_of_expr(e)); raise(Failure("AssignOp error: left hand side is invalid")) 
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e) ^" is invalid"))
               )
             | _ -> ignore()
           in
@@ -306,14 +300,10 @@ let check (functions) =
             FutureType ->
             let SNamedVariable(slice_name) = e1' in
             let SNamedVariable(future_object) = e2' in
-            print_string((string_of_expr(e)^"\n"));
-            print_string((slice_name ^ " " ^ future_object ^ "\n"));
-
             let check_eq a b = if a=b then ignore() else raise (Failure ( "Semant Err: only support add future objects with same async function in one slice")) in
             let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
             else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
             ignore(if Hashtbl.mem futures slice_name then check_eq slice_name future_object else ignore(Hashtbl.add futures slice_name future_func));
-            print_string(string_of_bool(Hashtbl.mem futures slice_name))
             | _ -> ignore()
             in
             (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
@@ -417,7 +407,6 @@ let check (functions) =
         in ck
       | ShortDecl(nl,el) ->
         let ret_list = List.map (fun e -> expr e) el in
-        print_string("short decl \n");
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
             if List.length nl != List.length tyl then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
@@ -430,7 +419,6 @@ let check (functions) =
         let check_dup_var_function n rt =
           if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n rt)
         in
-        print_string("  "^string_of_sexpr(List.hd ret_list));
         let _ = match (List.hd ret_list) with
           ([FutureType],SFunctionCall(fname,_)) ->
             List.iter (fun n -> if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )"))
@@ -438,15 +426,13 @@ let check (functions) =
             List.iter (fun n -> if Hashtbl.mem futures n then raise (Failure ("Semant Err: duplicate future variable declarations ( " ^ n ^ " )"))
             else  ignore(Hashtbl.add futures n fname)) nl;
           | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-            print_string("test: "^slice_name^"\n");
             (* *)
             List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-                Hashtbl.replace futures n (Hashtbl.find futures slice_name); print_string(slice_name^"!\n")) nl ret_list;
+                Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl ret_list;
             List.iter2 check_dup_var nl ret_list
           | (etl,SFunctionCall(_,_)) | (etl, SAwait(_))   -> 
               List.iter2 check_dup_var_function nl etl
           | ([SliceType(FutureType)], SSliceLiteral(_,_,_)) ->
-              print_string("\nshort decl slice of future\n");
               (* add (slice_name, []) to future_slice. this is to initialize a list of functions*)
               List.iter (fun n->Hashtbl.add future_slice n []) nl;
               List.iter2 check_dup_var nl ret_list

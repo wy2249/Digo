@@ -392,9 +392,8 @@ let translate(functions) =
                   let _ = (match ex1_ with 
                       SFunctionCall(fname,_) -> Hashtbl.add futures s fname
                       | SSliceIndex((_,SNamedVariable(slice_name)),_) -> 
-                          print_string(slice_name);
                           Hashtbl.replace futures s (Hashtbl.find futures slice_name)
-                    | _ -> print_string(string_of_sexpr(ex1)); raise(Failure("AssignOp error: left hand side is invalid")) 
+                    | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_sexpr(ex1) ^" is invalid")) 
                   )
                   in
                   (*  No GC here; no new object is actually created; it is just a reference  *)
@@ -410,9 +409,7 @@ let translate(functions) =
                         SNamedVariable(slice_name) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
                       | SAppend(expl) -> 
                         let (_,SNamedVariable(slice_name))= (List.hd expl) in
-                        print_string("slice_name: "^slice_name^"\n");
                         Hashtbl.replace futures s (Hashtbl.find futures slice_name);
-                        print_string(string_of_bool(Hashtbl.mem futures slice_name))
                       | _ -> print_string(string_of_sexpr(ex1)^"\n"); ignore()
                     )
                     | _ ->ignore()
@@ -438,7 +435,7 @@ let translate(functions) =
           let future_arg = build_load (lookup s) s builder  in 
           let result = "await_"^fd.sfname^"_result" in
           build_call await_llvm (Array.of_list [future_arg]) result builder
-     
+
         | SRead(e) ->
             let e_ = expr builder e in 
             build_call readFile [| e_ |] "read_file" builder
@@ -458,15 +455,16 @@ let translate(functions) =
             [FutureType] -> 
                 let SNamedVariable(slice_name) = e1' in
                 let SNamedVariable(future_object) = e2' in
+                (*
                 print_string((string_of_sexpr((ret_typl1,e1'))^"\n"));
                 print_string((string_of_sexpr((ret_typl2,e2'))^"\n"));
                 print_string((slice_name ^ " " ^ future_object ^ "\n"));
-
+                *)
                 let check_eq a b = if a=b then ignore() else raise (Failure ( "Semant Err: only support add future objects with same async function in one slice")) in
                 let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
                 else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
                 ignore(if Hashtbl.mem futures slice_name then check_eq slice_name future_object else ignore(Hashtbl.add futures slice_name future_func));
-                print_string(string_of_bool(Hashtbl.mem futures slice_name))
+                (* print_string(string_of_bool(Hashtbl.mem futures slice_name)) *)
             | _ -> ignore()
             in
             let call_ret = 
@@ -692,7 +690,6 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
-          print_string("codegen\n");
         let (p,_) = (List.hd el) in
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
@@ -716,18 +713,17 @@ let translate(functions) =
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
           | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_))  ->  
-              print_string("short decl slice index\n");
-              print_string("test: "^slice_name^"\n");
+              (* print_string("short decl slice index\n");
+              print_string("test: "^slice_name^"\n"); *)
               List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-                Hashtbl.replace futures n (Hashtbl.find futures slice_name); print_string(slice_name^"!\n")) nl el;
+                Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl el;
               List.map2 build_decll nl el;
               builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
-
-            let (ret_typ, _) = (List.hd el) in
+            (*let (ret_typ, _) = (List.hd el) in
             (match List.length ret_typ with
             1 -> List.map2 build_decll nl el; builder
-            | _ -> 
+            | _ -> *)
               let e_ = expr builder (List.hd el) in
               let rec apply_extractvaluef current_idx = function 
                 []          ->  ()
@@ -744,7 +740,7 @@ let translate(functions) =
                 apply_extractvaluef (current_idx+1) tl  
                 
               in  ignore(apply_extractvaluef 0 nl);  
-              builder)
+              builder
           | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
