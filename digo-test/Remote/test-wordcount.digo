@@ -72,12 +72,12 @@ async func count_words_in_file(file string, taskCount int) ([]string, []int) {
         resultWord, resultCount := await remote_task
         
         w, c := merge_two_word_cnt(resultWord, resultCount, mergedWords, mergedCount)
-        // println("count_words_in_file: current: %l | %l", mergedWords, mergedCount)
+         println("count_words_in_file: current: %l | %l", mergedWords, mergedCount)
         mergedWords = w
         mergedCount = c
     }
 
-    // println("count_words_in_file: going to return: %l | %l", mergedWords, mergedCount)
+     println("count_words_in_file: going to return: %l | %l", mergedWords, mergedCount)
     return mergedWords, mergedCount
 }
 

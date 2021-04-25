@@ -681,7 +681,9 @@ let translate(functions) =
           ( match ty with
             SliceType(x) -> 
             let arg_sn = get_slice_argument_number x in
-            build_call createSlice [|arg_sn|] "createslice" builder;
+            let call_ret = 
+            build_call createSlice [|arg_sn|] "createslice" builder in
+            ignore(gc_inject call_ret builder);
             builder
           | _ -> builder
           )
