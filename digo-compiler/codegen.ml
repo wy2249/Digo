@@ -719,28 +719,43 @@ let translate(functions) =
                 Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl el;
               List.map2 build_decll nl el;
               builder
-          | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
-            (*let (ret_typ, _) = (List.hd el) in
-            (match List.length ret_typ with
-            1 -> List.map2 build_decll nl el; builder
-            | _ -> *)
-              let e_ = expr builder (List.hd el) in
-              let rec apply_extractvaluef current_idx = function 
+          | (_,SAwait(_)) ->
+            let (ret_typ, _) = (List.hd el) in
+            let e_ = expr builder (List.hd el) in
+                let rec apply_extractvaluef current_idx = function 
                 []          ->  ()
                 | a::tl       ->   
-                
                 (*   GC Injection of return value here   *)
                 let extracted_llvalue = build_extractvalue e_ current_idx "extracted_value" builder
                 in
                 (* GC Inject if the type is i8*  *)
                 if type_of extracted_llvalue == pointer_type i8_t then
                   ignore(gc_inject extracted_llvalue builder);
-
+                ignore(build_store extracted_llvalue (lookup a) builder);   
+                apply_extractvaluef (current_idx+1) tl  
+              in  ignore(apply_extractvaluef 0 nl);  
+              builder
+          | (_,SFunctionCall(_,_)) ->
+            let (ret_typ, _) = (List.hd el) in
+            (match List.length ret_typ with
+            1 -> List.map2 build_decll nl el; builder
+            | _ ->
+              let e_ = expr builder (List.hd el) in
+              let rec apply_extractvaluef current_idx = function 
+                []          ->  ()
+                | a::tl       ->   
+                (*   GC Injection of return value here   *)
+                let extracted_llvalue = build_extractvalue e_ current_idx "extracted_value" builder
+                in
+                (* GC Inject if the type is i8*  *)
+                if type_of extracted_llvalue == pointer_type i8_t then
+                  ignore(gc_inject extracted_llvalue builder);
                 ignore(build_store extracted_llvalue (lookup a) builder);   
                 apply_extractvaluef (current_idx+1) tl  
                 
               in  ignore(apply_extractvaluef 0 nl);  
               builder
+            )
           | _ -> List.map2 build_decll nl el; builder
         in check_func_call
 
