@@ -674,19 +674,21 @@ let translate(functions) =
         ignore(build_cond_br bool_val body_bb merge_bb pred_builder);
         builder_at_end context merge_bb 
       | SDeclare(nl,ty,el) ->
-        let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
-        in List.iter add_decl nl;
+        (match ty with
+          SliceType(x) -> 
+          let add_slice_decl n = 
+          let arg_sn = get_slice_argument_number x in
+          let empty_slice = build_call createSlice [|arg_sn|] "createslice" builder in
+          let alloca = build_alloca (ltype_of_typ ty) n builder in 
+          let _ = build_store empty_slice alloca builder in 
+          add_var_decl n alloca 
+          in List.iter add_slice_decl nl  
+        | _ -> let add_decl n = ignore(add_var_decl n (build_alloca (ltype_of_typ ty) n builder))
+        in List.iter add_decl nl
+        );
         let ck = match el with
-          [([VoidType],_)] -> 
-          ( match ty with
-            SliceType(x) -> 
-            let arg_sn = get_slice_argument_number x in
-            let call_ret = 
-            build_call createSlice [|arg_sn|] "createslice" builder in
-            ignore(gc_inject call_ret builder);
-            builder
-          | _ -> builder
-          )
+          [([VoidType],_)] -> builder
+          
           (*
           | [(_,SFunctionCall(_,_))] | [(_,SAwait(_))] -> 
           print_string("fucntion call\n");
