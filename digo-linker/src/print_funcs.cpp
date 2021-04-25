@@ -31,6 +31,9 @@ namespace Print {
     string ToString<DigoSlice*> (DigoSlice * obj) {
         auto [underlying_arr, begin, end] = obj->Data();
         auto sliceType = obj->Type();
+        if (underlying_arr.empty() || begin == end) {
+            return "[]";
+        }
         string ret = "[";
         for (auto i = begin; i < end; i++) {
             switch (sliceType) {

@@ -26,7 +26,7 @@ const bool GC_DEBUG = false;
 
 /*  A Digo object with ref count GC support  */
 class DObject {
-private:
+protected:
     std::mutex ref_lock;
     int ref_cnt = 0;
 

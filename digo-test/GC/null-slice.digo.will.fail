@@ -1,0 +1,6 @@
+func digo_main() void {
+    var s1 []string
+    var s2 []int
+
+    println("%l %l", s1, s2)
+}

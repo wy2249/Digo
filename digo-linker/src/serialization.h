@@ -104,4 +104,16 @@ private:
     string msg;
 };
 
+class NullPointerException: public exception {
+public:
+    NullPointerException(string err) {
+        msg = std::move(err);
+    }
+    const char * what() const noexcept override {
+        return msg.c_str();
+    }
+private:
+    string msg;
+};
+
 #endif //DIGO_LINKER_SERIALIZATION_H
