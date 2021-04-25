@@ -34,7 +34,7 @@ TEST(MasterWorkerTest, Reconnect) {
   auto wk = Worker::GetInst();
   std::thread([&]{wk->Start("127.0.0.1:9999", "127.0.0.1:9998");}).detach();
 
-  sleep(5);
+  sleep(15);
 
   std::thread([&]{mr->Listen("127.0.0.1:9999");}).detach();
 

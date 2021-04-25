@@ -97,6 +97,11 @@ int Client::Call(const string &server_addr, const string &rpc_name,
   int retry_cnt = 10;
   while (connect(this->socket_, (struct sockaddr *) &address, sizeof(address)) < 0) {
     perror("connect");
+    if (retry_cnt-- <= 0) {
+      cerr << "retried 10 times but still failed, exit now." << endl;
+      exit(EXIT_FAILURE);
+    }
+    cerr << "retry after 1 second..." << endl;
     sleep(1);
 
     this->socket_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -104,8 +109,6 @@ int Client::Call(const string &server_addr, const string &rpc_name,
     address.sin_port = htons(port);
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = inet_addr(hostname.c_str());
-    if (retry_cnt-- <= 0)
-      exit(EXIT_FAILURE);
   }
 
   vector<byte> req = PackData(rpc_name, data);
