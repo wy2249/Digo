@@ -1,0 +1,10 @@
+func digo_main() void {
+    s1 := []int{}
+    var i int
+    for (i = 0; i < 10; i = i + 1) {
+        s1 = append(s1, i)
+    }
+    println("%l", s1)
+    n := s1[1]
+    println("%d", n)
+}

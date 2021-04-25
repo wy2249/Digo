@@ -1,0 +1,4 @@
+func digo_main() void {
+  1a := 1
+  println("%d", 1a)
+}

@@ -1,0 +1,6 @@
+func digo_main() void {
+    a, b, c := 3, 4, 5
+    println("%d", a)
+    println("%d", b)
+    println("%d", c)
+}
