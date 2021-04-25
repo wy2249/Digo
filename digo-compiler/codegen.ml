@@ -380,26 +380,43 @@ let translate(functions) =
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )            
             | (_,SNamedVariable(s)) -> 
-              let (typl, ex1_) = ex1 in
-               let from_llvm = e_
-              in
+              let (typl, ex1_) = ex1 in let from_llvm = e_ in
               ( match List.hd typl with
                 StringType ->
-
                   let clonellvm = build_call cloneString [|from_llvm|] "clonestr" builder in
                   ignore(build_store clonellvm (lookup s) builder);
                    (*  GC Injection for CloneString  *)
                   gc_inject clonellvm builder
 
                 | FutureType ->
-                  let (_,SFunctionCall(fname,_)) = ex1 in
-                  Hashtbl.add futures s fname;
+                  let _ = (match ex1_ with 
+                      SFunctionCall(fname,_) -> Hashtbl.add futures s fname
+                      | SSliceIndex((_,SNamedVariable(slice_name)),_) -> 
+                          print_string(slice_name);
+                          Hashtbl.replace futures s (Hashtbl.find futures slice_name)
+                    | _ -> print_string(string_of_sexpr(ex1)); raise(Failure("AssignOp error: left hand side is invalid")) 
+                  )
+                  in
                   (*  No GC here; no new object is actually created; it is just a reference  *)
                   ignore(build_store e_ (lookup s) builder); e_
+                  
                 | SliceType(x) -> 
-
                   let clonellvm = build_call cloneSlice [|from_llvm|] "cloneslice" builder in
                   ignore(build_store clonellvm (lookup s) builder);
+                  let _ = match x with 
+                    FutureType-> 
+                    let (typl, ex1_) = ex1 in
+                    (match ex1_ with 
+                        SNamedVariable(slice_name) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
+                      | SAppend(expl) -> 
+                        let (_,SNamedVariable(slice_name))= (List.hd expl) in
+                        print_string("slice_name: "^slice_name^"\n");
+                        Hashtbl.replace futures s (Hashtbl.find futures slice_name);
+                        print_string(string_of_bool(Hashtbl.mem futures slice_name))
+                      | _ -> print_string(string_of_sexpr(ex1)^"\n"); ignore()
+                    )
+                    | _ ->ignore()
+                  in
                    (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
                   gc_inject clonellvm builder; e_
@@ -434,6 +451,24 @@ let translate(functions) =
         | SAppend(args)                                    ->
             let e1 = expr builder (List.hd args) in 
             let e2 = expr builder (List.nth args 1) in 
+            let (ret_typl1,e1') = (List.hd args) in
+            let (ret_typl2,e2') = (List.nth args 1) in
+            (* e.g. s = append(s, c)*)
+            let _ = match ret_typl2 with 
+            [FutureType] -> 
+                let SNamedVariable(slice_name) = e1' in
+                let SNamedVariable(future_object) = e2' in
+                print_string((string_of_sexpr((ret_typl1,e1'))^"\n"));
+                print_string((string_of_sexpr((ret_typl2,e2'))^"\n"));
+                print_string((slice_name ^ " " ^ future_object ^ "\n"));
+
+                let check_eq a b = if a=b then ignore() else raise (Failure ( "Semant Err: only support add future objects with same async function in one slice")) in
+                let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
+                else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
+                ignore(if Hashtbl.mem futures slice_name then check_eq slice_name future_object else ignore(Hashtbl.add futures slice_name future_func));
+                print_string(string_of_bool(Hashtbl.mem futures slice_name))
+            | _ -> ignore()
+            in
             let call_ret = 
             build_call sliceAppend [|e1;e2|] "slice_append" builder in 
             (*   GC Injection for SliceAppend  *)
@@ -657,6 +692,7 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
+          print_string("codegen\n");
         let (p,_) = (List.hd el) in
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
@@ -679,6 +715,13 @@ let translate(functions) =
           in
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
+          | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_))  ->  
+              print_string("short decl slice index\n");
+              print_string("test: "^slice_name^"\n");
+              List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
+                Hashtbl.replace futures n (Hashtbl.find futures slice_name); print_string(slice_name^"!\n")) nl el;
+              List.map2 build_decll nl el;
+              builder
           | (_,SFunctionCall(_,_)) | (_,SAwait(_)) -> 
 
             let (ret_typ, _) = (List.hd el) in
