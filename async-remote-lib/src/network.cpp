@@ -94,9 +94,18 @@ int Client::Call(const string &server_addr, const string &rpc_name,
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = inet_addr(hostname.c_str());
 
-  if (connect(this->socket_, (struct sockaddr *) &address, sizeof(address)) < 0) {
+  int retry_cnt = 10;
+  while (connect(this->socket_, (struct sockaddr *) &address, sizeof(address)) < 0) {
     perror("connect");
-    exit(EXIT_FAILURE);
+    sleep(1);
+
+    this->socket_ = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&address, 0, sizeof(address));
+    address.sin_port = htons(port);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = inet_addr(hostname.c_str());
+    if (retry_cnt-- <= 0)
+      exit(EXIT_FAILURE);
   }
 
   vector<byte> req = PackData(rpc_name, data);

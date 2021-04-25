@@ -28,3 +28,23 @@ TEST(MasterWorkerTest, Normal) {
   std::thread([&]{mr->Listen("127.0.0.1:9999");}).detach();
   sleep(2);
 }
+
+TEST(MasterWorkerTest, Reconnect) {
+  auto mr = Master::GetInst();
+  auto wk = Worker::GetInst();
+  std::thread([&]{wk->Start("127.0.0.1:9999", "127.0.0.1:9998");}).detach();
+
+  sleep(5);
+
+  std::thread([&]{mr->Listen("127.0.0.1:9999");}).detach();
+
+
+  vector<byte> body{0, 0, 'a', 'b'};
+  auto result = mr->CallRemoteFunctionByName("1234567", body);
+
+  ASSERT_TRUE(equal(body.begin(), body.end(), result.begin()));
+
+
+  mr->StopListen();
+  wk->Stop();
+}
