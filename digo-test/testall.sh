@@ -126,7 +126,7 @@ RunTest() {
     fi
 
     echo "Config: WORKER_COUNT=$WORKER_COUNT; GC_DEBUG=$GC_DEBUG; ENABLE_MASTER=$ENABLE_MASTER; " >> "$global_log"
-    echo "        MASTER_ADDR=$MASTER_ADDR; WORKER_ADDR=$WORKER_ADDR" >> "$global_log"
+    echo "        MASTER_ADDR=${MASTER_ADDR[*]}; WORKER_ADDR=${WORKER_ADDR[*]}" >> "$global_log"
 
     diff_output_file="$test_name.diff.output"
 
