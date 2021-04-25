@@ -258,8 +258,9 @@ let check (functions) =
             when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd ret_typl1) = StringType) -> BoolType
           | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
           | Add when same && (List.hd ret_typl1) == StringType -> StringType
-          | _ -> raise ( Failure ("Semant Err: illegal binary operator " (*^ stringify_binary_operator e1 op e2^" e1 type "^ 
-            stringify_builtin_type ret_typ1^ " e2 type "^stringify_builtin_type ret_typ2*)  )) in 
+          | _ -> raise ( Failure ("Semant Err: illegal binary operator " ^(string_of_op op)^" for type "^ 
+          (String.concat ", " (List.map string_of_typ ret_typl1)) ^ " and type "^ (String.concat ", "(List.map string_of_typ ret_typl2))^
+          " in "^ string_of_expr e)) in 
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
       | FunctionCall(fname, args) ->
       (match fname with
@@ -297,15 +298,21 @@ let check (functions) =
             then 
             (* check future object type when appending. if it's the first one, add (slice, func of future) *)
             let _ = match x with 
-            FutureType ->
-            let SNamedVariable(slice_name) = e1' in
-            let SNamedVariable(future_object) = e2' in
-            let check_eq a b = 
-              if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a))
-            in
-            let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
-            else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
-            ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func));
+              FutureType ->
+                print_string(string_of_sexpr((ret_typl2,e2'))^"\n");
+                let SNamedVariable(slice_name) = e1' in
+                let check_eq a b = 
+                  if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a)) in
+                ( match e2' with 
+                | SNamedVariable(future_object)->
+                    (* let SNamedVariable(future_object) = e2'*)
+                    let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
+                    else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
+                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                | SFunctionCall(future_func,_)->
+                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                )
+                
             | _ -> ignore()
             in
             (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
@@ -319,7 +326,7 @@ let check (functions) =
             ( match ret_typl with
             | [SliceType(_)] -> ([IntegerType],SLen((ret_typl,e')))
             | [StringType] -> ([IntegerType],SLen((ret_typl,e')))
-            | _  -> raise(Failure("Built-in Len being called on non-slice object"))  
+            | _  -> raise(Failure("Built-in Len being called on non-slice object " ^ string_of_expr(ex)))  
             )
     | Read(e) ->
             (* only string type*)
