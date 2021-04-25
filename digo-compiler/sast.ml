@@ -60,6 +60,6 @@ let rec string_of_sexpr (tl, e) =
 | SSliceSlice (e1,e2,e3)->string_of_sexpr e1 ^ "[" ^ string_of_sexpr e2 ^":"^ string_of_sexpr e3^ "]"
 | SLen(e1)->"len("^string_of_sexpr e1 ^ ")" 
 | SAppend(el)->"append("^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
-| SAwait(e)->"await "^string_of_sexpr e
+| SAwait(e)->"await "^e
 | SRead(e)->"read " ^string_of_sexpr e
 ) ^ ")"				  

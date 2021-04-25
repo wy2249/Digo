@@ -116,6 +116,6 @@ EmptyExpr -> "empty"
 | SliceSlice (e1,e2,e3)->string_of_expr e1 ^ "[" ^ string_of_expr e2 ^":"^ string_of_expr e3^ "]"
 | Len(e1)->"len("^string_of_expr e1 ^ ")" 
 | Append(el)->"append("^ String.concat ", " (List.map string_of_expr el) ^ ")"
-| Await(e)->"await "^string_of_expr e
+| Await(e)->"await "^e
 | Read(e)->"read " ^string_of_expr e
 
