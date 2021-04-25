@@ -139,11 +139,10 @@ void Worker::Start(const string &server_addr, const string &client_addr) {
   auto cli = Client::Create();
 
   vector<byte> resp;
-  while (cli->Call(server_addr, "join", vector<byte>(client_addr.begin(),
+  if (cli->Call(server_addr, "join", vector<byte>(client_addr.begin(),
       client_addr.end()), resp) != 0) {
-    sleep(1);
-//    cerr << "join master fail" << endl;
-//    exit(EXIT_FAILURE);
+    cerr << "join master fail" << endl;
+    exit(EXIT_FAILURE);
   }
 
   if (string(resp.begin(), resp.end()) != "success\n") {
