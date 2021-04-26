@@ -692,7 +692,7 @@ let translate(functions) =
           let arg_sn = get_slice_argument_number x in
           let empty_slice = build_call createSlice [|arg_sn|] "createslice" builder in
           (*  DONOT DELETE THIS GC_INJECT  *)
-          gc_inject empty_slice;
+          gc_inject empty_slice builder;
           let alloca = build_alloca (ltype_of_typ ty) n builder in 
           let _ = build_store empty_slice alloca builder in 
           add_var_decl n alloca 
