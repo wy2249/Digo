@@ -1,13 +1,4 @@
-//word-count
-
-// The workers execute this `async remote` function.
-// Calling an `async remote` function returns immediately
-// after the job is dispatched to a worker. It does not 
-// wait for the job to finish.
-// An `async remote` function does not return with return values
-// defined in the function prototype.
-// Instead, it returns a future object, on which 
-// user can call await/gather to get the actual return values.
+//  word-count
 
 async remote func remote_count_word(words []string) ([]string, []int) {
      // println("in remote_count_word: parameters: %l", words)
@@ -38,9 +29,6 @@ async remote func remote_count_word(words []string) ([]string, []int) {
     return resultWord, resultCount
 }
 
-// The master executes this `async` function in a new thread.
-// Calling an `async` function returns immediately with
-// a implicit future object.
 async func count_words_in_file(file string, taskCount int) ([]string, []int) {
 
     words := read(file)
@@ -109,10 +97,6 @@ func word_count_entry() {
     futures = append(futures, count_words_in_file("./Remote/book2.txt", 4))
     futures = append(futures, count_words_in_file("./Remote/book3.txt", 4))
 
-    // Calling `async`/`async remote` functions does not block unless
-    // we expicitly wait for them to finish by calling await/gather.
-    // So word_count_entry() does not block until we `gather` here:
-    
     i := 0
     for (i = 0; i < len(futures); i = i + 1) {
         println("Word Count result of book%d: ", i + 1)
