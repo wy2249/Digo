@@ -48,7 +48,6 @@ p_functions:
 | { [] }
 | NEWLINE p_functions  { $2 }
 | p_function_decl p_functions { $1::$2 }
-/*| p_function p_functions  { $1::$2 } */
 
 p_function_annotation:
   { FuncNormal }
@@ -189,15 +188,9 @@ p_if_statement:
 /*  Declare:
     var a int = 5 
     var a int
-    Simple declare:
+    Short declare:
     a := 5
- */
-
-/*p_simple_statement: */                                                      /* need to check with local variables, works latter*/
-/*  p_expr              { Expr($1) }                                        */
-/*| KEYWORD_VAR p_variable_list p_type_list ASSIGNMENT p_expr_list_required { SimpleDeclare($3, $2, $5)  }*/
-/*| KEYWORD_VAR p_variable_list p_type_list { SimpleDeclare($3, $2, [EmptyExpr])  }*/
-/*| p_variable_list ASSIGNNEW p_expr_list_required { SimpleShortDecl($1, $3)  }*/                                  
+ */                                
 
 p_statement:
   p_expr                 NEWLINE   { Expr($1) }
