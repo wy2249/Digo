@@ -105,9 +105,10 @@ func merge_two_word_cnt(words1 []string, cnt1 []int, words2 []string, cnt2 []int
 func word_count_entry() {
     futures := []future{}
 
-    futures = append(futures, count_words_in_file("./Remote/book1.txt", 4))
-    futures = append(futures, count_words_in_file("./Remote/book2.txt", 4))
-    futures = append(futures, count_words_in_file("./Remote/book3.txt", 4))
+    futures = append(futures, count_words_in_file("./Demo/book1.txt", 4))
+    futures = append(futures, count_words_in_file("./Demo/book2.txt", 4))
+    futures = append(futures, count_words_in_file("./Demo/book3.txt", 4))
+    futures = append(futures, count_words_in_file("./Demo/haskell_book_chapter2.txt", 6))
 
     // Calling `async`/`async remote` functions does not block unless
     // we expicitly wait for them to finish by calling await/gather.
@@ -123,7 +124,7 @@ func word_count_entry() {
         } else {
             var j int
             for (j = 0; j < len(words); j = j + 1) {
-                println("word: %s, count: %d", words[j], count[j])
+                println("word: %s    count: %d", words[j], count[j])
             } 
         }
     }

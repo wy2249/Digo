@@ -81,6 +81,7 @@ void SW_AddSlice(void* wi, void* wj) {
     try {
         if (sliceWrapper == nullptr) {
             // throw NullPointerException("Add a null slice");
+            fprintf(stderr, "adding a null slice, seg fault !\n");
         }
         /*   unwrap here  */
         /*   generates an array with necessary data only   */
@@ -89,9 +90,16 @@ void SW_AddSlice(void* wi, void* wj) {
         digo_type sliceType = sliceWrapper->Type();
         arr.reserve(end - begin);
         for (auto i = begin; i < end; i++) {
-            TypeCell cell = underlying_arr[i];
+            if (i < 0 || i >= underlying_arr.size()) {
+                printf("%lu in %lu:%lu out of range!!\n", i, begin, end);
+            }
+            TypeCell cell = underlying_arr.at(i);
             if (sliceType == TYPE_STR) {
-                cell.str = ((DigoString*)(cell.str_obj))->Data();
+                if (cell.str_obj == nullptr) {
+                    cell.str = "";
+                } else {
+                    cell.str = ((DigoString*)(cell.str_obj))->Data();
+                }
             }
             cell.type = sliceType;
             arr.push_back(cell);
@@ -211,7 +219,7 @@ void* SW_ExtractSlice(void* s) {
         auto [underlying_arr, begin, end] = sliceObj->Data();
         begin = 0; end = 0;
         for (int i = 0; i < (int)cell.arr.size(); i++) {
-            auto nested_cell = cell.arr[i];
+            auto nested_cell = cell.arr.at(i);
             if (cell.arr_slice_type == TYPE_STR) {
                 /* wraps nested cell to Digo Object */
                 nested_cell.str_obj = CreateString(nested_cell.str.c_str());
