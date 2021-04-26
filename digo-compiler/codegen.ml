@@ -14,7 +14,6 @@ let translate(functions) =
     and i8_t       = i8_type     context
     and i1_t       = i1_type     context
     and float_t    = double_type context
-    (*and string_t   = array_type (i8_type context) 100     assume each string is less than 100 character*)
     and void_t     = void_type   context in
     
     let ltype_of_typ = function
@@ -27,123 +26,99 @@ let translate(functions) =
       | VoidType     -> void_t
     in
 
-(* built-in function *)
+(* print built-in function *)
   let printf_t = 
       var_arg_function_type void_t [|(pointer_type i8_t)|]  in 
   let printf =
       declare_function "print" printf_t the_module in 
-
   let printfln_t = 
       var_arg_function_type void_t [|(pointer_type i8_t)|]  in
   let printfln =
       declare_function "println" printfln_t the_module in
 
-  (*let printString_t= 
-    function_type void_t [|(pointer_type i8_t)|] in
-  let printString=
-    declare_function "printString" (printString_t) the_module in  *)
-
-    (* String related functions *)
+(* String related functions *)
   let createString_t= 
       function_type (pointer_type i8_t) [|pointer_type i8_t|] in
   let createString=
       declare_function "CreateString" (createString_t) the_module in
-  
-  (*let createEmptyString_t= 
-        function_type (pointer_type i8_t) [|  |] in
-  let createEmptyString=
-        declare_function "CreateEmptyString" (createEmptyString_t) the_module in*)
-
   let addString_t= 
       function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
   let addString=
       declare_function "AddString" (addString_t) the_module in
-  
   let compareString_t= 
         function_type (i64_t) [|pointer_type i8_t; pointer_type i8_t|] in
   let compareString=
         declare_function "CompareString" (compareString_t) the_module in
-  
   let cloneString_t= 
         function_type (pointer_type i8_t) [|pointer_type i8_t|] in
   let cloneString=
         declare_function "CloneString" (cloneString_t) the_module in
-  
   let lenString_t= 
       function_type (i64_t) [|pointer_type i8_t|] in
   let lenString=
       declare_function "GetStringSize" (lenString_t) the_module in
-  
+
+(* slice related built-in functions *)
     let createSlice_t = 
         function_type (pointer_type i8_t) [|i64_t|] in
     let createSlice = 
         declare_function "CreateSlice" (createSlice_t) the_module in
-
     let sliceAppend_t =
         var_arg_function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in
     let sliceAppend = 
         declare_function "SliceAppend" sliceAppend_t the_module in 
-
     let sliceSlice_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;i64_t|] in
     let sliceSlice = 
         declare_function "SliceSlice" (sliceSlice_t) the_module in
-  
     let getSliceSize_t =
         function_type i64_t [|(pointer_type i8_t)|] in
     let getSliceSize = 
         declare_function "GetSliceSize" (getSliceSize_t) the_module in      
-  
     let setSliceIndexDouble_t =
         function_type float_t [|(pointer_type i8_t);i64_t;float_t|] in
     let setSliceIndexDouble = 
         declare_function "SetSliceIndexDouble" (setSliceIndexDouble_t) the_module in
-  
     let setSliceIndexFuture_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;(pointer_type i8_t)|] in
     let setSliceIndexFuture = 
         declare_function "SetSliceIndexFuture" (setSliceIndexFuture_t) the_module in
-  
     let setSliceIndexString_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t;(pointer_type i8_t)|] in
     let setSliceIndexString = 
         declare_function "SetSliceIndexString" (setSliceIndexString_t) the_module in
-  
     let setSliceIndexInt_t =
         function_type i64_t [|(pointer_type i8_t);i64_t;i64_t|] in
     let setSliceIndexInt = 
         declare_function "SetSliceIndexInt" (setSliceIndexInt_t) the_module in
-  
     let getSliceIndexDouble_t =
         function_type float_t [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexDouble = 
         declare_function "GetSliceIndexDouble" (getSliceIndexDouble_t) the_module in
-  
     let getSliceIndexFuture_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexFuture = 
         declare_function "GetSliceIndexFuture" (getSliceIndexFuture_t) the_module in
-  
     let getSliceIndexString_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexString = 
         declare_function "GetSliceIndexString" (getSliceIndexString_t) the_module in
-  
     let getSliceIndexInt_t =
         function_type i64_t [|(pointer_type i8_t);i64_t|] in
     let getSliceIndexInt = 
         declare_function "GetSliceIndexInt" (getSliceIndexInt_t) the_module in
-
     let cloneSlice_t =
         function_type (pointer_type i8_t) [|(pointer_type i8_t)|] in 
     let cloneSlice =
         declare_function "CloneSlice" (cloneSlice_t) the_module in 
 
+(* red function *)
     let readFile_t= 
           function_type (pointer_type i8_t) [|pointer_type i8_t|] in
     let readFile=
           declare_function "ReadFile" (readFile_t) the_module in
 
+(* gc related functions*)
     let gc_create_trace_map_t =
           function_type (pointer_type i8_t) [| |] in 
     let gc_create_trace_map = 
@@ -172,8 +147,7 @@ let translate(functions) =
     in
     
   
-(*usr function*)
-
+(* usr functions *)
   let function_decls = Hashtbl.create 5000 in
   let function_delc fdecl=
       let name = fdecl.sfname
@@ -197,7 +171,7 @@ let translate(functions) =
     in
 
   let build_function_body fdecl= 
-      let (the_function,_) = find_func fdecl.sfname (*StringMap.find fdecl.sfname function_decls*)
+      let (the_function,_) = find_func fdecl.sfname 
       in
       let builder = 
         builder_at_end context (entry_block the_function) in
@@ -220,7 +194,6 @@ let translate(functions) =
 
       let add_var_decl id llvalue = Hashtbl.add local_vars id llvalue
       in
-
       let lookup n = if Hashtbl.mem local_vars n then Hashtbl.find local_vars n
         else raise (Failure("cannot find symbol in local_vars"))
       in
@@ -265,7 +238,7 @@ let translate(functions) =
       let rec expr builder (e_typl,e) = 
         expr_is_lvalue_obj := 0;
         match e with
-          SEmptyExpr                                                          ->  const_int i1_t 1       (*cannot changed since for loop needs boolean value*)
+          SEmptyExpr  ->  const_int i1_t 1      (*cannot changed since for loop needs boolean value*)
         | SBinaryOp(ex1,op,ex2) when List.hd e_typl = FloatType               ->                        
           let e1 = expr builder ex1
           and e2 = expr builder ex2 in 
@@ -356,38 +329,42 @@ let translate(functions) =
           | Negative when ex1_typl = [FloatType]     ->  build_fneg
           | _ -> raise (Failure("unary operation is invalid and should be rejected in semant"))
           ) e_ "tmp" builder
-        | SAssignOp(var,ex1)                                                  ->    (*multi return values of function assignop works latter *)      
+        | SAssignOp(var,ex1)  -> 
           let e_ = expr builder ex1 in
           (match var with
               ([IntegerType],SSliceIndex(e1,e2))  -> 
               (match e1 with
-              | (_,SNamedVariable(s)) -> build_call setSliceIndexInt [|(expr builder e1);(expr builder e2);e_|] "setsliceidxn" builder
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexInt [|(expr builder e1);(expr builder e2)
+                                          ;e_|] "setsliceidxn" builder
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant"))
               )
             | ([FloatType],SSliceIndex(e1,e2))    -> 
               (match e1 with
-              | (_,SNamedVariable(s)) -> build_call setSliceIndexDouble [|(expr builder e1);(expr builder e2);e_|] "setsliceidxf" builder
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexDouble [|(expr builder e1);(expr builder e2)
+                                          ;e_|] "setsliceidxf" builder
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )
             | ([FutureType],SSliceIndex(e1,e2))   -> 
               (match e1 with
-              | (_,SNamedVariable(s)) -> build_call setSliceIndexFuture [|(expr builder e1);(expr builder e2);e_|] "setsliceidxF" builder
+              | (_,SNamedVariable(s)) -> build_call setSliceIndexFuture [|(expr builder e1);(expr builder e2);
+                                          e_|] "setsliceidxF" builder
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )            
             | ([StringType],SSliceIndex(e1,e2))    -> 
               (match e1 with
-              | (_,SNamedVariable(s)) ->  build_call setSliceIndexString [|(expr builder e1);(expr builder e2);e_|] "setsliceidxs" builder
+              | (_,SNamedVariable(s)) ->  build_call setSliceIndexString [|(expr builder e1);(expr builder e2);e_|]
+                                            "setsliceidxs" builder
               | _ -> raise(Failure("SAssignOp error: should be rejected in semant")) 
               )            
             | (_,SNamedVariable(s)) -> 
               let (typl, ex1_) = ex1 in let from_llvm = e_ in
               ( match List.hd typl with
-                StringType ->
-                  let clonellvm = build_call cloneString [|from_llvm|] "clonestr" builder in
-                  ignore(build_store clonellvm (lookup s) builder);
-                   (*  GC Injection for CloneString  *)
-                  gc_inject clonellvm builder
-
+                  StringType ->
+                    let clonellvm = build_call cloneString [|from_llvm|] "clonestr" builder in
+                    ignore(build_store clonellvm (lookup s) builder);
+                    (*  GC Injection for CloneString  *)
+                    gc_inject clonellvm builder
+                
                 | FutureType ->
                   let _ = (match ex1_ with 
                       SFunctionCall(fname,_) -> Hashtbl.add futures s fname
@@ -408,7 +385,6 @@ let translate(functions) =
                     (match ex1_ with 
                         SNamedVariable(slice_name) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
                       | SAppend(expl) -> 
-                        (*let (_,SNamedVariable(slice_name))= (List.hd expl) in*)
                         (
                           match List.hd expl with
                           (_,SNamedVariable(slice_name)) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
@@ -418,7 +394,7 @@ let translate(functions) =
                     )
                     | _ ->ignore()
                   in
-                   (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
+                  (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
                   ignore(gc_inject clonellvm builder); e_
 
@@ -465,15 +441,19 @@ let translate(functions) =
                   SNamedVariable(x) -> x
                 | _ -> raise(Failure("SAppend error: should be rejected in semant")) 
                 in 
-                let check_eq a b = if a=b then ignore() else raise (Failure ( "Codegen Err: only support add future objects with same async function in one slice")) in
+                let check_eq a b = if a=b then ignore() else raise (Failure ( "Codegen Err: only support 
+                    add future objects with same async function in one slice")) in
                 ( match e2' with 
                 | SNamedVariable(future_object)->
                     (* let SNamedVariable(future_object) = e2'*)
-                    let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
-                    else raise (Failure ( "Codegen Err: undeclared future object " ^ future_object)) in
-                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                    let future_func = 
+                        if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
+                        else raise (Failure ( "Codegen Err: undeclared future object " ^ future_object)) in
+                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) 
+                    future_func else ignore(Hashtbl.add futures slice_name future_func))
                 | SFunctionCall(future_func,_)->
-                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) 
+                    future_func else ignore(Hashtbl.add futures slice_name future_func))
                 | _ -> raise(Failure("SAppend error: should be rejected in semant"))
                 )
                 (* print_string(string_of_bool(Hashtbl.mem futures slice_name)) *)
@@ -483,7 +463,7 @@ let translate(functions) =
             build_call sliceAppend [|e1;e2|] "slice_append" builder in 
             (*   GC Injection for SliceAppend  *)
             gc_inject call_ret builder
-        | SFunctionCall(f_name,args)                                           ->             
+        | SFunctionCall(f_name,args) ->             
           let (fdef,fd) = find_func f_name in
           let llargs = List.map (expr builder) args in 
           let result = (match fd.styp with [VoidType] -> "" | _ -> f_name ^ "_result") in 
@@ -515,8 +495,8 @@ let translate(functions) =
               in gc_inject call_ret builder
           )
 
-        | SInteger(ex)                                                         ->  const_int i64_t ex
-        | SFloat(ex)                                                           ->  const_float float_t ex
+        | SInteger(ex)  ->  const_int i64_t ex
+        | SFloat(ex) ->  const_float float_t ex
         | SString(ex)  ->  
         (* build_global_stringptr ex "str" builder *)
           let current_ptr = build_global_stringptr ex "createstr_ptr" builder in
@@ -524,9 +504,9 @@ let translate(functions) =
             build_call createString [|current_ptr|] "createstr" builder in
             (*  GC Injection for CreateString  *)
           gc_inject call_ret builder
-        | SBool(ex)                                                            ->  const_int i1_t (if ex then 1 else 0)
-        | SNamedVariable(n)                                                    ->  build_load (lookup n) n builder  
-        | SSliceLiteral(built_typ,len,e1_l)                                    ->  
+        | SBool(ex)                                ->  const_int i1_t (if ex then 1 else 0)
+        | SNamedVariable(n)                        ->  build_load (lookup n) n builder  
+        | SSliceLiteral(built_typ,len,e1_l)        ->  
         let tp = get_type_in_slicetype built_typ in 
         let arg_sn = get_slice_argument_number tp in 
         let empty_slice = build_call createSlice [|arg_sn|] "createslice" builder in
@@ -574,20 +554,22 @@ let translate(functions) =
             List.fold_left append_future empty_slice e1_l           
         | _           -> raise(Failure("invalide slice type"))   
         )      
-      | SSliceIndex(ex1,ex2)                                                 ->  
+      | SSliceIndex(ex1,ex2) ->  
         let rt = List.hd e_typl in
         let ex1' = expr builder ex1 in 
         let ex2' = expr builder ex2 in 
         (match rt with
-          StringType        -> let call_ret = build_call getSliceIndexString [|ex1';ex2'|] "findsliceindexs" builder in
-                                gc_inject call_ret builder
-        | IntegerType       ->  build_call getSliceIndexInt [|ex1';ex2'|] "findsliceindexn" builder
-        | FloatType         ->  build_call getSliceIndexDouble [|ex1';ex2'|] "findsliceindexf" builder
-        | FutureType        -> let call_ret = build_call getSliceIndexFuture [|ex1';ex2'|] "findsliceindexF" builder in
-                                gc_inject call_ret builder
-        | _                 ->  raise(Failure("sliceindex error: should be rejected in semant"))
+          StringType  -> let call_ret = build_call getSliceIndexString [|ex1';ex2'|] 
+                            "findsliceindexs" builder in
+                          gc_inject call_ret builder
+        | IntegerType ->  build_call getSliceIndexInt [|ex1';ex2'|] "findsliceindexn" builder
+        | FloatType ->  build_call getSliceIndexDouble [|ex1';ex2'|] "findsliceindexf" builder
+        | FutureType  -> let call_ret = build_call getSliceIndexFuture [|ex1';ex2'|] 
+                              "findsliceindexF" builder in
+                          gc_inject call_ret builder
+        | _         ->  raise(Failure("sliceindex error: should be rejected in semant"))
         )
-      | SSliceSlice(ex1,ex2,ex3)                                             ->  
+      | SSliceSlice(ex1,ex2,ex3)  ->  
         let ex1' = expr builder ex1 in
         let start_idx = match ex2 with
         | ([IntegerType],_)  -> expr builder ex2  
@@ -613,10 +595,10 @@ let translate(functions) =
         | None -> ignore (instr builder) in 
 
       let rec stmt builder = function  
-        SEmptyStatement                                                        ->  builder
-      | SBlock(sl)                                                             ->  
+        SEmptyStatement  ->  builder
+      | SBlock(sl)  ->  
         List.fold_left stmt builder sl
-      | SIfStatement(ex, s1, s2)                                               ->  
+      | SIfStatement(ex, s1, s2) ->  
         let bool_val = 
         (match ex with
           ([BoolType],SBinaryOp(e1,op,e2)) -> 
@@ -649,7 +631,8 @@ let translate(functions) =
 
         ignore(build_cond_br bool_val then_bb else_bb builder);
         builder_at_end context merge_bb
-      | SForStatement(e1, ex, e2, stl)                                          ->
+
+      | SForStatement(e1, ex, e2, stl) ->
         ignore(stmt builder (SExpr e1));
 
         let whole_body = SBlock[stl;SExpr(e2)] in 
@@ -702,17 +685,6 @@ let translate(functions) =
         );
         let ck = match el with
           [([VoidType],_)] -> builder
-          
-          (*
-          | [(_,SFunctionCall(_,_))] | [(_,SAwait(_))] -> 
-          print_string("fucntion call\n");
-          let e_ = expr builder (List.hd el) in 
-          let rec apply_extractvaluef current_idx = function 
-            []          ->  ()
-            | a::tl       ->  ignore(build_store (build_extractvalue e_ current_idx "extracted_value" builder) (lookup a) builder);   
-                              apply_extractvaluef (current_idx+1) tl  
-          in  ignore(apply_extractvaluef 0 nl);  
-          builder *)
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(([ty],SNamedVariable(n)),e))
             in ignore(List.map2 build_decll nl el);
@@ -720,7 +692,6 @@ let translate(functions) =
         in ck
 
       | SShortDecl(nl,el) ->
-        (*let (p,_) = (List.hd el) in*)
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
           let add_decl n = 
@@ -743,14 +714,16 @@ let translate(functions) =
           match (List.hd el) with
           ([FutureType],SFunctionCall(_,_))  ->  ignore(List.map2 build_decll nl el); builder
           | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_))  ->  
-              (* print_string("short decl slice index\n");
-              print_string("test: "^slice_name^"\n"); *)
-              List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-                Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl el;
-              ignore(List.map2 build_decll nl el);
-              builder
+            let add_futures n ret = 
+              ( match ret with 
+                  (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) ->  Hashtbl.replace futures 
+                      n (Hashtbl.find futures slice_name)
+                  | _ -> ignore()
+              ) in
+            List.iter2 add_futures nl el;
+            ignore(List.map2 build_decll nl el);
+            builder
           | (_,SAwait(_)) ->
-            (*let (ret_typ, _) = (List.hd el) in*)
             let e_ = expr builder (List.hd el) in
                 let rec apply_extractvaluef current_idx = function 
                 []          ->  ()
@@ -788,10 +761,8 @@ let translate(functions) =
             )
           | _ -> ignore(List.map2 build_decll nl el); builder
         in check_func_call
-
-      | SBreak                                                                ->  builder   (*more work on continue and break*)
+      | SBreak                                                                ->  builder 
       | SContinue                                                             ->  builder   
-
       | SReturn(el)                                                           ->  
         let el_mapper e = 
           let expr_llvalue = expr builder e in
@@ -808,7 +779,7 @@ let translate(functions) =
         ignore(build_call gc_release_all [|gc_trace_map_obj|] "" builder); 
         ignore(build_aggregate_ret agg builder); builder
 
-      | SExpr(ex)                                                             ->  ignore(expr builder ex); builder    
+      | SExpr(ex) ->  ignore(expr builder ex); builder    
 
       in
 
@@ -816,7 +787,7 @@ let translate(functions) =
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
         [VoidType] -> ignore(build_call gc_release_all [|gc_trace_map_obj|] "" builder); 
-                     ignore(build_ret_void builder)
+                      ignore(build_ret_void builder)
         | _ -> 
               add_terminal builder (build_aggregate_ret agg_)  
 

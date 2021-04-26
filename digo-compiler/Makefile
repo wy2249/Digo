@@ -1,4 +1,4 @@
-all : printer
+all : generate-compiler
 
 semant : parser.cmo scanner.cmo semant.cmo
 	ocamlc -o semant $^
