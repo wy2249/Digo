@@ -1,7 +1,7 @@
 # Digo
 
 ```
-  docker run --rm -it -v `pwd`:/home/microc -w=/home/microc wy2249/plt
+  docker run --rm -it -v `pwd`:/home/digo -w=/home/digo wy2249/plt
  ```
 
 Now you can compile a digo file to executable by:

@@ -7,19 +7,12 @@ open Llvm_analysis
 
 module StringMap = Map.Make(String)
 
-
 let check (functions) =
-
-  (* Verify a list of bindings has no void types or duplicate names *)
 
   (* Collect function declarations for built-in functions: no bodies. *)
   let built_in_decls = 
     let builtins = 
       [
-        (* print functions*)
-        (*("printString", {ann = FuncNormal; fname = "printString"; typ = [VoidType]; 
-        formals = [(StringType,"string")] ; body=[]});*)
-  
         (* string related*)
         (* Accepts a C-layout string and returns a wrapped Digo String object *)
         ("CreateString", {ann = FuncNormal; fname = "CreateString"; typ = [StringType]; 
@@ -128,26 +121,18 @@ let check (functions) =
   (* Check semantic in function *)
   let check_function func =
 
-    (* check_duplicate is a helper function to check duplicate in a list*)
-    (*let check_duplicate exceptf list =
-      let rec helper = function
-          n1 :: n2 :: _ when n1 = n2 -> raise (Failure (exceptf n1))
-        | _ :: t -> helper t
-        | [] -> ()
-      in helper (List.sort compare list)
-
-    (* check duplicate in parameters with check_duplicate*)
-    in check_duplicate (fun n -> "duplicate formal " ^ n ^ " in function " ^ func.fname)
-    (List.map fst func.formals);*)
     let _ =
+      (* check digo_main is valid *)
       match func.fname with 
-      "digo_main" -> if (List.length func.formals) > 0 then raise(Failure "Semant Err: digo_main should be no-arugment.");
-        (match func.typ with
-        [VoidType] -> ignore()
-        | _ -> raise(Failure "Semant Err: digo_main should be void type."))
+      "digo_main" -> 
+          if (List.length func.formals) > 0 
+          then raise(Failure "Semant Err: digo_main should be no-arugment.");
+          (match func.typ with
+            [VoidType] -> ignore()
+            | _ -> raise(Failure "Semant Err: digo_main should be void type.")
+          )
       | _ -> ignore()
     in
-
     let check_binds kind binds =              
       List.iter(function
         (VoidType, b) -> raise(Failure("illegal VoidType in " ^ kind ^" : "^b))
@@ -155,18 +140,18 @@ let check (functions) =
       ) binds;
       let rec dup_check = function 
         [] -> []
-      | ((_,n1)::(_,n2)::_) when n1 = n2 -> raise(Failure("duplicate in "^ kind ^ " : " ^ n1))
+      | ((_,n1)::(_,n2)::_) when n1 = n2 -> 
+          raise(Failure("duplicate in "^ kind ^ " : " ^ n1))
       | _::vdecls -> dup_check vdecls
       in 
         dup_check (List.sort (fun (_,n1)(_,n2)-> compare n1 n2) binds)
     in  
-
     ignore(check_binds "argument" func.formals);
 
-    (* Type of each variable (global, formal, or local *)
-    let symbols = Hashtbl.create 500 in
-    let futures = Hashtbl.create 500 in
-    let future_slice = Hashtbl.create 500 in                                      
+    (* Type of each variable *)
+    let symbols = Hashtbl.create 500 in (* symbol: hastbl for variables *)
+    let futures = Hashtbl.create 500 in (* symbol: hastbl for future variables *)
+    let future_slice = Hashtbl.create 500 in
     let _ = List.iter (fun (t, n) -> Hashtbl.add symbols n t) func.formals in 
     let type_of_identifier n =
       if Hashtbl.mem symbols n then Hashtbl.find symbols n
@@ -206,7 +191,8 @@ let check (functions) =
             let (var_typ,_) = expr var 
             and (ret_typ,e') = expr e in
             let err = "illegal assignment" in
-            ([check_assign (List.hd var_typ) (List.hd ret_typ) err], SAssignOp((expr var),(ret_typ, e')))   
+            ([check_assign (List.hd var_typ) (List.hd ret_typ) err], 
+              SAssignOp((expr var),(ret_typ, e')))   
           | _  -> raise(Failure("AssignOp error: left hand side is invalid"))
           )
         | NamedVariable(x)   -> 
@@ -219,16 +205,24 @@ let check (functions) =
                 SFunctionCall(fname,_) -> Hashtbl.add futures x fname
               | SSliceIndex((_,SNamedVariable(slice_name)),_) -> 
                   Hashtbl.replace futures x (Hashtbl.find futures slice_name)
-              | SNamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
-              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e)^" is invalid")) 
+              | SNamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find 
+                                                futures slice_name)
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e)
+                            ^" is invalid")) 
               )
             | SliceType(FutureType) ->
               (match e with 
-                NamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find futures slice_name)
+                NamedVariable(slice_name) -> Hashtbl.replace futures x (Hashtbl.find 
+                                                futures slice_name)
               | Append(expl) -> 
-                let NamedVariable(slice_name)= List.hd expl in
-                Hashtbl.replace futures x (Hashtbl.find futures slice_name);
-              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e) ^" is invalid"))
+                ( match (List.hd expl) with 
+                NamedVariable(slice_name)-> Hashtbl.replace futures x (Hashtbl.find 
+                                                  futures slice_name)
+                | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e) 
+                    ^" is invalid"))
+                )
+              | _ -> raise(Failure("AssignOp error: left hand side " ^string_of_expr(e) ^
+                    " is invalid"))
               )
             | _ -> ignore()
           in
@@ -255,12 +249,13 @@ let check (functions) =
           | Add | Sub | Mul | Div | Mod when same && ((List.hd ret_typl1) = FloatType) -> FloatType
           | IsEqual | IsNotEqual  when same -> BoolType
           | LessThan | LessEqual | GreaterThan | GreaterEqual
-            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd ret_typl1) = StringType) -> BoolType
+            when same && ((List.hd ret_typl1) = IntegerType || (List.hd ret_typl1) = FloatType || (List.hd 
+            ret_typl1) = StringType) -> BoolType
           | LogicalAnd | LogicalOr when same && ((List.hd ret_typl1) = BoolType) -> BoolType
           | Add when same && (List.hd ret_typl1) == StringType -> StringType
           | _ -> raise ( Failure ("Semant Err: illegal binary operator " ^(string_of_op op)^" for type "^ 
-          (String.concat ", " (List.map string_of_typ ret_typl1)) ^ " and type "^ (String.concat ", "(List.map string_of_typ ret_typl2))^
-          " in "^ string_of_expr e)) in 
+          (String.concat ", " (List.map string_of_typ ret_typl1)) ^ " and type "^ (String.concat ", "(List.map 
+          string_of_typ ret_typl2))^ " in "^ string_of_expr e)) in 
         ([op_typ],SBinaryOp((ret_typl1,e1'),op,(ret_typl2,e2')))
       | FunctionCall(fname, args) ->
       (match fname with
@@ -270,8 +265,9 @@ let check (functions) =
         let fd = find_func fname in 
         let param_length = List.length fd.formals in
         if List.length args != param_length then
-          raise (Failure ("Semant Err: different number of aruguments passed. Expected " ^ string_of_int param_length ^ " aruguments but "
-                          ^ string_of_int (List.length args) ^" aruguments provided in function " ^ fname))
+          raise (Failure ("Semant Err: different number of aruguments passed. Expected " 
+                  ^ string_of_int param_length ^ " aruguments but " ^ string_of_int 
+                  (List.length args) ^" aruguments provided in function " ^ fname))
         else 
           let check_call (ft, _) e = 
             let (ret_typl,e') = expr e in 
@@ -281,10 +277,8 @@ let check (functions) =
           let args' = List.map2 check_call fd.formals args in 
           let tpy' = match fd.ann with
             FuncNormal -> fd.typ
-          | _ -> 
-            [FutureType]
-          in
-          (tpy',SFunctionCall(fname,args'))
+          | _ -> [FutureType]
+          in (tpy',SFunctionCall(fname,args'))
       )
       | Append(exl) ->
         let exlen = List.length exl in 
@@ -296,27 +290,35 @@ let check (functions) =
           | [SliceType(x)] -> 
             if x = (List.hd ret_typl2)
             then 
-            (* check future object type when appending. if it's the first one, add (slice, func of future) *)
-            let _ = match x with 
-              FutureType ->
-                let SNamedVariable(slice_name) = e1' in
-                let check_eq a b = 
-                  if a = b then () else raise (Failure ( "Semant Err: cannot append future with async function " ^b ^" to a slice of future object with function " ^ a)) in
-                ( match e2' with 
-                | SNamedVariable(future_object)->
-                    (* let SNamedVariable(future_object) = e2'*)
-                    let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures future_object
-                    else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
-                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
-                | SFunctionCall(future_func,_)->
-                    ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
-                )
-                
-            | _ -> ignore()
-            in
-            (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
-
-            else raise(Failure("Built-in Append object and element are not compatible due to different type"))
+              (* check future object type when appending. if it's the first one, add (slice, func of future) *)
+              let _ = match x with 
+                  FutureType ->
+                    (match e1' with 
+                        SNamedVariable(slice_name)->
+                          let check_eq a b = 
+                            if a = b then () else raise (Failure ( "Semant Err: cannot append future with async 
+                            function " ^b ^" to a slice of future object with function " ^ a)) in
+                            ( match e2' with 
+                                SNamedVariable(future_object)->
+                                (* let SNamedVariable(future_object) = e2'*)
+                                let future_func = if Hashtbl.mem futures future_object then Hashtbl.find futures 
+                                future_object
+                                else raise (Failure ( "Semant Err: undeclared future object " ^ future_object)) in
+                                ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures 
+                                slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                              | SFunctionCall(future_func,_)->
+                                ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name)
+                                future_func else ignore(Hashtbl.add futures slice_name future_func))
+                              | _ -> ignore()
+                            )
+                        | _ -> raise (Failure ( "Semant Err: left hand side in " ^ string_of_expr(e) ^ " 
+                                  should be a variable"))
+                      )
+                  | _ -> ignore()
+              in (ret_typl1,SAppend([(ret_typl1,e1');(ret_typl2,e2')]))
+            else 
+              raise(Failure("Semantic Err: cannot append type "^(string_of_typ (List.hd ret_typl2))^ " to "
+                            ^ (string_of_typ (List.hd ret_typl1)) ^ " in expression " ^ (string_of_expr e)))
           | _  -> raise(Failure("Built-in Append being called on non-slice object"))  
           )
         else raise(Failure("Append needs two objects"))
@@ -345,11 +347,11 @@ let check (functions) =
       ([btyp],SSliceLiteral(btyp, slice_len , sexpl))
     | SliceIndex(e1,e2)                     -> 
       let (ret_typl1,e1') = expr e1 and (ret_typl2,e2') = expr e2 in
-      let check_e1typ = match ret_typl1 with
+      let _ = match ret_typl1 with
         [SliceType(_)]  -> ()
       | _             -> raise(Failure("illgal slice indexing on non-slice object"))
       in 
-      let check_e2typ = match ret_typl2 with
+      let _ = match ret_typl2 with
       | [IntegerType] -> ()
       | _ -> raise(Failure("illgal slice index: non-integer index"))
       in 
@@ -357,29 +359,21 @@ let check (functions) =
       ([rt_typ],SSliceIndex((ret_typl1,e1'),(ret_typl2,e2')))
     | SliceSlice(e1,e2,e3)                  ->
       let (ret_typl1,e1') = expr e1 and (ret_typl2,e2') = expr e2 and (ret_typl3,e3') = expr e3 in
-      let check_e1typ = match ret_typl1 with
+      let _ = match ret_typl1 with
         [SliceType(_)]  -> ()
       | _             -> raise(Failure("illgal slice slicing on non-slice object"))
       in 
-      let check_e2typ = match ret_typl2 with
+      let _ = match ret_typl2 with
       | [IntegerType] -> ()
       | [VoidType]    -> ()
       | _ -> raise(Failure("illgal slice slice: non-integer index"))
       in  
-      let check_e3typ = match ret_typl3 with
+      let _ = match ret_typl3 with
       | [IntegerType] -> ()
       | [VoidType]    -> ()
       | _ -> raise(Failure("illgal slice slice: non-integer index"))
       in                
       (ret_typl1,SSliceSlice((ret_typl1,e1'),(ret_typl2,e2'),(ret_typl3,e3')))
-      (*| Len(e) ->
-        (* only string and slice type*)
-        let (ret_typ,e') = expr e in
-        let ck = match (List.hd ret_typ) with
-          StringType -> ([IntegerType],SLen((ret_typ,e')))
-          |_ -> raise (Failure ("error: len is not supported for "^ string_of_typ (List.hd ret_typ)))
-        in ck
-      *)
       | Await(n) ->
             (* await futureVar *)
             (* return [list of returned aysn val types, SAwait(n)]*)
@@ -397,18 +391,20 @@ let check (functions) =
 
     let rec check_stmt = function 
         EmptyStatement                    ->  SEmptyStatement
-      | IfStatement(e,st1,st2)            ->  SIfStatement(check_bool_expr e, check_stmt st1, check_stmt st2)                         
+      | IfStatement(e,st1,st2)            ->  SIfStatement(check_bool_expr e, check_stmt st1, check_stmt st2)
       | ForStatement(e1,e,e2,st3)         ->  SForStatement(expr e1, check_bool_expr e, expr e2, check_stmt st3)
-      | Break                             ->  SBreak                                (*more on sbreak*)
-      | Continue                          ->  SContinue                            (*more on scontinune*)
+      | Break                             ->  SBreak                                
+      | Continue                          ->  SContinue                           
       | Declare(nl,t,el) ->
         let check_dup_var n =
-          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n t)
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n 
+          ^ " )")) else  ignore(Hashtbl.add symbols n t)
         in List.iter check_dup_var nl;
         let ck = match el with
           [] -> SDeclare(nl, t, [([VoidType],SEmptyExpr)])
           | _ ->
-            if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
+            if List.length nl != List.length el then raise (Failure ("assignment mismatch: "^string_of_int (List.length 
+            nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
             let ret_list = List.map (fun e -> expr e) el in 
             let _ = List.iter (fun (rt,_) -> ignore(check_assign t (List.hd rt) "illegal assignment type")) ret_list
             in SDeclare(nl, t, ret_list)
@@ -417,27 +413,38 @@ let check (functions) =
         let ret_list = List.map (fun e -> expr e) el in
         let _ = match (List.hd ret_list) with
             (tyl,SFunctionCall(_,_)) | (tyl, SAwait(_)) -> 
-            if List.length nl != List.length tyl then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
+            if List.length nl != List.length tyl then raise (Failure ("short decl assignment mismatch: "^
+            string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length tyl) ^ " values"));
           | _ ->
-            if List.length nl != List.length el then raise (Failure ("short decl assignment mismatch: "^string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
+            if List.length nl != List.length el then raise (Failure ("short decl assignment mismatch: "^
+            string_of_int (List.length nl) ^" variables but "^ string_of_int (List.length el) ^ " values"));
         in
         let check_dup_var n (rt,_) =
-          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n (List.hd rt))
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( "
+          ^ n ^ " )")) else  ignore(Hashtbl.add symbols n (List.hd rt))
         in 
         let check_dup_var_function n rt =
-          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )")) else  ignore(Hashtbl.add symbols n rt)
+          if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( "
+          ^ n ^ " )")) else  ignore(Hashtbl.add symbols n rt)
         in
         let _ = match (List.hd ret_list) with
           ([FutureType],SFunctionCall(fname,_)) ->
-            List.iter (fun n -> if Hashtbl.mem symbols n then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )"))
+            List.iter (fun n -> if Hashtbl.mem symbols n 
+            then raise (Failure ("Semant Err: duplicate local variable declarations ( " ^ n ^ " )"))
             else ignore(Hashtbl.add symbols n FutureType)) nl;
-            List.iter (fun n -> if Hashtbl.mem futures n then raise (Failure ("Semant Err: duplicate future variable declarations ( " ^ n ^ " )"))
+            List.iter (fun n -> if Hashtbl.mem futures n 
+            then raise (Failure ("Semant Err: duplicate future variable declarations ( " ^ n ^ " )"))
             else  ignore(Hashtbl.add futures n fname)) nl;
-          | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-            (* *)
-            List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
-                Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl ret_list;
+          | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_)) ->
+            let add_futures n ret = 
+              ( match ret with 
+                  (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) ->  
+                      Hashtbl.replace futures n (Hashtbl.find futures slice_name)
+                  | _ -> ignore()
+              ) in
+            List.iter2 add_futures nl ret_list;
             List.iter2 check_dup_var nl ret_list
+          
           | (etl,SFunctionCall(_,_)) | (etl, SAwait(_))   -> 
               List.iter2 check_dup_var_function nl etl
           | ([SliceType(FutureType)], SSliceLiteral(_,_,_)) ->
@@ -451,29 +458,28 @@ let check (functions) =
       | Return(el)                        -> 
             (match func.typ with
             [VoidType] -> if (List.length el) > 0 
-                            then raise (Failure ("Semant Err: too many arguments to return in a void function "^func.fname)) else raise (Failure ("Semant Err: "))
+                            then raise (Failure ("Semant Err: too many arguments to return in a void function "^
+                            func.fname)) else raise (Failure ("Semant Err: "))
             | _ -> 
               (match (List.length func.typ - List.length el) with
               0 -> let ret_list = List.map (fun e -> expr e) el in
-                let _ = List.iter2 (fun (rt,_) ft -> ignore(check_assign (List.hd rt) ft ("cannot use "^(string_of_typ (List.hd rt)) ^" in return argument of function " ^func.fname))) ret_list func.typ
+                let _ = List.iter2 (fun (rt,_) ft -> ignore(check_assign (List.hd rt) ft ("cannot use "^(string_of_typ 
+                (List.hd rt)) ^" in return argument of function " ^func.fname))) ret_list func.typ
                 in SReturn(ret_list)
-              | _ when (List.length func.typ - List.length el)> 0 -> raise (Failure ("Semant Err: not enough arguments to return in function "^func.fname))
+              | _ when (List.length func.typ - List.length el)> 0 -> 
+                    raise (Failure ("Semant Err: not enough arguments to return in function "^func.fname))
               | _ -> raise (Failure ("Semant Err: too many arguments in function "^func.fname))
               ))
-
       | Block(stl)                        -> 
         let rec check_stmt_list = function 
           [Return _ as s] -> [check_stmt s]
         | Return _ :: _      -> raise(Failure ("Statements appear after Return"))
         | Block b::ss     -> check_stmt_list (b@ss)
-        | s::ss           ->
-          let a = check_stmt s in
-          a :: check_stmt_list ss
+        | s::ss           -> let a = check_stmt s in a :: check_stmt_list ss
         | []              ->   [SEmptyStatement]
         in
         SBlock(check_stmt_list stl) 
-    
-      in
+    in
 
     let rec generate_default_return_value func_typ = 
       (
@@ -485,6 +491,7 @@ let check (functions) =
               | IntegerType :: ar -> Integer(0) :: make_arr ar
               | FloatType :: ar -> Float(0.0) :: make_arr ar
               | StringType :: ar -> String("") :: make_arr ar
+              | _ :: ar -> make_arr ar
             in 
             let new_return = make_arr func_typ in
             [check_stmt (Return(new_return))]
