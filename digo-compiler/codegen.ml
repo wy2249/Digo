@@ -38,10 +38,6 @@ let translate(functions) =
   let printfln =
       declare_function "println" printfln_t the_module in
 
-  let show_string (_,ex)= match ex with
-    SString(ex)  -> ex
-  | _           -> ""                    in    
-
   (*let printString_t= 
     function_type void_t [|(pointer_type i8_t)|] in
   let printString=
@@ -53,10 +49,10 @@ let translate(functions) =
   let createString=
       declare_function "CreateString" (createString_t) the_module in
   
-  let createEmptyString_t= 
+  (*let createEmptyString_t= 
         function_type (pointer_type i8_t) [|  |] in
   let createEmptyString=
-        declare_function "CreateEmptyString" (createEmptyString_t) the_module in
+        declare_function "CreateEmptyString" (createEmptyString_t) the_module in*)
 
   let addString_t= 
       function_type (pointer_type i8_t) [|pointer_type i8_t; pointer_type i8_t|] in
@@ -169,7 +165,7 @@ let translate(functions) =
       match eexpr with
         []     ->    builder
         | ((e, e_typl) :: el)  ->  (match e_typl with 
-          1 -> build_call gc_no_trace [| trace_map; e |] "" builder;  
+          1 -> ignore(build_call gc_no_trace [| trace_map; e |] "" builder);  
           gc_gen_notrace_from_retval builder trace_map el
         | _ -> gc_gen_notrace_from_retval builder trace_map el
         )
@@ -261,7 +257,7 @@ let translate(functions) =
           adds it to GC tracing map; and sets the is_lvalue_obj to 1 indicating 
           it is a Digo Object  *)
       let rec gc_inject func_ret_val builder = 
-        build_call gc_trace [|gc_trace_map_obj; func_ret_val|] "" builder;
+        ignore(build_call gc_trace [|gc_trace_map_obj; func_ret_val|] "" builder);
         expr_is_lvalue_obj := 1; 
         func_ret_val
       in
@@ -304,6 +300,7 @@ let translate(functions) =
               | GreaterEqual  ->  build_fcmp Fcmp.Oge
               | IsEqual     ->  build_fcmp Fcmp.Oeq
               | IsNotEqual  ->  build_fcmp Fcmp.One
+              | _ -> raise(Failure("invalid binary operation: should be rejected in semant"))
               ) e1 e2 "tmp" builder in
               build_select condition (const_float float_t 1.0) (const_float float_t 0.0) "booleantofloat" builder
           | ([IntegerType],_)                                   ->
@@ -314,12 +311,14 @@ let translate(functions) =
               | GreaterEqual  ->  build_icmp Icmp.Sge
               | IsEqual     ->  build_icmp Icmp.Eq
               | IsNotEqual  ->  build_icmp Icmp.Ne
+              | _ -> raise(Failure("invalid binary operation: should be rejected in semant"))
               ) e1 e2 "tmp" builder in
               build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           | ([BoolType],_)                                      ->
               let condition = (match op with
               | LogicalAnd  ->  build_and
               | LogicalOr   ->  build_or
+              | _ -> raise(Failure("invalid binary operation: should be rejected in semant"))
               ) e1 e2 "tmp" builder in
               build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
           | ([StringType],_)                                     ->
@@ -338,6 +337,7 @@ let translate(functions) =
               | _         ->  raise(Failure("binary operation is invalid and should be rejected in semant"))
               ) cmpllvm (const_int i64_t 0) "cmpstr_bool" builder in
               build_select condition (const_int i64_t 1) (const_int i64_t 0) "booleantoint" builder
+          | _ -> raise(Failure("invalid binary operation: should be rejected in semant"))
           )          
         | SBinaryOp(ex1,op,ex2) when (List.hd e_typl) = StringType                       ->                        
           let e1 = expr builder ex1
@@ -408,15 +408,19 @@ let translate(functions) =
                     (match ex1_ with 
                         SNamedVariable(slice_name) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
                       | SAppend(expl) -> 
-                        let (_,SNamedVariable(slice_name))= (List.hd expl) in
-                        Hashtbl.replace futures s (Hashtbl.find futures slice_name);
+                        (*let (_,SNamedVariable(slice_name))= (List.hd expl) in*)
+                        (
+                          match List.hd expl with
+                          (_,SNamedVariable(slice_name)) -> Hashtbl.replace futures s (Hashtbl.find futures slice_name)
+                          | _ -> ignore()
+                        )
                       | _ -> ignore()
                     )
                     | _ ->ignore()
                   in
                    (* MERGE CONFLICT FIXME TODO: return e_ ??*) 
                    (*  GC Injection for CloneSlice  *)
-                  gc_inject clonellvm builder; e_
+                  ignore(gc_inject clonellvm builder); e_
 
                 | _ -> 
                   ignore(build_store from_llvm (lookup s) builder); e_
@@ -456,7 +460,11 @@ let translate(functions) =
             (* e.g. s = append(s, c)*)
             let _ = match ret_typl2 with 
             [FutureType] -> 
-                let SNamedVariable(slice_name) = e1' in
+                (*let SNamedVariable(slice_name) = e1' in*)
+                let slice_name = match e1' with
+                  SNamedVariable(x) -> x
+                | _ -> raise(Failure("SAppend error: should be rejected in semant")) 
+                in 
                 let check_eq a b = if a=b then ignore() else raise (Failure ( "Codegen Err: only support add future objects with same async function in one slice")) in
                 ( match e2' with 
                 | SNamedVariable(future_object)->
@@ -466,6 +474,7 @@ let translate(functions) =
                     ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
                 | SFunctionCall(future_func,_)->
                     ignore(if Hashtbl.mem futures slice_name then check_eq (Hashtbl.find futures slice_name) future_func else ignore(Hashtbl.add futures slice_name future_func))
+                | _ -> raise(Failure("SAppend error: should be rejected in semant"))
                 )
                 (* print_string(string_of_bool(Hashtbl.mem futures slice_name)) *)
             | _ -> ignore()
@@ -595,6 +604,7 @@ let translate(functions) =
         build_call sliceSlice [|ex1';start_idx;end_idx|] "SliceSlice" builder
          (*  GC Injection for SliceSlice  *)
         in gc_inject call_ret builder
+      | _ -> raise(Failure("invalid expr: should be rejected in semant"))
     in
 
       let add_terminal builder instr  =
@@ -623,6 +633,7 @@ let translate(functions) =
            | ([StringType],_)  ->
             let rt = expr builder ex in 
             build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
+           | _ -> raise(Failure("if statement error: should be rejected in semant"))
            ) 
         | ([BoolType],_) -> expr builder ex
         | _ -> raise(Failure("not boolean on if condition"))
@@ -665,6 +676,7 @@ let translate(functions) =
            | ([StringType],_)  ->
             let rt = expr builder ex in 
             build_icmp Icmp.Eq rt (const_int i64_t 1) "judgeif" builder
+           | _ -> raise(Failure("for statement error: should be rejected in semant"))
            ) 
         | ([BoolType],_) -> expr builder ex
         | _ -> raise(Failure("not boolean on for condition"))
@@ -703,12 +715,12 @@ let translate(functions) =
           builder *)
           | _ ->
             let build_decll n e = expr builder ([ty],SAssignOp(([ty],SNamedVariable(n)),e))
-            in List.map2 build_decll nl el;
+            in ignore(List.map2 build_decll nl el);
             builder
         in ck
 
       | SShortDecl(nl,el) ->
-        let (p,_) = (List.hd el) in
+        (*let (p,_) = (List.hd el) in*)
         (match el with
         [([FutureType],SFunctionCall(_,_))] ->
           let add_decl n = 
@@ -729,16 +741,16 @@ let translate(functions) =
             expr builder (et,SAssignOp((et,SNamedVariable(n)),e)) 
           in
           match (List.hd el) with
-          ([FutureType],SFunctionCall(_,_))  ->  List.map2 build_decll nl el; builder
+          ([FutureType],SFunctionCall(_,_))  ->  ignore(List.map2 build_decll nl el); builder
           | ([FutureType], SSliceIndex((_,SNamedVariable(slice_name)),_))  ->  
               (* print_string("short decl slice index\n");
               print_string("test: "^slice_name^"\n"); *)
               List.iter2 (fun n (_, SSliceIndex((_,SNamedVariable(slice_name)),_)) -> 
                 Hashtbl.replace futures n (Hashtbl.find futures slice_name)) nl el;
-              List.map2 build_decll nl el;
+              ignore(List.map2 build_decll nl el);
               builder
           | (_,SAwait(_)) ->
-            let (ret_typ, _) = (List.hd el) in
+            (*let (ret_typ, _) = (List.hd el) in*)
             let e_ = expr builder (List.hd el) in
                 let rec apply_extractvaluef current_idx = function 
                 []          ->  ()
@@ -756,7 +768,7 @@ let translate(functions) =
           | (_,SFunctionCall(_,_)) ->
             let (ret_typ, _) = (List.hd el) in
             (match List.length ret_typ with
-            1 -> List.map2 build_decll nl el; builder
+            1 -> ignore(List.map2 build_decll nl el); builder
             | _ ->
               let e_ = expr builder (List.hd el) in
               let rec apply_extractvaluef current_idx = function 
@@ -774,7 +786,7 @@ let translate(functions) =
               in  ignore(apply_extractvaluef 0 nl);  
               builder
             )
-          | _ -> List.map2 build_decll nl el; builder
+          | _ -> ignore(List.map2 build_decll nl el); builder
         in check_func_call
 
       | SBreak                                                                ->  builder   (*more work on continue and break*)
@@ -792,8 +804,8 @@ let translate(functions) =
         let el_unmmaper (e2, _) = e2 in
         let agg_with_type = List.map el_mapper el in 
         let agg = Array.of_list (List.map el_unmmaper agg_with_type) in
-        gc_gen_notrace_from_retval builder gc_trace_map_obj agg_with_type;
-        build_call gc_release_all [|gc_trace_map_obj|] "" builder; 
+        ignore(gc_gen_notrace_from_retval builder gc_trace_map_obj agg_with_type);
+        ignore(build_call gc_release_all [|gc_trace_map_obj|] "" builder); 
         ignore(build_aggregate_ret agg builder); builder
 
       | SExpr(ex)                                                             ->  ignore(expr builder ex); builder    
@@ -803,7 +815,7 @@ let translate(functions) =
         let builder = stmt builder (SBlock fdecl.sbody) in
         let agg_ = [|const_int i64_t 0|] in
         match fdecl.styp with
-        [VoidType] -> build_call gc_release_all [|gc_trace_map_obj|] "" builder; 
+        [VoidType] -> ignore(build_call gc_release_all [|gc_trace_map_obj|] "" builder); 
                      ignore(build_ret_void builder)
         | _ -> 
               add_terminal builder (build_aggregate_ret agg_)  
