@@ -9,7 +9,7 @@
 #ifndef DIGO_LINKER_GC_H
 #define DIGO_LINKER_GC_H
 
-#define ENABLE_GC_DEBUG
+// #define ENABLE_GC_DEBUG
 
 #ifdef ENABLE_GC_DEBUG
 

@@ -1,0 +1,23 @@
+Word Count result of book1:
+word: a, count: 1
+word: b, count: 1
+word: c, count: 1
+word: d, count: 1
+word: e, count: 1
+word: f, count: 1
+Word Count result of book2:
+word: a, count: 2
+word: b, count: 2
+word: c, count: 2
+word: d, count: 2
+word: e, count: 2
+word: f, count: 2
+Word Count result of book3:
+word: df, count: 3
+word: kk, count: 3
+word: k1, count: 1
+word: k2, count: 1
+word: k3, count: 1
+word: k4, count: 1
+word: k5, count: 1
+word: k6, count: 1

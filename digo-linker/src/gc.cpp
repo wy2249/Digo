@@ -53,14 +53,21 @@ void  __GC_Trace(void* map, void* obj) {
 
 void  __GC_NoTrace(void* map, void* obj) {
     auto m = (TraceMap*)map;
+    // fprintf(stderr, "GC NO_TRACE map: %p, obj: %p\n", map, obj);
     m->ref[obj]--;
 }
 
 void  __GC_ReleaseAll(void* map) {
     auto m = (TraceMap*)map;
     for (auto obj : m->ref) {
+        // fprintf(stderr, "GC ReleaseAll map: %p, obj: %p, time: %d\n", map, obj.first, obj.second);
         for (int i = 0; i < obj.second; i++) {
             __GC_DecRef(obj.first);
+        }
+        if (obj.second < 0) {
+            for (int i = 0; i < -(obj.second); i++) {
+                ((DObject*)obj.first)->IncRef();
+            }
         }
     }
     delete m;
@@ -97,6 +104,7 @@ void DObject::IncRef() {
 }
 
 void DObject::DecRef() {
+    // fprintf(stderr, "You are visiting GC System: %p\n", this);
     this->ref_lock.lock();
     this->ref_cnt--;
     if (GC_DEBUG) {

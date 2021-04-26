@@ -230,6 +230,16 @@ if.func#<id>#:
         }
     }
 
+    /*  We also do not need the digo objects extracted by #<arg_extractor>#.
+     *  So we have to do GC_DecRef.
+     */
+    for (int i = 0; i < proto.parameters.size(); i++) {
+        auto t = proto.parameters[i];
+        if (t == TYPE_STR || t == TYPE_SLICE) {
+            dec_ref += "  call void @__GC_DecRef(i8* %arg" + to_string(id) + "_" + to_string(i) + ")\n";
+        }
+    }
+
     string ret_type = "{ " + GenerateArgumentsType(proto.return_type) + " }";
 
     auto result = fmt::format(label_template, fmt::arg("id", id),

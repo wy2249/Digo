@@ -13,6 +13,6 @@ func digo_main() void {
 }
 
 
-async func f1(a []string, b []string, c []int) ([]string, []string, []int) {
+async remote func f1(a []string, b []string, c []int) ([]string, []string, []int) {
     return b, a, c
 }
