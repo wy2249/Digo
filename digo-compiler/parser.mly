@@ -86,14 +86,6 @@ p_function_decl:
     formals = $5;
     body = List.rev $12 } }
 
-
-/*p_function_impl:*/
-  /*LEFT_BRACE NEWLINE p_statements RIGHT_BRACE   {  FunctionImpl($3) }*/
-
-/*p_function: */
-/*  p_function_prototype p_function_impl  {  Function($1, $2)   }  */
-
-
 p_type_list:
   /* empty type list is not allowed  */
 | p_type    {  [$1]  }
