@@ -12,5 +12,5 @@ echo "Picking a random available port: $port"
 
 worker_addr="127.0.0.1:$port"
 
-echo "./executable --master $addr"
+echo "./executable --worker $master_addr $worker_addr"
 ./executable --worker $master_addr $worker_addr
