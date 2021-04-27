@@ -1,8 +1,10 @@
 # Digo
 ## Environment Setup
 
+We recommend using docker to easily set up everything
 ```
   git clone https://github.com/wy2249/Digo.git
+  cd Digo
   docker run --rm -it -v `pwd`:/home/digo -w=/home/digo wy2249/plt
  ```
 
@@ -19,13 +21,17 @@ After setting up the environment, you can compile a digo file to executable by:
   make digo=./digo-compiler/test/test-async-remote1.digo out=executable
 ```
 
-And run the executable. For example,
+And run the executable with either master mode or worker mode. For example,
 
 ```
 ./executable --master 127.0.0.1:20001
 ```
+or
+```
+./executable --worker 127.0.0.1:20001 127.0.0.1:20002
+```
 
-The above full clean compilation is slow, so you can break the compilation into two parts:
+The above full clean compilation is slow, so we recommend to break the compilation into two parts:
 
 (1) Generate Digo Compiler, Digo Library & Linker
 
@@ -33,51 +39,22 @@ The above full clean compilation is slow, so you can break the compilation into 
     make clean
     make gen
 ```
-There is no need to generate them every time.
+In this way, there is no need to generate them every time!
 
-(2)  Compile Digo:
+(2)  Compile a Digo file:
 ```
     make build digo=DIGOFILE.digo out=ExecutableName
 ```
 
   For example:
 ```
-  make build digo=./digo-compiler/test/test-future-decl.digo out=executable
+  make build digo=./digo-compiler/test/test-future-decl.digo out=test-future-decl
 ```
 
 (3)   Other debugging commands:
 
+Running this command can print llvm
 ```
     make print-llvm digo=./digo-test/Basic/test-fib.digo
 ```
 
---------
-Legacy:
-
-The above full clean compilation is slow, so you can break the compilation into three parts:
-
-(1) Generate dependency:
-```
-    make clean
-    make generate-dependency
-```
-
-This generates the Digo Library and Linker. There is no need to generate them every time.
-
-(2) Generate Digo compiler:
-```
-    make generate-digo-compiler
-```
-This generates the Digo compiler. Re-generate it if compiler implementation changes.
-
-(3) Compile Digo:
-```
-    make build digo=DIGOFILE.digo out=ExecutableName
-```
-
-  For example:
-```
-  make build digo=./digo-compiler/test/test-future-decl.digo out=executable
-```
-
-Compiling from LLVM IR is no longer supported.
