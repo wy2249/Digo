@@ -1,10 +1,14 @@
 # Digo
+## Environment Setup
 
 ```
+  git clone https://github.com/wy2249/Digo.git
   docker run --rm -it -v `pwd`:/home/digo -w=/home/digo wy2249/plt
  ```
 
-Now you can compile a digo file to executable by:
+## Compile with digo
+
+After setting up the environment, you can compile a digo file to executable by:
 
 ```
   make digo=DIGOFILE.digo out=ExecutableName
