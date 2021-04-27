@@ -1,7 +1,0 @@
-func master() int {
-    await some_future_object
-    gather(future1, future2, future3, future4)
-    gather(future1)
-    len(slice1)
-    append(slice1, 1)
-}
